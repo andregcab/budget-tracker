@@ -9,45 +9,32 @@ export class AnalyticsService {
     const start = new Date(year, month - 1, 1);
     const end = new Date(year, month, 0, 23, 59, 59);
 
-    const [
-      transactions,
-      revenueOverride,
-      user,
-      additionalIncomes,
-      expectedFixedExpenses,
-    ] = await Promise.all([
-      this.prisma.transaction.findMany({
-        where: {
-          userId,
-          date: { gte: start, lte: end },
-          amount: { lt: 0 },
-          isExcluded: false,
-        },
-        include: {
-          category: { select: { id: true, name: true, isFixed: true } },
-        },
-      }),
-      this.prisma.revenue.findUnique({
-        where: {
-          userId_year_month: { userId, year, month },
-        },
-      }),
-      this.prisma.user.findUnique({
-        where: { id: userId },
-        select: { monthlyIncome: true },
-      }),
-      this.prisma.additionalIncome.findMany({
-        where: { userId, year, month },
-      }),
-      this.prisma.expectedFixedExpense.findMany({
-        where: { userId, year, month },
-        include: {
-          category: {
-            select: { id: true, name: true, isFixed: true, isActive: true },
+    const [transactions, revenueOverride, user, additionalIncomes] =
+      await Promise.all([
+        this.prisma.transaction.findMany({
+          where: {
+            userId,
+            date: { gte: start, lte: end },
+            amount: { lt: 0 },
+            isExcluded: false,
           },
-        },
-      }),
-    ]);
+          include: {
+            category: { select: { id: true, name: true, isFixed: true } },
+          },
+        }),
+        this.prisma.revenue.findUnique({
+          where: {
+            userId_year_month: { userId, year, month },
+          },
+        }),
+        this.prisma.user.findUnique({
+          where: { id: userId },
+          select: { monthlyIncome: true },
+        }),
+        this.prisma.additionalIncome.findMany({
+          where: { userId, year, month },
+        }),
+      ]);
 
     const budgets = await this.prisma.categoryBudget.findMany({
       where: { userId },
@@ -95,25 +82,6 @@ export class AnalyticsService {
           budget,
           isFixed: isFixedByCategory[catId] ?? false,
         };
-      }
-    }
-
-    // Add expected fixed expenses (for untracked accounts like rent)
-    for (const exp of expectedFixedExpenses) {
-      if (!exp.category.isActive) continue;
-      const amt = Number(exp.amount);
-      const key = exp.categoryId;
-      if (!byCategory[key]) {
-        byCategory[key] = {
-          name: exp.category.name,
-          total: amt,
-          budget: budgetByCategory[key] ?? amt,
-          isFixed: exp.category.isFixed ?? true,
-        };
-        totalSpend += amt;
-      } else if (byCategory[key].total === 0) {
-        byCategory[key].total = amt;
-        totalSpend += amt;
       }
     }
 

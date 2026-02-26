@@ -378,7 +378,22 @@ export function Dashboard() {
   );
   const fixedCategoriesForPicker = categories.filter((c) => c.isFixed);
 
-  const fixedCategories = chartData.filter((c) => c.isFixed);
+  // Fixed categories from analytics (actual transactions + budgets only).
+  // Merge in expected-only categories so they show in the fixed section.
+  const fixedFromChart = chartData.filter((c) => c.isFixed);
+  const fixedCategories = [...fixedFromChart];
+  for (const exp of expectedFixed) {
+    if (!fixedCategories.some((c) => c.id === exp.categoryId)) {
+      fixedCategories.push({
+        id: exp.categoryId,
+        name: exp.categoryName,
+        total: exp.amount,
+        budget: exp.amount,
+        isFixed: true,
+        over: false,
+      });
+    }
+  }
   const variableCategories = chartData.filter((c) => !c.isFixed);
   const fixedTotal = fixedCategories.reduce(
     (sum, c) => sum + c.total,

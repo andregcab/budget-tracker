@@ -12,18 +12,47 @@ import {
 export class CategoriesService {
   constructor(private readonly prisma: PrismaService) {}
 
-  async findAllActive(userId: string) {
+  /** Ensures user has default categories (creates if missing). Call before import so transactions use user category IDs. */
+  async ensureUserCategories(userId: string): Promise<void> {
     const userCategoryCount = await this.prisma.category.count({
       where: { userId },
     });
     if (userCategoryCount === 0) {
       await this.createDefaultCategoriesForUser(userId);
+    } else {
+      await this.migrateTransactionsFromGlobalToUser(userId);
     }
-    const categories = await this.prisma.category.findMany({
+  }
+
+  /** Migrate transactions from global category IDs to user category IDs (fixes filter mismatch). */
+  private async migrateTransactionsFromGlobalToUser(userId: string): Promise<void> {
+    const globals = await this.prisma.category.findMany({
+      where: { userId: null },
+      select: { id: true, name: true },
+    });
+    if (globals.length === 0) return;
+    const userCats = await this.prisma.category.findMany({
+      where: { userId },
+      select: { id: true, name: true },
+    });
+    const nameToNewId = Object.fromEntries(userCats.map((c) => [c.name, c.id]));
+    for (const g of globals) {
+      const newId = nameToNewId[g.name];
+      if (newId && newId !== g.id) {
+        await this.prisma.transaction.updateMany({
+          where: { userId, categoryId: g.id },
+          data: { categoryId: newId },
+        });
+      }
+    }
+  }
+
+  async findAllActive(userId: string) {
+    await this.ensureUserCategories(userId);
+    return this.prisma.category.findMany({
       where: { userId, isActive: true },
       orderBy: { name: 'asc' },
     });
-    return categories;
   }
 
   private async createDefaultCategoriesForUser(userId: string) {

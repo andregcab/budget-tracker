@@ -1,5 +1,6 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { CategoriesService } from '../categories/categories.service';
 import { externalId, parseChaseCsv, ParsedRow } from './chase-csv.parser';
 
 export interface ImportResult {
@@ -12,7 +13,10 @@ export interface ImportResult {
 
 @Injectable()
 export class ImportsService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly categoriesService: CategoriesService,
+  ) {}
 
   async importFromCsv(
     userId: string,
@@ -44,6 +48,8 @@ export class ImportsService {
         status: 'processing',
       },
     });
+
+    await this.categoriesService.ensureUserCategories(userId);
 
     let imported = 0;
     let skipped = 0;

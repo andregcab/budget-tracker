@@ -30,7 +30,7 @@ export function Login() {
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-background">
-      <div className="w-full max-w-sm space-y-6 rounded-lg border bg-card p-6 shadow-sm">
+      <div className="w-full max-w-sm space-y-6 rounded-lg border border-border bg-card p-6 text-foreground shadow-sm">
         <h1 className="text-center text-2xl font-semibold">Sign in</h1>
         <form onSubmit={handleSubmit} className="space-y-4">
           {error && (
@@ -39,7 +39,7 @@ export function Login() {
             </p>
           )}
           <div>
-            <label htmlFor="email" className="mb-1 block text-sm font-medium">
+            <label htmlFor="email" className="mb-1 block text-sm font-medium text-foreground">
               Email
             </label>
             <input
@@ -48,7 +48,7 @@ export function Login() {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               className={cn(
-                "w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background",
+                "w-full rounded-md border border-border bg-muted px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground ring-offset-background",
                 "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
               )}
               required
@@ -56,7 +56,7 @@ export function Login() {
             />
           </div>
           <div>
-            <label htmlFor="password" className="mb-1 block text-sm font-medium">
+            <label htmlFor="password" className="mb-1 block text-sm font-medium text-foreground">
               Password
             </label>
             <input
@@ -65,7 +65,7 @@ export function Login() {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               className={cn(
-                "w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background",
+                "w-full rounded-md border border-border bg-muted px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground ring-offset-background",
                 "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
               )}
               required
