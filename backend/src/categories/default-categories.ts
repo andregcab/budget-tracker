@@ -1,0 +1,18 @@
+export const DEFAULT_CATEGORIES = [
+  'Groceries',
+  'Restaurants',
+  'Rent',
+  'Utilities',
+  'Subscriptions',
+  'Gas',
+  'Travel',
+  'Healthcare',
+  'Insurance',
+  'Entertainment',
+  'Shopping',
+  'Personal Care',
+  'Education',
+  'Gifts & Donations',
+  'Transfer',
+  'Uncategorized',
+];

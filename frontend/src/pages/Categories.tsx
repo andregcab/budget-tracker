@@ -1,0 +1,480 @@
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useState } from "react";
+import { api } from "@/api/client";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import { Combobox } from "@/components/ui/combobox";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { Pencil, Trash2 } from "lucide-react";
+
+type Category = {
+  id: string;
+  name: string;
+  isDefault: boolean;
+  isActive: boolean;
+  userId: string | null;
+};
+
+type CategoryBudget = { categoryId: string; categoryName: string; amount: number };
+
+async function getCategories(): Promise<Category[]> {
+  return api("/categories");
+}
+
+async function getBudgets(): Promise<CategoryBudget[]> {
+  return api("/category-budgets");
+}
+
+async function createCategory(body: { name: string }) {
+  return api("/categories", { method: "POST", body: JSON.stringify(body) });
+}
+
+async function updateCategory(
+  id: string,
+  body: { name?: string; isActive?: boolean }
+) {
+  return api(`/categories/${id}`, { method: "PATCH", body: JSON.stringify(body) });
+}
+
+async function deleteCategory(id: string, migrateTo?: string) {
+  const url = migrateTo
+    ? `/categories/${id}?migrateTo=${encodeURIComponent(migrateTo)}`
+    : `/categories/${id}`;
+  return api(url, { method: "DELETE" });
+}
+
+async function getCategoryWithCount(id: string) {
+  return api<{ id: string; name: string; transactionCount: number }>(
+    `/categories/${id}`
+  );
+}
+
+async function upsertBudget(categoryId: string, amount: number) {
+  return api("/category-budgets", {
+    method: "PUT",
+    body: JSON.stringify({ categoryId, amount }),
+  });
+}
+
+async function removeBudget(categoryId: string) {
+  return api(`/category-budgets/${categoryId}`, { method: "DELETE" });
+}
+
+export function Categories() {
+  const queryClient = useQueryClient();
+  const { data: categories = [], isLoading } = useQuery({
+    queryKey: ["categories"],
+    queryFn: getCategories,
+  });
+  const { data: budgets = [] } = useQuery({
+    queryKey: ["category-budgets"],
+    queryFn: getBudgets,
+  });
+  const budgetByCategory = Object.fromEntries(
+    budgets.map((b) => [b.categoryId, b.amount])
+  );
+
+  const [createOpen, setCreateOpen] = useState(false);
+  const [createName, setCreateName] = useState("");
+  const [editId, setEditId] = useState<string | null>(null);
+  const [editName, setEditName] = useState("");
+  const [budgetEditId, setBudgetEditId] = useState<string | null>(null);
+  const [budgetAmount, setBudgetAmount] = useState("");
+  const [deleteTarget, setDeleteTarget] = useState<{
+    id: string;
+    name: string;
+    transactionCount: number;
+  } | null>(null);
+  const [migrateToId, setMigrateToId] = useState("");
+  const [deactivateTarget, setDeactivateTarget] = useState<Category | null>(null);
+
+  const createMutation = useMutation({
+    mutationFn: createCategory,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["categories"] });
+      setCreateOpen(false);
+      setCreateName("");
+    },
+  });
+
+  const updateMutation = useMutation({
+    mutationFn: ({ id, body }: { id: string; body: { name?: string; isActive?: boolean } }) =>
+      updateCategory(id, body),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["categories"] });
+      queryClient.invalidateQueries({ queryKey: ["transactions"] });
+      setEditId(null);
+    },
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: ({ id, migrateTo }: { id: string; migrateTo?: string }) =>
+      deleteCategory(id, migrateTo),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["categories"] });
+      queryClient.invalidateQueries({ queryKey: ["transactions"] });
+      queryClient.invalidateQueries({ queryKey: ["category-budgets"] });
+      queryClient.invalidateQueries({ queryKey: ["analytics", "monthly"] });
+      setDeleteTarget(null);
+      setMigrateToId("");
+    },
+  });
+
+  async function handleDeleteClick(cat: Category) {
+    const data = await getCategoryWithCount(cat.id);
+    setDeleteTarget({
+      id: data.id,
+      name: data.name,
+      transactionCount: data.transactionCount,
+    });
+    setMigrateToId("");
+  }
+
+  const budgetMutation = useMutation({
+    mutationFn: ({ categoryId, amount }: { categoryId: string; amount: number }) =>
+      upsertBudget(categoryId, amount),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["category-budgets"] });
+      queryClient.invalidateQueries({ queryKey: ["analytics", "monthly"] });
+      setBudgetEditId(null);
+    },
+  });
+
+  const removeBudgetMutation = useMutation({
+    mutationFn: removeBudget,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["category-budgets"] });
+      queryClient.invalidateQueries({ queryKey: ["analytics", "monthly"] });
+      setBudgetEditId(null);
+    },
+  });
+
+  function handleCreate(e: React.FormEvent) {
+    e.preventDefault();
+    createMutation.mutate({ name: createName });
+  }
+
+  function handleEditSave(e: React.FormEvent) {
+    e.preventDefault();
+    if (editId && editName.trim()) {
+      updateMutation.mutate({ id: editId, body: { name: editName.trim() } });
+    }
+  }
+
+  function handleBudgetSave(e: React.FormEvent) {
+    e.preventDefault();
+    if (budgetEditId) {
+      const amt = parseFloat(budgetAmount);
+      if (!isNaN(amt) && amt >= 0) {
+        budgetMutation.mutate({ categoryId: budgetEditId, amount: amt });
+      }
+    }
+  }
+
+  if (isLoading) return <p className="text-muted-foreground">Loading categories...</p>;
+
+  return (
+    <div>
+      <div className="flex items-center justify-between">
+        <h1 className="text-2xl font-semibold">Categories</h1>
+        <Dialog open={createOpen} onOpenChange={setCreateOpen}>
+          <DialogTrigger asChild>
+            <Button onClick={() => setCreateOpen(true)}>Add category</Button>
+          </DialogTrigger>
+          <DialogContent>
+            <form onSubmit={handleCreate}>
+              <DialogHeader>
+                <DialogTitle>New category</DialogTitle>
+              </DialogHeader>
+              <div className="grid gap-4 py-4">
+                <div className="grid gap-2">
+                  <Label htmlFor="name">Name</Label>
+                  <Input
+                    id="name"
+                    value={createName}
+                    onChange={(e) => setCreateName(e.target.value)}
+                    required
+                  />
+                </div>
+              </div>
+              <DialogFooter>
+                <Button type="button" variant="outline" onClick={() => setCreateOpen(false)}>
+                  Cancel
+                </Button>
+                <Button type="submit" disabled={createMutation.isPending}>
+                  Create
+                </Button>
+              </DialogFooter>
+            </form>
+          </DialogContent>
+        </Dialog>
+        <Dialog
+          open={deleteTarget != null}
+          onOpenChange={(open) => !open && setDeleteTarget(null)}
+        >
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Delete &quot;{deleteTarget?.name}&quot;</DialogTitle>
+            </DialogHeader>
+            {deleteTarget && (
+              <>
+                <p className="text-muted-foreground text-sm">
+                  {deleteTarget.transactionCount === 0
+                    ? "No transactions use this category."
+                    : `${deleteTarget.transactionCount} transaction${deleteTarget.transactionCount === 1 ? "" : "s"} use this category.`}
+                </p>
+                {deleteTarget.transactionCount > 0 && (
+                  <div className="grid gap-2 py-2">
+                    <Label>Migrate to</Label>
+                    <Combobox
+                      options={categories
+                        .filter((c) => c.id !== deleteTarget.id)
+                        .map((c) => ({ value: c.id, label: c.name }))}
+                      value={migrateToId || null}
+                      onValueChange={(v) => setMigrateToId(v ?? "")}
+                      placeholder="Select category (optional)"
+                      searchPlaceholder="Type to search..."
+                      allowEmpty
+                      emptyOption={{ value: null, label: "Don't migrate" }}
+                    />
+                  </div>
+                )}
+              </>
+            )}
+            <DialogFooter>
+              <Button
+                variant="outline"
+                onClick={() => setDeleteTarget(null)}
+              >
+                Cancel
+              </Button>
+              <Button
+                variant="destructive"
+                onClick={() => {
+                  if (deleteTarget) {
+                    deleteMutation.mutate({
+                      id: deleteTarget.id,
+                      migrateTo: migrateToId || undefined,
+                    });
+                  }
+                }}
+                disabled={deleteMutation.isPending}
+              >
+                {migrateToId
+                  ? "Migrate and delete"
+                  : "Delete and uncategorize"}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+        <Dialog
+          open={deactivateTarget != null}
+          onOpenChange={(open) => !open && setDeactivateTarget(null)}
+        >
+          <DialogContent className="border-destructive/30">
+            <DialogHeader>
+              <DialogTitle className="text-destructive">
+                Deactivate &quot;{deactivateTarget?.name}&quot;?
+              </DialogTitle>
+            </DialogHeader>
+            <p className="text-muted-foreground text-sm">
+              Deactivating hides this category from dropdowns. Transactions keep
+              their category. You can reactivate anytime.
+            </p>
+            <DialogFooter>
+              <Button
+                variant="outline"
+                onClick={() => setDeactivateTarget(null)}
+              >
+                Cancel
+              </Button>
+              <Button
+                variant="destructive"
+                onClick={() => {
+                  if (deactivateTarget) {
+                    updateMutation.mutate({
+                      id: deactivateTarget.id,
+                      body: { isActive: false },
+                    });
+                    setDeactivateTarget(null);
+                  }
+                }}
+                disabled={updateMutation.isPending}
+              >
+                Deactivate
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      </div>
+      <Card className="mt-4">
+        <CardHeader>
+          <CardTitle>Categories</CardTitle>
+          <p className="text-muted-foreground text-sm">
+            Edit names, set monthly budgets, or delete. Changes apply to all
+            transactions using that category.
+          </p>
+        </CardHeader>
+        <CardContent>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Name</TableHead>
+                <TableHead>Monthly budget</TableHead>
+                <TableHead>Active</TableHead>
+                <TableHead className="w-[140px]">Actions</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {categories.map((cat) => (
+                <TableRow key={cat.id}>
+                  <TableCell>
+                    {editId === cat.id ? (
+                      <form onSubmit={handleEditSave} className="flex gap-2">
+                        <Input
+                          value={editName}
+                          onChange={(e) => setEditName(e.target.value)}
+                          className="max-w-[200px]"
+                          autoFocus
+                        />
+                        <Button type="submit" size="sm">
+                          Save
+                        </Button>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => setEditId(null)}
+                        >
+                          Cancel
+                        </Button>
+                      </form>
+                    ) : (
+                      <span>{cat.name}</span>
+                    )}
+                  </TableCell>
+                  <TableCell>
+                    {budgetEditId === cat.id ? (
+                      <form onSubmit={handleBudgetSave} className="flex gap-2 items-center">
+                        <Input
+                          type="number"
+                          step="0.01"
+                          min="0"
+                          value={budgetAmount}
+                          onChange={(e) => setBudgetAmount(e.target.value)}
+                          className="max-w-[120px]"
+                          autoFocus
+                        />
+                        <Button type="submit" size="sm">
+                          Save
+                        </Button>
+                        {budgetByCategory[cat.id] != null && (
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => removeBudgetMutation.mutate(cat.id)}
+                            disabled={removeBudgetMutation.isPending}
+                          >
+                            Clear
+                          </Button>
+                        )}
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => setBudgetEditId(null)}
+                        >
+                          Cancel
+                        </Button>
+                      </form>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setBudgetEditId(cat.id);
+                          setBudgetAmount(
+                            budgetByCategory[cat.id] != null
+                              ? String(budgetByCategory[cat.id])
+                              : ""
+                          );
+                        }}
+                        className="text-left hover:underline text-muted-foreground"
+                      >
+                        {budgetByCategory[cat.id] != null
+                          ? `$${budgetByCategory[cat.id].toFixed(2)}`
+                          : "Set budget"}
+                      </button>
+                    )}
+                  </TableCell>
+                  <TableCell>{cat.isActive ? "Yes" : "No"}</TableCell>
+                  <TableCell>
+                    {editId !== cat.id && budgetEditId !== cat.id && (
+                      <div className="flex gap-1">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8"
+                          onClick={() => {
+                            setEditId(cat.id);
+                            setEditName(cat.name);
+                          }}
+                          title="Edit name"
+                        >
+                          <Pencil className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8 text-destructive hover:text-destructive"
+                          onClick={() => handleDeleteClick(cat)}
+                          disabled={deleteMutation.isPending}
+                          title="Delete"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className={cat.isActive ? "border-destructive/50 text-destructive hover:bg-destructive/10 hover:border-destructive hover:text-destructive" : ""}
+                          onClick={() =>
+                            cat.isActive
+                              ? setDeactivateTarget(cat)
+                              : updateMutation.mutate({
+                                  id: cat.id,
+                                  body: { isActive: true },
+                                })
+                          }
+                          disabled={updateMutation.isPending}
+                        >
+                          {cat.isActive ? "Deactivate" : "Activate"}
+                        </Button>
+                      </div>
+                    )}
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}

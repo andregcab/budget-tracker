@@ -1,0 +1,62 @@
+import { externalId, parseChaseCsv, ParsedRow } from './chase-csv.parser';
+
+describe('parseChaseCsv', () => {
+  it('parses CSV with Date, Description, Amount', () => {
+    const csv = `Date,Description,Amount
+2024-01-15,COFFEE SHOP,-5.99
+2024-01-16,PAYCHECK,2500.00`;
+    const rows = parseChaseCsv(csv);
+    expect(rows).toHaveLength(2);
+    expect(rows[0].description).toBe('COFFEE SHOP');
+    expect(rows[0].amount).toBe('-5.99');
+    expect(rows[1].amount).toBe('2500.00');
+  });
+
+  it('throws when required columns missing', () => {
+    const csv = `Col1,Col2
+a,b`;
+    expect(() => parseChaseCsv(csv)).toThrow('CSV must have columns');
+  });
+
+  it('handles optional Type and Category', () => {
+    const csv = `Date,Description,Amount,Type,Category
+2024-01-01,Grocery,50.00,Debit,Groceries`;
+    const rows = parseChaseCsv(csv);
+    expect(rows).toHaveLength(1);
+    expect(rows[0].type).toBe('Debit');
+    expect(rows[0].category).toBe('Groceries');
+  });
+
+  it('strips dollar signs and commas from amount', () => {
+    const csv = `Date,Description,Amount
+2024-01-01,Test,"$1,234.56"`;
+    const rows = parseChaseCsv(csv);
+    expect(rows[0].amount).toBe('1234.56');
+  });
+});
+
+describe('externalId', () => {
+  it('produces same id for same inputs', () => {
+    const row: ParsedRow = {
+      date: new Date('2024-01-15'),
+      description: 'COFFEE',
+      amount: '-5.99',
+      type: '',
+    };
+    const a = externalId('acc-1', row);
+    const b = externalId('acc-1', row);
+    expect(a).toBe(b);
+    expect(a).toMatch(/^ext-/);
+  });
+
+  it('produces different id for different amount', () => {
+    const row1: ParsedRow = {
+      date: new Date('2024-01-15'),
+      description: 'COFFEE',
+      amount: '-5.99',
+      type: '',
+    };
+    const row2: ParsedRow = { ...row1, amount: '-6.00' };
+    expect(externalId('acc-1', row1)).not.toBe(externalId('acc-1', row2));
+  });
+});
