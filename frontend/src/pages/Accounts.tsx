@@ -164,7 +164,7 @@ export function Accounts() {
                     id="institution"
                     value={institution}
                     onChange={(e) => setInstitution(e.target.value)}
-                    placeholder="e.g. Chase"
+                    placeholder="e.g. Your Bank"
                   />
                 </div>
                 <div className="flex items-center gap-2">

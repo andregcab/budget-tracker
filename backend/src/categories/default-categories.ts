@@ -1,6 +1,6 @@
 /**
  * Default categories aligned with common MCC codes and bank exports
- * (Chase, BofA, Citi, Wells Fargo, Amex, Capital One).
+ * aligned with common bank formats.
  * Keywords improve matching when CSV category names differ from bank to bank.
  */
 export interface DefaultCategory {

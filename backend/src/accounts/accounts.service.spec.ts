@@ -31,14 +31,14 @@ describe('AccountsService', () => {
     mockPrisma.account.create.mockResolvedValue({
       id: 'acc-1',
       userId: 'user-1',
-      name: 'Chase',
+      name: 'Main Checking',
       type: 'checking',
     });
     const result = await service.create('user-1', {
-      name: 'Chase',
+      name: 'Main Checking',
       type: 'checking',
     });
-    expect(result.name).toBe('Chase');
+    expect(result.name).toBe('Main Checking');
     expect(mockPrisma.account.create).toHaveBeenCalledTimes(1);
     const createArg = (
       mockPrisma.account.create.mock.calls[0] as unknown[]
@@ -53,7 +53,7 @@ describe('AccountsService', () => {
     };
     expect(createArg.data).toMatchObject({
       userId: 'user-1',
-      name: 'Chase',
+      name: 'Main Checking',
       type: 'checking',
       isDefault: false,
     });

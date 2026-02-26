@@ -1,6 +1,6 @@
 # Budget Tracker
 
-A multi-user, self-hosted budget tracking web app with CSV import (Chase-style), transactions, categories, and basic analytics.
+A multi-user, self-hosted budget tracking web app with CSV import (bank-agnostic), transactions, categories, and basic analytics.
 
 ## Stack
 
@@ -56,7 +56,7 @@ cd backend && npm run db:seed
 - Terminal 1 – API: `npm run dev:backend` (or `cd backend && npm run start:dev`)
 - Terminal 2 – Frontend: `npm run dev:frontend` (or `cd frontend && npm run dev`)
 
-Open the frontend (e.g. http://localhost:5173). Register a user, add an account, and import a Chase-style CSV from the Import page.
+Open the frontend (e.g. http://localhost:5173). Register a user, add an account, and import a bank CSV from the Import page.
 
 **Production build**
 
@@ -79,9 +79,9 @@ Serve `frontend/dist` with a static server and run the backend with `cd backend 
 | `npm run db:studio` | Open Prisma Studio |
 | `npm run db:seed` | Seed default categories (run from `backend/`) |
 
-## CSV import format (Chase-style)
+## CSV import format
 
-Expected columns (case-insensitive, some aliases supported):
+Expected columns (case-insensitive, common bank export aliases supported):
 
 - **Required:** Date (or Post Date), Description (or Details), Amount
 - **Optional:** Type, Balance, Category

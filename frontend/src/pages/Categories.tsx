@@ -430,10 +430,10 @@ export function Categories() {
                   />
                   <p className="text-xs text-muted-foreground">
                     The category name is always used for matching. Add
-                    extras here to map Chase categories or match
+                    extras here to map bank categories or match
                     descriptions (e.g. &quot;dining&quot; for Eating
-                    Out, &quot;Food &amp; Drink&quot; for Chase&apos;s
-                    type).
+                    Out, &quot;Food &amp; Drink&quot; for common
+                    bank types).
                   </p>
                 </div>
               </div>
@@ -569,7 +569,7 @@ export function Categories() {
             is always used (e.g. &quot;Netflix&quot; matches
             &quot;netflix&quot;), and you can add extras like
             &quot;dining&quot; or &quot;Food &amp; Drink&quot; to map
-            Chase types.
+            bank export types.
           </p>
         </CardHeader>
         <CardContent>

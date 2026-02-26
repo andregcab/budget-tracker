@@ -38,7 +38,7 @@ Assumptions:
 
 1. **User accounts & auth** – Sign up, login, logout; password hashing; all data scoped to user.
 2. **Accounts management** – CRUD for financial accounts; optional default account for imports.
-3. **CSV import (Chase-like)** – Upload CSV; parse date, description, amount, type, balance, optional category; dedupe by account+date+description+amount; return import summary.
+3. **CSV import (bank-agnostic)** – Upload CSV; parse date, description, amount, type, balance, optional category; dedupe by account+date+description+amount; return import summary.
 4. **Transactions view** – Paginated, sortable table; filters (date range, category, amount); inline edit category and notes.
 5. **Categories** – Seeded default set; users can enable/disable and add custom; v1 uses CSV category or "Uncategorized" (no AI).
 6. **Basic analytics** – Monthly spend by category; simple charts; quick stats (e.g., this month vs last).
@@ -54,7 +54,7 @@ Assumptions:
 
 ## 5. CSV import design
 
-- **Chase-like columns:** Required – Date, Description, Amount; Optional – Type, Balance, Category.
+- **Standard columns:** Required – Date, Description, Amount; Optional – Type, Balance, Category.
 - Parser validates header, normalizes rows, maps category if present, generates externalId for dedupe.
 - Batch insert in a DB transaction; return summary (imported, skipped, errors).
 - Leave a clear extension point for future AI categorization (e.g., uncategorized rows).
@@ -79,7 +79,7 @@ Assumptions:
 4. Accounts API – CRUD, default-account flag; user-scoped; tests.
 5. Categories API – List active, toggle, add custom; tests.
 6. Transactions API – List/filter, update category/notes; tests.
-7. CSV import backend – Upload endpoint (FileInterceptor), Chase-style parser, dedupe, ImportJob + summary; tests with fixture CSVs.
+7. CSV import backend – Upload endpoint (FileInterceptor), bank CSV parser, dedupe, ImportJob + summary; tests with fixture CSVs.
 8. Frontend shell & auth – Routing, layout, shadcn, login/register, auth state, protected routes.
 9. Accounts & categories UI – CRUD dialogs, category toggles.
 10. Transactions UI – Table, filters, pagination, inline edit.

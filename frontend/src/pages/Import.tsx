@@ -82,7 +82,7 @@ export function Import() {
     <div>
       <h1 className="text-2xl font-semibold">Import CSV</h1>
       <p className="text-muted-foreground mt-1">
-        Upload a Chase-style CSV (Date, Description, Amount). Duplicates are skipped.
+        Upload a bank CSV with Date, Description, and Amount columns. Duplicates are skipped.
       </p>
       <Card className="mt-4">
         <CardHeader>

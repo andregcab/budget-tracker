@@ -9,9 +9,11 @@ export interface ParsedRow {
   category?: string;
 }
 
+// Column aliases for common bank CSV export formats
 const HEADER_ALIASES: Record<string, string> = {
   date: 'date',
   'post date': 'date',
+  'transaction date': 'date',
   description: 'description',
   details: 'description',
   transaction: 'description',
@@ -19,7 +21,7 @@ const HEADER_ALIASES: Record<string, string> = {
   type: 'type',
   balance: 'balance',
   category: 'category',
-  'chase category': 'category',
+  'chase category': 'category', // vendor-specific alias for category column
 };
 
 function normalizeHeader(h: string): string {
@@ -41,7 +43,12 @@ function parseDate(value: string): Date {
   return d;
 }
 
-export function parseChaseCsv(csvContent: string): ParsedRow[] {
+/**
+ * Parses a bank CSV export. Expects columns: Date (or Post Date, Transaction Date),
+ * Description (or Details, Transaction), Amount. Optional: Type, Balance, Category.
+ * Compatible with exports from many major banks.
+ */
+export function parseBankCsv(csvContent: string): ParsedRow[] {
   const rows = parse<Record<string, string>>(csvContent, {
     columns: true,
     skip_empty_lines: true,

@@ -1,7 +1,7 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CategoriesService } from '../categories/categories.service';
-import { externalId, parseChaseCsv, ParsedRow } from './chase-csv.parser';
+import { externalId, parseBankCsv, ParsedRow } from './bank-csv.parser';
 
 export interface ImportResult {
   jobId: string;
@@ -33,7 +33,7 @@ export class ImportsService {
 
     let rows: ParsedRow[];
     try {
-      rows = parseChaseCsv(buffer.toString('utf-8'));
+      rows = parseBankCsv(buffer.toString('utf-8'));
     } catch (e) {
       throw new BadRequestException(
         e instanceof Error ? e.message : 'Invalid CSV format',
