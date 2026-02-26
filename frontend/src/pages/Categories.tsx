@@ -750,12 +750,14 @@ export function Categories() {
                           onClick={(e) => {
                             e.preventDefault();
                             e.stopPropagation();
-                            cat.isActive
-                              ? setDeactivateTarget(cat)
-                              : updateMutation.mutate({
-                                  id: cat.id,
-                                  body: { isActive: true },
-                                });
+                            if (cat.isActive) {
+                              setDeactivateTarget(cat);
+                            } else {
+                              updateMutation.mutate({
+                                id: cat.id,
+                                body: { isActive: true },
+                              });
+                            }
                           }}
                           disabled={updateMutation.isPending}
                         >
