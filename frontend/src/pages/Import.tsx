@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState, useCallback } from "react";
+import { toast } from "sonner";
 import { api, apiUpload } from "@/api/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -43,6 +44,13 @@ export function Import() {
       setFile(null);
       queryClient.invalidateQueries({ queryKey: ["transactions"] });
       queryClient.invalidateQueries({ queryKey: ["imports"] });
+      queryClient.invalidateQueries({ queryKey: ["analytics", "monthly"] });
+      toast.success(
+        `Imported ${data.imported} transaction(s)${data.skipped > 0 ? `, ${data.skipped} skipped (duplicates)` : ""}`,
+      );
+    },
+    onError: (err) => {
+      toast.error(err instanceof Error ? err.message : "Import failed");
     },
   });
 

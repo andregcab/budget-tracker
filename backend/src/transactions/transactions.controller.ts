@@ -69,6 +69,21 @@ export class TransactionsController {
     return this.transactionsService.removeMany(user.id, ids);
   }
 
+  @Post('re-apply-categories')
+  reApplyCategories(
+    @CurrentUser() user: UserPayload,
+    @Query('year') year: string,
+    @Query('month') month: string,
+  ) {
+    const now = new Date();
+    const y = year ? parseInt(year, 10) : now.getFullYear();
+    const m = month ? parseInt(month, 10) : now.getMonth() + 1;
+    if (Number.isNaN(y) || Number.isNaN(m) || m < 1 || m > 12) {
+      throw new BadRequestException('Valid year and month are required');
+    }
+    return this.transactionsService.reApplyCategories(user.id, y, m);
+  }
+
   @Delete()
   removeByDateRange(
     @CurrentUser() user: UserPayload,

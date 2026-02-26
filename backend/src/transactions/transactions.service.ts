@@ -92,6 +92,76 @@ export class TransactionsService {
     return { deleted: result.count };
   }
 
+  async reApplyCategories(
+    userId: string,
+    year: number,
+    month: number,
+  ): Promise<{ updated: number }> {
+    const start = new Date(year, month - 1, 1);
+    const end = new Date(year, month, 0, 23, 59, 59);
+
+    const categoriesWithKeywords: { id: string; keywords: string[] }[] = [];
+    const list = await this.prisma.category.findMany({
+      where: {
+        isActive: true,
+        OR: [{ userId: null }, { userId }],
+      },
+      select: { id: true, name: true, keywords: true },
+      orderBy: { userId: 'desc' },
+    });
+    list.forEach((c) => {
+      const explicit = c.keywords?.filter((k) => k?.trim()) ?? [];
+      const nameLower = c.name.toLowerCase().trim();
+      const effective = [
+        ...new Set([
+          nameLower,
+          ...explicit.map((k) => k.toLowerCase().trim()),
+        ]),
+      ].filter(Boolean);
+      categoriesWithKeywords.push({ id: c.id, keywords: effective });
+    });
+
+    function matchCategoryByKeyword(text: string): string | null {
+      if (!text?.trim()) return null;
+      const textLower = text.toLowerCase();
+      for (const cat of categoriesWithKeywords) {
+        for (const kw of cat.keywords) {
+          if (!kw?.trim()) continue;
+          const kwLower = kw.toLowerCase();
+          const matches =
+            textLower.includes(kwLower) || kwLower.includes(textLower);
+          if (matches) return cat.id;
+        }
+      }
+      return null;
+    }
+
+    const transactions = await this.prisma.transaction.findMany({
+      where: {
+        userId,
+        date: { gte: start, lte: end },
+        isExcluded: false,
+      },
+      select: { id: true, description: true, categoryId: true },
+    });
+
+    let updated = 0;
+    for (const tx of transactions) {
+      const matchedId = matchCategoryByKeyword(tx.description);
+      // Only update when we have a positive keyword match that differs from current.
+      // Do NOT overwrite with Uncategorized - preserve manual/CSV-assigned categories.
+      if (matchedId != null && matchedId !== (tx.categoryId ?? null)) {
+        await this.prisma.transaction.update({
+          where: { id: tx.id },
+          data: { categoryId: matchedId },
+        });
+        updated++;
+      }
+    }
+
+    return { updated };
+  }
+
   async update(userId: string, id: string, dto: UpdateTransactionDto) {
     const tx = await this.prisma.transaction.findFirst({
       where: { id, userId },

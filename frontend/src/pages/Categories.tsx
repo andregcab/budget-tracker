@@ -31,6 +31,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
+import { toast } from 'sonner';
 import { Pencil, Trash2 } from 'lucide-react';
 
 type Category = {
@@ -88,6 +89,13 @@ async function deleteCategory(id: string, migrateTo?: string) {
     ? `/categories/${id}?migrateTo=${encodeURIComponent(migrateTo)}`
     : `/categories/${id}`;
   return api(url, { method: 'DELETE' });
+}
+
+async function reApplyCategories(year: number, month: number) {
+  return api<{ updated: number }>(
+    `/transactions/re-apply-categories?year=${year}&month=${month}`,
+    { method: 'POST' },
+  );
 }
 
 async function getCategoryWithCount(id: string) {
@@ -150,12 +158,31 @@ export function Categories() {
 
   const createMutation = useMutation({
     mutationFn: createCategory,
-    onSuccess: () => {
+    onSuccess: async () => {
       queryClient.invalidateQueries({ queryKey: ['categories'] });
       setCreateOpen(false);
       setCreateName('');
       setCreateIsFixed(false);
       setCreateKeywords('');
+      try {
+        const now = new Date();
+        const { updated } = await reApplyCategories(
+          now.getFullYear(),
+          now.getMonth() + 1,
+        );
+        queryClient.invalidateQueries({ queryKey: ['transactions'] });
+        queryClient.invalidateQueries({ queryKey: ['analytics', 'monthly'] });
+        toast.success(
+          updated > 0
+            ? `Category added. ${updated} transaction(s) updated this month.`
+            : 'Category added.',
+        );
+      } catch {
+        toast.success('Category added.');
+      }
+    },
+    onError: (err) => {
+      toast.error(err instanceof Error ? err.message : 'Failed to add category');
     },
   });
 
@@ -172,10 +199,27 @@ export function Categories() {
         keywords?: string[];
       };
     }) => updateCategory(id, body),
-    onSuccess: () => {
+    onSuccess: async () => {
       queryClient.invalidateQueries({ queryKey: ['categories'] });
       queryClient.invalidateQueries({ queryKey: ['transactions'] });
       setEditId(null);
+      try {
+        const now = new Date();
+        const { updated } = await reApplyCategories(
+          now.getFullYear(),
+          now.getMonth() + 1,
+        );
+        queryClient.invalidateQueries({ queryKey: ['transactions'] });
+        queryClient.invalidateQueries({ queryKey: ['analytics', 'monthly'] });
+        if (updated > 0) {
+          toast.success(`${updated} transaction(s) updated this month.`);
+        }
+      } catch {
+        // Re-apply failed; category update still succeeded
+      }
+    },
+    onError: (err) => {
+      toast.error(err instanceof Error ? err.message : 'Failed to update category');
     },
   });
 
@@ -198,6 +242,10 @@ export function Categories() {
       });
       setDeleteTarget(null);
       setMigrateToId('');
+      toast.success('Category deleted.');
+    },
+    onError: (err) => {
+      toast.error(err instanceof Error ? err.message : 'Failed to delete category');
     },
   });
 
@@ -271,9 +319,26 @@ export function Categories() {
       id: string;
       keywords: string[];
     }) => updateCategory(id, { keywords }),
-    onSuccess: () => {
+    onSuccess: async () => {
       queryClient.invalidateQueries({ queryKey: ['categories'] });
       setKeywordsEditId(null);
+      try {
+        const now = new Date();
+        const { updated } = await reApplyCategories(
+          now.getFullYear(),
+          now.getMonth() + 1,
+        );
+        queryClient.invalidateQueries({ queryKey: ['transactions'] });
+        queryClient.invalidateQueries({ queryKey: ['analytics', 'monthly'] });
+        if (updated > 0) {
+          toast.success(`${updated} transaction(s) updated this month.`);
+        }
+      } catch {
+        // Re-apply failed; keywords update still succeeded
+      }
+    },
+    onError: (err) => {
+      toast.error(err instanceof Error ? err.message : 'Failed to save keywords');
     },
   });
 
