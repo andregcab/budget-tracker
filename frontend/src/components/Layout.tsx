@@ -72,7 +72,7 @@ export function Layout() {
           </Button>
         </div>
       </header>
-      <main className="flex-1 p-4">
+      <main className="flex-1 p-4 text-foreground">
         <Outlet />
       </main>
     </div>
