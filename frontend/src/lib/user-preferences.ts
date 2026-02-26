@@ -5,6 +5,11 @@ const VALID_LIMITS = [25, 50, 100] as const;
 
 export type TransactionsPerPage = (typeof VALID_LIMITS)[number];
 
+export const SPENDING_CHART_TYPES = ['bar', 'pie'] as const;
+export type SpendingChartType = (typeof SPENDING_CHART_TYPES)[number];
+
+const DEFAULT_SPENDING_CHART_TYPE: SpendingChartType = 'bar';
+
 function getStoredPreferences(): Record<string, unknown> {
   if (typeof window === "undefined") return {};
   try {
@@ -38,5 +43,20 @@ export function getTransactionsPerPage(): TransactionsPerPage {
 export function setTransactionsPerPage(limit: TransactionsPerPage) {
   const prefs = getStoredPreferences();
   prefs.transactionsPerPage = limit;
+  setStoredPreferences(prefs);
+}
+
+export function getSpendingChartType(): SpendingChartType {
+  const prefs = getStoredPreferences();
+  const val = prefs.spendingChartType;
+  if (typeof val === 'string' && SPENDING_CHART_TYPES.includes(val as SpendingChartType)) {
+    return val as SpendingChartType;
+  }
+  return DEFAULT_SPENDING_CHART_TYPE;
+}
+
+export function setSpendingChartType(type: SpendingChartType) {
+  const prefs = getStoredPreferences();
+  prefs.spendingChartType = type;
   setStoredPreferences(prefs);
 }

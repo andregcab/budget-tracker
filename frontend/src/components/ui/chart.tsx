@@ -264,10 +264,18 @@ const ChartLegendContent = React.forwardRef<
     Pick<RechartsPrimitive.LegendProps, "payload" | "verticalAlign"> & {
       hideIcon?: boolean
       nameKey?: string
+      onItemHover?: (index: number | undefined) => void
     }
 >(
   (
-    { className, hideIcon = false, payload, verticalAlign = "bottom", nameKey },
+    {
+      className,
+      hideIcon = false,
+      payload,
+      verticalAlign = "bottom",
+      nameKey,
+      onItemHover,
+    },
     ref
   ) => {
     const { config } = useChart()
@@ -275,6 +283,8 @@ const ChartLegendContent = React.forwardRef<
     if (!payload?.length) {
       return null
     }
+
+    const items = payload.filter((item) => item.type !== "none")
 
     return (
       <div
@@ -285,19 +295,20 @@ const ChartLegendContent = React.forwardRef<
           className
         )}
       >
-        {payload
-          .filter((item) => item.type !== "none")
-          .map((item) => {
-            const key = `${nameKey || item.dataKey || "value"}`
-            const itemConfig = getPayloadConfigFromPayload(config, item, key)
+        {items.map((item, index) => {
+          const key = `${nameKey || item.dataKey || "value"}`
+          const itemConfig = getPayloadConfigFromPayload(config, item, key)
 
-            return (
-              <div
-                key={item.value}
-                className={cn(
-                  "flex items-center gap-1.5 [&>svg]:h-3 [&>svg]:w-3 [&>svg]:text-muted-foreground"
-                )}
-              >
+          return (
+            <div
+              key={item.value}
+              className={cn(
+                "flex items-center gap-1.5 [&>svg]:h-3 [&>svg]:w-3 [&>svg]:text-muted-foreground",
+                onItemHover && "cursor-pointer"
+              )}
+              onMouseEnter={onItemHover ? () => onItemHover(index) : undefined}
+              onMouseLeave={onItemHover ? () => onItemHover(undefined) : undefined}
+            >
                 {itemConfig?.icon && !hideIcon ? (
                   <itemConfig.icon />
                 ) : (

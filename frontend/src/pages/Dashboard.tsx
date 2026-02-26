@@ -16,6 +16,10 @@ import {
 } from '@/components/ui/card';
 import {
   ChartContainer,
+  ChartLegend,
+  ChartLegendContent,
+  ChartTooltip,
+  ChartTooltipContent,
   type ChartConfig,
 } from '@/components/ui/chart';
 import {
@@ -28,7 +32,16 @@ import {
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Bar, BarChart, XAxis, YAxis } from 'recharts';
+import {
+  Bar,
+  BarChart,
+  Cell,
+  Pie,
+  PieChart,
+  Sector,
+  XAxis,
+  YAxis,
+} from 'recharts';
 import { Info, Pencil, Plus, Trash2 } from 'lucide-react';
 import {
   Popover,
@@ -42,6 +55,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import {
+  getSpendingChartType,
+  setSpendingChartType,
+} from '@/lib/user-preferences';
 
 type MonthlySummary = {
   year: number;
@@ -161,6 +178,18 @@ const chartConfig = {
   total: { label: 'Spend', color: 'var(--chart-1)' },
 } satisfies ChartConfig;
 
+// Wider hue spread (teal→blue→purple) for better distinguishability; uses CSS vars for dark mode
+const PIE_COLORS = [
+  'var(--chart-6)',
+  'var(--chart-1)',
+  'var(--chart-7)',
+  'var(--chart-8)',
+  'var(--chart-9)',
+  'var(--chart-10)',
+  'var(--chart-4)',
+  'var(--chart-2)',
+];
+
 export function Dashboard() {
   const { user } = useAuth();
   const queryClient = useQueryClient();
@@ -174,6 +203,13 @@ export function Dashboard() {
   const [expectedFixedOpen, setExpectedFixedOpen] = useState(false);
   const [expectedCategoryId, setExpectedCategoryId] = useState('');
   const [expectedAmount, setExpectedAmount] = useState('');
+  const [chartType, setChartType] = useState(getSpendingChartType);
+  const [pieActiveIndex, setPieActiveIndex] = useState<number | undefined>(
+    undefined,
+  );
+  const [legendHoverIndex, setLegendHoverIndex] = useState<
+    number | undefined
+  >(undefined);
 
   const currentYear = now.getFullYear();
   const currentMonth = now.getMonth() + 1;
@@ -281,6 +317,13 @@ export function Dashboard() {
     },
   });
 
+  const handleChartTypeChange = (type: 'bar' | 'pie') => {
+    setChartType(type);
+    setSpendingChartType(type);
+    setPieActiveIndex(undefined);
+    setLegendHoverIndex(undefined);
+  };
+
   const handleEditOpen = (open: boolean) => {
     setEditOpen(open);
     if (open) {
@@ -357,15 +400,6 @@ export function Dashboard() {
     if (month > maxMonth) setMonth(maxMonth);
   };
 
-  if (isLoading) {
-    return (
-      <div>
-        <h1 className="text-2xl font-semibold">Dashboard</h1>
-        <p className="text-muted-foreground mt-2">Loading...</p>
-      </div>
-    );
-  }
-
   const chartData =
     data?.byCategory.map((c) => ({
       id: c.id,
@@ -375,6 +409,28 @@ export function Dashboard() {
       isFixed: c.isFixed,
       over: c.budget > 0 && c.total > c.budget,
     })) ?? [];
+
+  const variableCategories = chartData.filter((c) => !c.isFixed);
+
+  const pieChartConfig: ChartConfig = (() => {
+    const config: ChartConfig = { ...chartConfig };
+    variableCategories.forEach((c, i) => {
+      config[c.name] = {
+        label: c.name,
+        color: PIE_COLORS[i % PIE_COLORS.length],
+      };
+    });
+    return config;
+  })();
+
+  if (isLoading) {
+    return (
+      <div>
+        <h1 className="text-2xl font-semibold">Dashboard</h1>
+        <p className="text-muted-foreground mt-2">Loading...</p>
+      </div>
+    );
+  }
 
   const expectedByCategoryId = Object.fromEntries(
     expectedFixed.map((e) => [e.categoryId, e]),
@@ -399,7 +455,7 @@ export function Dashboard() {
       });
     }
   }
-  const variableCategories = chartData.filter((c) => !c.isFixed);
+
   const fixedTotal = fixedCategories.reduce(
     (sum, c) => sum + c.total,
     0,
@@ -915,32 +971,153 @@ export function Dashboard() {
             </div>
 
             {variableCategories.length > 0 && (
-              <ChartContainer
-                config={chartConfig}
-                className="h-[260px] w-full"
-              >
-                <BarChart
-                  data={variableCategories}
-                  margin={{ left: 12, right: 12 }}
+              <div className="space-y-3">
+                <div className="flex gap-1">
+                  {(['bar', 'pie'] as const).map((type) => (
+                    <Button
+                      key={type}
+                      variant={chartType === type ? 'secondary' : 'ghost'}
+                      size="sm"
+                      className="capitalize"
+                      onClick={() => handleChartTypeChange(type)}
+                    >
+                      {type}
+                    </Button>
+                  ))}
+                </div>
+                <ChartContainer
+                  config={
+                    chartType === 'bar' ? chartConfig : pieChartConfig
+                  }
+                  className="h-[340px] w-full"
                 >
-                  <XAxis
-                    dataKey="name"
-                    tickLine={false}
-                    axisLine={false}
-                    tickMargin={8}
-                  />
-                  <YAxis
-                    tickLine={false}
-                    axisLine={false}
-                    tickMargin={8}
-                  />
-                  <Bar
-                    dataKey="total"
-                    fill="var(--color-total)"
-                    radius={[4, 4, 0, 0]}
-                  />
-                </BarChart>
-              </ChartContainer>
+                  {chartType === 'bar' ? (
+                    <BarChart
+                      data={variableCategories}
+                      margin={{ left: 12, right: 12 }}
+                    >
+                      <XAxis
+                        dataKey="name"
+                        tickLine={false}
+                        axisLine={false}
+                        tickMargin={8}
+                      />
+                      <YAxis
+                        tickLine={false}
+                        axisLine={false}
+                        tickMargin={8}
+                      />
+                      <Bar
+                        dataKey="total"
+                        fill="var(--color-total)"
+                        radius={[4, 4, 0, 0]}
+                      />
+                    </BarChart>
+                  ) : (
+                    <PieChart>
+                      <ChartTooltip
+                        content={
+                          <ChartTooltipContent
+                            labelKey="name"
+                            nameKey="name"
+                            formatter={(value) =>
+                              `$${Number(value).toFixed(2)}`
+                            }
+                          />
+                        }
+                      />
+                      <Pie
+                        data={variableCategories}
+                        dataKey="total"
+                        nameKey="name"
+                        innerRadius={0}
+                        strokeWidth={0}
+                        animationDuration={300}
+                        animationEasing="ease-in-out"
+                        activeIndex={
+                          legendHoverIndex ?? pieActiveIndex
+                        }
+                        activeShape={(props: unknown) => {
+                          const p = props as {
+                            outerRadius?: number;
+                            cx?: number;
+                            cy?: number;
+                            [key: string]: unknown;
+                          };
+                          const { cx = 0, cy = 0 } = p;
+                          return (
+                            <g
+                              className="pie-active-slice"
+                              style={{
+                                transformOrigin: `${cx}px ${cy}px`,
+                              }}
+                            >
+                              <Sector
+                                {...p}
+                                outerRadius={(p.outerRadius ?? 0) + 3}
+                                stroke="rgba(0,0,0,0.4)"
+                                strokeWidth={1}
+                                vectorEffect="non-scaling-stroke"
+                                style={{
+                                  filter:
+                                    'drop-shadow(0 4px 8px rgba(0,0,0,0.35))',
+                                }}
+                              />
+                            </g>
+                          );
+                        }}
+                        onClick={(_, index) =>
+                          setPieActiveIndex(
+                            pieActiveIndex === index ? undefined : index,
+                          )
+                        }
+                      >
+                        {variableCategories.map((_, index) => (
+                          <Cell
+                            key={index}
+                            fill={
+                              PIE_COLORS[
+                                index % PIE_COLORS.length
+                              ]
+                            }
+                          />
+                        ))}
+                      </Pie>
+                      <ChartLegend
+                        content={
+                          <ChartLegendContent
+                            nameKey="name"
+                            onItemHover={setLegendHoverIndex}
+                          />
+                        }
+                        verticalAlign="bottom"
+                      />
+                    </PieChart>
+                  )}
+                </ChartContainer>
+                {chartType === 'pie' &&
+                  pieActiveIndex !== undefined &&
+                  variableCategories[pieActiveIndex] && (
+                    <div
+                      className="rounded-md border border-border/50 bg-background px-3 py-2 text-sm shadow-sm"
+                      role="status"
+                      aria-live="polite"
+                    >
+                      <span className="font-medium">
+                        {variableCategories[pieActiveIndex].name}
+                      </span>
+                      <span className="ml-2 text-muted-foreground">
+                        $
+                        {variableCategories[
+                          pieActiveIndex
+                        ].total.toFixed(2)}
+                      </span>
+                      <span className="ml-1 text-xs text-muted-foreground">
+                        (tap again to dismiss)
+                      </span>
+                    </div>
+                  )}
+              </div>
             )}
           </CardContent>
         </Card>
