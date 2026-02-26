@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import {
   useQuery,
@@ -203,7 +203,15 @@ export function Dashboard() {
   const [expectedFixedOpen, setExpectedFixedOpen] = useState(false);
   const [expectedCategoryId, setExpectedCategoryId] = useState('');
   const [expectedAmount, setExpectedAmount] = useState('');
-  const [chartType, setChartType] = useState(getSpendingChartType);
+  const [chartType, setChartType] = useState< 'bar' | 'pie'>('bar');
+
+  useEffect(() => {
+    if (user?.id) {
+      const stored = getSpendingChartType(user.id);
+      queueMicrotask(() => setChartType(stored));
+    }
+  }, [user?.id]);
+
   const [pieActiveIndex, setPieActiveIndex] = useState<number | undefined>(
     undefined,
   );
@@ -319,7 +327,7 @@ export function Dashboard() {
 
   const handleChartTypeChange = (type: 'bar' | 'pie') => {
     setChartType(type);
-    setSpendingChartType(type);
+    if (user?.id) setSpendingChartType(user.id, type);
     setPieActiveIndex(undefined);
     setLegendHoverIndex(undefined);
   };

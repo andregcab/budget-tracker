@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { api } from "@/api/client";
+import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -104,13 +105,19 @@ function getMonthRange(): { from: string; to: string } {
 }
 
 export function Transactions() {
+  const { user } = useAuth();
   const queryClient = useQueryClient();
+  const userId = user?.id ?? null;
   const [accountId, setAccountId] = useState<string>("");
   const [categoryId, setCategoryId] = useState<string>("");
   const [fromDate, setFromDate] = useState("");
   const [toDate, setToDate] = useState("");
   const [page, setPage] = useState(1);
-  const [limit, setLimit] = useState(getTransactionsPerPage);
+  const [limit, setLimit] = useState(25);
+
+  useEffect(() => {
+    if (userId) setLimit(getTransactionsPerPage(userId));
+  }, [userId]);
   const [deleteTarget, setDeleteTarget] = useState<TransactionRow | null>(null);
   const [deleteMonthOpen, setDeleteMonthOpen] = useState(false);
 
@@ -267,7 +274,7 @@ export function Transactions() {
               onValueChange={(v) => {
                 const next = parseInt(v, 10) as 25 | 50 | 100;
                 setLimit(next);
-                setTransactionsPerPage(next);
+                if (userId) setTransactionsPerPage(userId, next);
                 setPage(1);
               }}
             >

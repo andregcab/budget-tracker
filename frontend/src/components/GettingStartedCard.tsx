@@ -27,7 +27,12 @@ async function getMonthlySummary(): Promise<{ totalSpend: number }> {
 
 export function GettingStartedCard() {
   const { user } = useAuth();
-  const [dismissed, setDismissed] = useState(getGettingStartedDismissed);
+  const userId = user?.id ?? null;
+  const [dismissed, setDismissed] = useState(false);
+
+  useEffect(() => {
+    if (userId) setDismissed(getGettingStartedDismissed(userId));
+  }, [userId]);
 
   const { data: accounts = [] } = useQuery({
     queryKey: ["accounts"],
@@ -46,8 +51,8 @@ export function GettingStartedCard() {
   const allDone = hasAccounts && hasTransactions && hasIncome;
 
   useEffect(() => {
-    if (allDone && !getGettingStartedConfettiShown()) {
-      setGettingStartedConfettiShown(true);
+    if (allDone && userId && !getGettingStartedConfettiShown(userId)) {
+      setGettingStartedConfettiShown(userId, true);
       confetti({
         particleCount: 80,
         spread: 60,
@@ -55,10 +60,10 @@ export function GettingStartedCard() {
         disableForReducedMotion: true,
       });
     }
-  }, [allDone]);
+  }, [allDone, userId]);
 
   function handleDismiss() {
-    setGettingStartedDismissed(true);
+    if (userId) setGettingStartedDismissed(userId, true);
     setDismissed(true);
   }
 
