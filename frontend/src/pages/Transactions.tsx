@@ -29,6 +29,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Trash2 } from "lucide-react";
+import { getTransactionsPerPage, setTransactionsPerPage } from "@/lib/user-preferences";
 
 type Category = { id: string; name: string };
 type TransactionRow = {
@@ -116,7 +117,7 @@ export function Transactions() {
   const [fromDate, setFromDate] = useState("");
   const [toDate, setToDate] = useState("");
   const [page, setPage] = useState(1);
-  const [limit, setLimit] = useState(25);
+  const [limit, setLimit] = useState(getTransactionsPerPage);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [deleteTarget, setDeleteTarget] = useState<TransactionRow | null>(null);
   const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false);
@@ -311,7 +312,9 @@ export function Transactions() {
             <Select
               value={String(limit)}
               onValueChange={(v) => {
-                setLimit(parseInt(v, 10));
+                const next = parseInt(v, 10) as 25 | 50 | 100;
+                setLimit(next);
+                setTransactionsPerPage(next);
                 setPage(1);
               }}
             >
