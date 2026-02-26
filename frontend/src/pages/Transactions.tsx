@@ -82,13 +82,6 @@ async function deleteTransaction(id: string) {
   return api(`/transactions/${id}`, { method: "DELETE" });
 }
 
-async function bulkDeleteTransactions(ids: string[]) {
-  return api<{ deleted: number }>("/transactions/bulk-delete", {
-    method: "POST",
-    body: JSON.stringify({ ids }),
-  });
-}
-
 async function deleteTransactionsByDateRange(fromDate: string, toDate: string) {
   return api<{ deleted: number }>(
     `/transactions?fromDate=${encodeURIComponent(fromDate)}&toDate=${encodeURIComponent(toDate)}`,
@@ -118,9 +111,7 @@ export function Transactions() {
   const [toDate, setToDate] = useState("");
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(getTransactionsPerPage);
-  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [deleteTarget, setDeleteTarget] = useState<TransactionRow | null>(null);
-  const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false);
   const [deleteMonthOpen, setDeleteMonthOpen] = useState(false);
 
   const { data: accounts = [] } = useQuery({
@@ -180,16 +171,6 @@ export function Transactions() {
     },
   });
 
-  const bulkDeleteMutation = useMutation({
-    mutationFn: bulkDeleteTransactions,
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["transactions"] });
-      queryClient.invalidateQueries({ queryKey: ["analytics", "monthly"] });
-      setSelectedIds(new Set());
-      setBulkDeleteOpen(false);
-    },
-  });
-
   const deleteMonthMutation = useMutation({
     mutationFn: ({ from, to }: { from: string; to: string }) =>
       deleteTransactionsByDateRange(from, to),
@@ -204,26 +185,8 @@ export function Transactions() {
   const total = data?.total ?? 0;
   const totalPages = Math.ceil(total / limit);
 
-  const toggleSelect = (id: string) => {
-    setSelectedIds((prev) => {
-      const next = new Set(prev);
-      if (next.has(id)) next.delete(id);
-      else next.add(id);
-      return next;
-    });
-  };
-  const toggleSelectAll = () => {
-    if (selectedIds.size === items.length) setSelectedIds(new Set());
-    else setSelectedIds(new Set(items.map((tx) => tx.id)));
-  };
-  const isAllSelected = items.length > 0 && selectedIds.size === items.length;
-  const isSomeSelected = selectedIds.size > 0;
-
   const handleDeleteSingle = () => {
     if (deleteTarget) deleteMutation.mutate(deleteTarget.id);
-  };
-  const handleBulkDelete = () => {
-    bulkDeleteMutation.mutate(Array.from(selectedIds));
   };
   const handleDeleteMonth = () => {
     const { from, to } = getMonthRange();
@@ -289,30 +252,12 @@ export function Transactions() {
           <CardTitle>Transactions ({total})</CardTitle>
           <div className="flex items-center gap-2 flex-wrap">
             <Button
-              variant="ghost"
-              size="sm"
-              className="md:hidden text-muted-foreground"
-              onClick={toggleSelectAll}
-            >
-              {isAllSelected ? "Clear all" : "Select all"}
-            </Button>
-            {isSomeSelected && (
-              <Button
-                variant="outline"
-                size="sm"
-                className="border-destructive/50 text-destructive hover:bg-destructive/10 hover:border-destructive"
-                onClick={() => setBulkDeleteOpen(true)}
-              >
-                Delete selected ({selectedIds.size})
-              </Button>
-            )}
-            <Button
               variant="outline"
               size="sm"
               className="border-destructive/50 text-destructive hover:bg-destructive/10 hover:border-destructive"
               onClick={() => setDeleteMonthOpen(true)}
             >
-              Delete all for this month
+              Delete All
             </Button>
             <Label htmlFor="limit" className="text-sm text-muted-foreground whitespace-nowrap">
               Per page
@@ -359,13 +304,6 @@ export function Transactions() {
                           </p>
                         </div>
                         <div className="flex items-center gap-1 shrink-0">
-                          <input
-                            type="checkbox"
-                            checked={selectedIds.has(tx.id)}
-                            onChange={() => toggleSelect(tx.id)}
-                            title="Select"
-                            className="h-4 w-4 rounded border-input"
-                          />
                           <Button
                             variant="ghost"
                             size="icon"
@@ -434,23 +372,6 @@ export function Transactions() {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead className="w-24">
-                      <label className="flex cursor-pointer items-center gap-2">
-                        <input
-                          type="checkbox"
-                          checked={isAllSelected}
-                          ref={(el) => {
-                            if (el) el.indeterminate = isSomeSelected && !isAllSelected;
-                          }}
-                          onChange={toggleSelectAll}
-                          title="Select all on page"
-                          className="h-4 w-4 rounded border-input"
-                        />
-                        <span className="text-xs font-medium text-muted-foreground">
-                          Select all
-                        </span>
-                      </label>
-                    </TableHead>
                     <TableHead className="w-20">Exclude</TableHead>
                     <TableHead>Date</TableHead>
                     <TableHead className="w-[220px]">Description</TableHead>
@@ -466,15 +387,6 @@ export function Transactions() {
                       key={tx.id}
                       className={tx.isExcluded ? "opacity-50 bg-muted/30" : ""}
                     >
-                      <TableCell>
-                        <input
-                          type="checkbox"
-                          checked={selectedIds.has(tx.id)}
-                          onChange={() => toggleSelect(tx.id)}
-                          title="Select for bulk delete"
-                          className="h-4 w-4 rounded border-input"
-                        />
-                      </TableCell>
                       <TableCell>
                         <input
                           type="checkbox"
@@ -597,30 +509,6 @@ export function Transactions() {
               variant="destructive"
               onClick={handleDeleteSingle}
               disabled={deleteMutation.isPending}
-            >
-              Delete
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      <Dialog open={bulkDeleteOpen} onOpenChange={setBulkDeleteOpen}>
-        <DialogContent className="border-destructive/50 sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle className="text-destructive">Delete selected transactions</DialogTitle>
-          </DialogHeader>
-          <p className="text-sm text-muted-foreground">
-            Delete {selectedIds.size} transaction{selectedIds.size !== 1 ? "s" : ""}? This cannot be
-            undone.
-          </p>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setBulkDeleteOpen(false)}>
-              Cancel
-            </Button>
-            <Button
-              variant="destructive"
-              onClick={handleBulkDelete}
-              disabled={bulkDeleteMutation.isPending}
             >
               Delete
             </Button>

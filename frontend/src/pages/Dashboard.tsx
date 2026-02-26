@@ -29,7 +29,12 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Bar, BarChart, XAxis, YAxis } from 'recharts';
-import { Pencil, Plus, Trash2 } from 'lucide-react';
+import { Info, Pencil, Plus, Trash2 } from 'lucide-react';
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '@/components/ui/popover';
 import {
   Select,
   SelectContent,
@@ -127,9 +132,7 @@ async function getExpectedFixedExpenses(
   year: number,
   month: number,
 ): Promise<ExpectedFixedItem[]> {
-  return api(
-    `/expected-fixed-expenses?year=${year}&month=${month}`,
-  );
+  return api(`/expected-fixed-expenses?year=${year}&month=${month}`);
 }
 
 async function createExpectedFixedExpense(body: {
@@ -376,7 +379,9 @@ export function Dashboard() {
   const expectedByCategoryId = Object.fromEntries(
     expectedFixed.map((e) => [e.categoryId, e]),
   );
-  const fixedCategoriesForPicker = categories.filter((c) => c.isFixed);
+  const fixedCategoriesForPicker = categories.filter(
+    (c) => c.isFixed,
+  );
 
   // Fixed categories from analytics (actual transactions + budgets only).
   // Merge in expected-only categories so they show in the fixed section.
@@ -544,16 +549,16 @@ export function Dashboard() {
                     <Label>Add extra income</Label>
                     <form
                       onSubmit={handleAddAdditional}
-                      className="flex flex-wrap gap-2"
+                      className="flex flex-wrap gap-2 items-center"
                     >
                       <Input
                         type="text"
-                        placeholder="e.g. Sold item, Headshots"
+                        placeholder="e.g. Sold item, Birthday Money"
                         value={addDescription}
                         onChange={(e) =>
                           setAddDescription(e.target.value)
                         }
-                        className="w-[140px]"
+                        className="flex-1 min-w-[200px]"
                       />
                       <Input
                         type="number"
@@ -567,7 +572,6 @@ export function Dashboard() {
                       <Button
                         type="submit"
                         variant="outline"
-                        size="sm"
                         disabled={
                           addIncomeMutation.isPending ||
                           !addAmount ||
@@ -668,11 +672,13 @@ export function Dashboard() {
                 <DialogContent className="text-foreground">
                   <form onSubmit={handleAddExpectedFixed}>
                     <DialogHeader>
-                      <DialogTitle>Add expected fixed expense</DialogTitle>
+                      <DialogTitle>
+                        Add expected fixed expense
+                      </DialogTitle>
                     </DialogHeader>
                     <p className="text-muted-foreground text-sm mt-2">
-                      For expenses paid from accounts you don&apos;t track (e.g.
-                      rent). Add a fixed category in{' '}
+                      For expenses paid from accounts you don&apos;t
+                      track (e.g. rent). Add a fixed category in{' '}
                       <Link
                         to="/categories"
                         className="underline"
@@ -684,46 +690,53 @@ export function Dashboard() {
                     </p>
                     <div className="grid gap-4 py-4">
                       <div className="grid gap-2">
-                        <Label htmlFor="expected-category">Category</Label>
+                        <Label htmlFor="expected-category">
+                          Category
+                        </Label>
                         {fixedCategoriesForPicker.length === 0 ? (
                           <p className="text-sm text-muted-foreground">
-                            No fixed categories yet. Create one (e.g. Rent) in{' '}
+                            No fixed categories yet. Create one (e.g.
+                            Rent) in{' '}
                             <Link
                               to="/categories"
                               className="underline"
-                              onClick={() => setExpectedFixedOpen(false)}
+                              onClick={() =>
+                                setExpectedFixedOpen(false)
+                              }
                             >
                               Categories
                             </Link>{' '}
                             and mark it as fixed.
                           </p>
                         ) : (
-                        <Select
-                          value={expectedCategoryId}
-                          onValueChange={setExpectedCategoryId}
-                        >
-                          <SelectTrigger
-                            id="expected-category"
-                            className="bg-background text-foreground"
+                          <Select
+                            value={expectedCategoryId}
+                            onValueChange={setExpectedCategoryId}
                           >
-                            <SelectValue placeholder="Select category" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {fixedCategoriesForPicker.map((cat) => (
-                              <SelectItem
-                                key={cat.id}
-                                value={cat.id}
-                                className="text-foreground"
-                              >
-                                {cat.name}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
+                            <SelectTrigger
+                              id="expected-category"
+                              className="bg-background text-foreground"
+                            >
+                              <SelectValue placeholder="Select category" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {fixedCategoriesForPicker.map((cat) => (
+                                <SelectItem
+                                  key={cat.id}
+                                  value={cat.id}
+                                  className="text-foreground"
+                                >
+                                  {cat.name}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
                         )}
                       </div>
                       <div className="grid gap-2">
-                        <Label htmlFor="expected-amount">Amount</Label>
+                        <Label htmlFor="expected-amount">
+                          Amount
+                        </Label>
                         <Input
                           id="expected-amount"
                           type="number"
@@ -772,7 +785,9 @@ export function Dashboard() {
                     key={c.id}
                     className="flex items-center justify-between text-sm group"
                   >
-                    <span className="text-muted-foreground">{c.name}</span>
+                    <span className="text-muted-foreground">
+                      {c.name}
+                    </span>
                     <span className="flex items-center gap-2">
                       ${c.total.toFixed(2)}
                       {expected && (
@@ -791,9 +806,13 @@ export function Dashboard() {
                           size="icon"
                           className="h-6 w-6 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
                           onClick={() =>
-                            removeExpectedFixedMutation.mutate(expected.id)
+                            removeExpectedFixedMutation.mutate(
+                              expected.id,
+                            )
                           }
-                          disabled={removeExpectedFixedMutation.isPending}
+                          disabled={
+                            removeExpectedFixedMutation.isPending
+                          }
                           title="Remove expected expense"
                         >
                           <Trash2 className="h-3 w-3" />
@@ -816,14 +835,27 @@ export function Dashboard() {
       {variableCategories.length > 0 && (
         <Card className="mt-6">
           <CardHeader>
-            <CardTitle>Variable spending</CardTitle>
-            <p className="text-muted-foreground text-sm">
-              Groceries, dining, shopping — set budgets in{' '}
-              <Link to="/categories" className="underline">
-                Categories
-              </Link>
-              . Over-budget items are highlighted.
-            </p>
+            <div className="flex items-center gap-1.5">
+              <CardTitle>Variable spending</CardTitle>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <button
+                    type="button"
+                    className="inline-flex text-muted-foreground hover:text-foreground focus:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded"
+                    aria-label="More information"
+                  >
+                    <Info className="h-4 w-4" />
+                  </button>
+                </PopoverTrigger>
+                <PopoverContent className="w-72 text-sm" align="start">
+                  Groceries, dining, shopping — set budgets in{' '}
+                  <Link to="/categories" className="underline">
+                    Categories
+                  </Link>
+                  . Over-budget items are highlighted.
+                </PopoverContent>
+              </Popover>
+            </div>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="space-y-3">
@@ -867,9 +899,7 @@ export function Dashboard() {
                       <div className="h-1.5 w-full overflow-hidden rounded-full bg-muted">
                         <div
                           className={`h-full rounded-full transition-all ${
-                            c.over
-                              ? 'bg-destructive'
-                              : 'bg-primary'
+                            c.over ? 'bg-destructive' : 'bg-primary'
                           }`}
                           style={{ width: `${Math.min(pct, 100)}%` }}
                         />
