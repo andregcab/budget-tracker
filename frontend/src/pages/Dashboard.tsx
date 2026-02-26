@@ -437,8 +437,8 @@ export function Dashboard() {
           <p
             className={`text-4xl font-bold sm:text-5xl ${
               (data?.savings ?? 0) >= 0
-                ? 'text-green-600 dark:text-green-400'
-                : 'text-red-600 dark:text-red-400'
+                ? 'text-[var(--positive)]'
+                : 'text-destructive'
             }`}
           >
             ${data?.savings?.toFixed(2) ?? '0.00'}
@@ -823,7 +823,7 @@ export function Dashboard() {
                       <span
                         className={
                           c.over
-                            ? 'font-medium text-red-600 dark:text-red-400'
+                            ? 'font-medium text-destructive'
                             : 'font-medium'
                         }
                       >
@@ -838,8 +838,8 @@ export function Dashboard() {
                             <span
                               className={
                                 c.over
-                                  ? 'ml-1 font-medium text-red-600 dark:text-red-400'
-                                  : 'ml-1 text-green-600 dark:text-green-400'
+                                  ? 'ml-1 font-medium text-destructive'
+                                  : 'ml-1 text-[var(--positive)]'
                               }
                             >
                               {c.over ? 'Over' : 'Under'}
@@ -853,7 +853,7 @@ export function Dashboard() {
                         <div
                           className={`h-full rounded-full transition-all ${
                             c.over
-                              ? 'bg-red-500 dark:bg-red-400'
+                              ? 'bg-destructive'
                               : 'bg-primary'
                           }`}
                           style={{ width: `${Math.min(pct, 100)}%` }}

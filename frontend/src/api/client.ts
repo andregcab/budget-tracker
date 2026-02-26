@@ -30,7 +30,9 @@ export async function api<T>(
     throw new Error(message || `HTTP ${res.status}`);
   }
   if (res.status === 204) return undefined as T;
-  return res.json();
+  const text = await res.text();
+  if (!text || text.trim() === "") return undefined as T;
+  return JSON.parse(text) as T;
 }
 
 export async function apiUpload<T>(

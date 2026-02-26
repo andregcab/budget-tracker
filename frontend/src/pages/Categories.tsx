@@ -96,8 +96,11 @@ async function getCategoryWithCount(id: string) {
   );
 }
 
-async function upsertBudget(categoryId: string, amount: number) {
-  return api('/category-budgets', {
+async function upsertBudget(
+  categoryId: string,
+  amount: number,
+): Promise<CategoryBudget> {
+  return api<CategoryBudget>('/category-budgets', {
     method: 'PUT',
     body: JSON.stringify({ categoryId, amount }),
   });
@@ -217,26 +220,20 @@ export function Categories() {
       amount: number;
     }) => upsertBudget(categoryId, amount),
     onSuccess: () => {
-      queryClient.invalidateQueries({
-        queryKey: ['category-budgets'],
-      });
-      queryClient.invalidateQueries({
-        queryKey: ['analytics', 'monthly'],
-      });
+      queryClient.invalidateQueries({ queryKey: ['category-budgets'] });
+      queryClient.invalidateQueries({ queryKey: ['analytics', 'monthly'] });
       setBudgetEditId(null);
+      setBudgetAmount('');
     },
   });
 
   const removeBudgetMutation = useMutation({
     mutationFn: removeBudget,
     onSuccess: () => {
-      queryClient.invalidateQueries({
-        queryKey: ['category-budgets'],
-      });
-      queryClient.invalidateQueries({
-        queryKey: ['analytics', 'monthly'],
-      });
+      queryClient.invalidateQueries({ queryKey: ['category-budgets'] });
+      queryClient.invalidateQueries({ queryKey: ['analytics', 'monthly'] });
       setBudgetEditId(null);
+      setBudgetAmount('');
     },
   });
 
@@ -293,8 +290,16 @@ export function Categories() {
   function handleBudgetSave(e: React.FormEvent) {
     e.preventDefault();
     if (budgetEditId) {
-      const amt = parseFloat(budgetAmount);
-      if (!isNaN(amt) && amt >= 0) {
+      const trimmed = budgetAmount.trim();
+      const amt = parseFloat(trimmed);
+      if (trimmed === '' || isNaN(amt) || amt < 0) {
+        if (budgetByCategory[budgetEditId] != null) {
+          removeBudgetMutation.mutate(budgetEditId);
+        } else {
+          setBudgetEditId(null);
+          setBudgetAmount('');
+        }
+      } else {
         budgetMutation.mutate({
           categoryId: budgetEditId,
           amount: amt,
@@ -568,11 +573,14 @@ export function Categories() {
                         {budgetByCategory[cat.id] != null && (
                           <Button
                             type="button"
-                            variant="ghost"
+                            variant="outline"
                             size="sm"
-                            onClick={() =>
-                              removeBudgetMutation.mutate(cat.id)
-                            }
+                            className="border-border"
+                            onClick={(e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              removeBudgetMutation.mutate(cat.id);
+                            }}
                             disabled={removeBudgetMutation.isPending}
                           >
                             Clear
@@ -580,8 +588,9 @@ export function Categories() {
                         )}
                         <Button
                           type="button"
-                          variant="ghost"
+                          variant="outline"
                           size="sm"
+                          className="border-border"
                           onClick={() => setBudgetEditId(null)}
                         >
                           Cancel
