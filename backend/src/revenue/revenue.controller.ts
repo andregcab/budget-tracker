@@ -3,6 +3,8 @@ import {
   Controller,
   Delete,
   Get,
+  Param,
+  Post,
   Put,
   Query,
   UseGuards,
@@ -33,6 +35,42 @@ export class RevenueController {
       parseInt(year, 10),
       parseInt(month, 10),
     );
+  }
+
+  @Get('additional')
+  getAdditionalIncome(
+    @CurrentUser() user: UserPayload,
+    @Query('year') year: string,
+    @Query('month') month: string,
+  ) {
+    return this.revenueService.getAdditionalIncome(
+      user.id,
+      parseInt(year, 10),
+      parseInt(month, 10),
+    );
+  }
+
+  @Post('additional')
+  createAdditionalIncome(
+    @CurrentUser() user: UserPayload,
+    @Body()
+    body: { year: number; month: number; amount: number; description?: string },
+  ) {
+    return this.revenueService.createAdditionalIncome(
+      user.id,
+      body.year,
+      body.month,
+      body.amount,
+      body.description,
+    );
+  }
+
+  @Delete('additional/:id')
+  deleteAdditionalIncome(
+    @CurrentUser() user: UserPayload,
+    @Param('id') id: string,
+  ) {
+    return this.revenueService.deleteAdditionalIncome(user.id, id);
   }
 
   @Put()

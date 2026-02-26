@@ -15,6 +15,41 @@ export class RevenueService {
     return revenue ? { amount: Number(revenue.amount) } : null;
   }
 
+  async getAdditionalIncome(userId: string, year: number, month: number) {
+    const items = await this.prisma.additionalIncome.findMany({
+      where: { userId, year, month },
+      orderBy: { id: 'asc' },
+    });
+    return items.map((i) => ({
+      id: i.id,
+      amount: Number(i.amount),
+      description: i.description,
+    }));
+  }
+
+  async createAdditionalIncome(
+    userId: string,
+    year: number,
+    month: number,
+    amount: number,
+    description?: string,
+  ) {
+    const item = await this.prisma.additionalIncome.create({
+      data: { userId, year, month, amount, description: description || null },
+    });
+    return {
+      id: item.id,
+      amount: Number(item.amount),
+      description: item.description,
+    };
+  }
+
+  async deleteAdditionalIncome(userId: string, id: string) {
+    await this.prisma.additionalIncome.deleteMany({
+      where: { id, userId },
+    });
+  }
+
   async upsert(userId: string, dto: UpsertRevenueDto) {
     const revenue = await this.prisma.revenue.upsert({
       where: {

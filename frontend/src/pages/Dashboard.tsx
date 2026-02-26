@@ -1,11 +1,23 @@
-import { useState, useEffect } from "react";
-import { Link } from "react-router-dom";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { useAuth } from "@/hooks/useAuth";
-import { api } from "@/api/client";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { ChartContainer, type ChartConfig } from "@/components/ui/chart";
+import { useState } from 'react';
+import { Link } from 'react-router-dom';
+import {
+  useQuery,
+  useMutation,
+  useQueryClient,
+} from '@tanstack/react-query';
+import { useAuth } from '@/hooks/useAuth';
+import { api } from '@/api/client';
+import { Button } from '@/components/ui/button';
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
+import {
+  ChartContainer,
+  type ChartConfig,
+} from '@/components/ui/chart';
 import {
   Dialog,
   DialogContent,
@@ -13,18 +25,18 @@ import {
   DialogTitle,
   DialogTrigger,
   DialogFooter,
-} from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Bar, BarChart, XAxis, YAxis } from "recharts";
-import { Pencil } from "lucide-react";
+} from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Bar, BarChart, XAxis, YAxis } from 'recharts';
+import { Pencil, Plus, Trash2 } from 'lucide-react';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select";
+} from '@/components/ui/select';
 
 type MonthlySummary = {
   year: number;
@@ -43,7 +55,7 @@ type MonthlySummary = {
 
 async function getMonthlySummary(
   year?: number,
-  month?: number
+  month?: number,
 ): Promise<MonthlySummary> {
   const now = new Date();
   const y = year ?? now.getFullYear();
@@ -53,7 +65,7 @@ async function getMonthlySummary(
 
 async function getRevenueOverride(
   year: number,
-  month: number
+  month: number,
 ): Promise<{ amount: number } | null> {
   return api(`/revenue?year=${year}&month=${month}`);
 }
@@ -63,18 +75,87 @@ async function upsertRevenueOverride(body: {
   month: number;
   amount: number;
 }) {
-  return api<{ amount: number }>("/revenue", {
-    method: "PUT",
+  return api<{ amount: number }>('/revenue', {
+    method: 'PUT',
     body: JSON.stringify(body),
   });
 }
 
 async function removeRevenueOverride(year: number, month: number) {
-  return api(`/revenue?year=${year}&month=${month}`, { method: "DELETE" });
+  return api(`/revenue?year=${year}&month=${month}`, {
+    method: 'DELETE',
+  });
+}
+
+type AdditionalIncomeItem = {
+  id: string;
+  amount: number;
+  description: string | null;
+};
+
+async function getAdditionalIncome(
+  year: number,
+  month: number,
+): Promise<AdditionalIncomeItem[]> {
+  return api(`/revenue/additional?year=${year}&month=${month}`);
+}
+
+async function createAdditionalIncome(body: {
+  year: number;
+  month: number;
+  amount: number;
+  description?: string;
+}) {
+  return api<AdditionalIncomeItem>('/revenue/additional', {
+    method: 'POST',
+    body: JSON.stringify(body),
+  });
+}
+
+async function deleteAdditionalIncome(id: string) {
+  return api(`/revenue/additional/${id}`, { method: 'DELETE' });
+}
+
+type ExpectedFixedItem = {
+  id: string;
+  categoryId: string;
+  categoryName: string;
+  amount: number;
+};
+
+async function getExpectedFixedExpenses(
+  year: number,
+  month: number,
+): Promise<ExpectedFixedItem[]> {
+  return api(
+    `/expected-fixed-expenses?year=${year}&month=${month}`,
+  );
+}
+
+async function createExpectedFixedExpense(body: {
+  year: number;
+  month: number;
+  categoryId: string;
+  amount: number;
+}) {
+  return api<ExpectedFixedItem>('/expected-fixed-expenses', {
+    method: 'POST',
+    body: JSON.stringify(body),
+  });
+}
+
+async function deleteExpectedFixedExpense(id: string) {
+  return api(`/expected-fixed-expenses/${id}`, { method: 'DELETE' });
+}
+
+async function getCategories(): Promise<
+  { id: string; name: string; isFixed: boolean }[]
+> {
+  return api('/categories');
 }
 
 const chartConfig = {
-  total: { label: "Spend", color: "var(--chart-1)" },
+  total: { label: 'Spend', color: 'var(--chart-1)' },
 } satisfies ChartConfig;
 
 export function Dashboard() {
@@ -84,7 +165,12 @@ export function Dashboard() {
   const [year, setYear] = useState(now.getFullYear());
   const [month, setMonth] = useState(now.getMonth() + 1);
   const [editOpen, setEditOpen] = useState(false);
-  const [editAmount, setEditAmount] = useState("");
+  const [editAmount, setEditAmount] = useState('');
+  const [addAmount, setAddAmount] = useState('');
+  const [addDescription, setAddDescription] = useState('');
+  const [expectedFixedOpen, setExpectedFixedOpen] = useState(false);
+  const [expectedCategoryId, setExpectedCategoryId] = useState('');
+  const [expectedAmount, setExpectedAmount] = useState('');
 
   const currentYear = now.getFullYear();
   const currentMonth = now.getMonth() + 1;
@@ -92,13 +178,30 @@ export function Dashboard() {
   const effectiveMonth = Math.min(month, maxMonthForYear);
 
   const { data, isLoading } = useQuery({
-    queryKey: ["analytics", "monthly", year, effectiveMonth],
+    queryKey: ['analytics', 'monthly', year, effectiveMonth],
     queryFn: () => getMonthlySummary(year, effectiveMonth),
   });
 
   const { data: override } = useQuery({
-    queryKey: ["revenue", year, effectiveMonth],
+    queryKey: ['revenue', year, effectiveMonth],
     queryFn: () => getRevenueOverride(year, effectiveMonth),
+  });
+
+  const { data: additionalIncome = [] } = useQuery({
+    queryKey: ['revenue', 'additional', year, effectiveMonth],
+    queryFn: () => getAdditionalIncome(year, effectiveMonth),
+    enabled: editOpen,
+  });
+
+  const { data: expectedFixed = [] } = useQuery({
+    queryKey: ['expected-fixed-expenses', year, effectiveMonth],
+    queryFn: () => getExpectedFixedExpenses(year, effectiveMonth),
+  });
+
+  const { data: categories = [] } = useQuery({
+    queryKey: ['categories'],
+    queryFn: getCategories,
+    enabled: expectedFixedOpen,
   });
 
   const hasOverride = override != null;
@@ -107,8 +210,10 @@ export function Dashboard() {
   const upsertMutation = useMutation({
     mutationFn: upsertRevenueOverride,
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["analytics", "monthly"] });
-      queryClient.invalidateQueries({ queryKey: ["revenue"] });
+      queryClient.invalidateQueries({
+        queryKey: ['analytics', 'monthly'],
+      });
+      queryClient.invalidateQueries({ queryKey: ['revenue'] });
       setEditOpen(false);
     },
   });
@@ -116,9 +221,60 @@ export function Dashboard() {
   const deleteMutation = useMutation({
     mutationFn: () => removeRevenueOverride(year, effectiveMonth),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["analytics", "monthly"] });
-      queryClient.invalidateQueries({ queryKey: ["revenue"] });
+      queryClient.invalidateQueries({
+        queryKey: ['analytics', 'monthly'],
+      });
+      queryClient.invalidateQueries({ queryKey: ['revenue'] });
       setEditOpen(false);
+    },
+  });
+
+  const addIncomeMutation = useMutation({
+    mutationFn: createAdditionalIncome,
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: ['analytics', 'monthly'],
+      });
+      queryClient.invalidateQueries({ queryKey: ['revenue'] });
+      setAddAmount('');
+      setAddDescription('');
+    },
+  });
+
+  const removeAdditionalMutation = useMutation({
+    mutationFn: deleteAdditionalIncome,
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: ['analytics', 'monthly'],
+      });
+      queryClient.invalidateQueries({ queryKey: ['revenue'] });
+    },
+  });
+
+  const addExpectedFixedMutation = useMutation({
+    mutationFn: createExpectedFixedExpense,
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: ['analytics', 'monthly'],
+      });
+      queryClient.invalidateQueries({
+        queryKey: ['expected-fixed-expenses'],
+      });
+      setExpectedFixedOpen(false);
+      setExpectedCategoryId('');
+      setExpectedAmount('');
+    },
+  });
+
+  const removeExpectedFixedMutation = useMutation({
+    mutationFn: deleteExpectedFixedExpense,
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: ['analytics', 'monthly'],
+      });
+      queryClient.invalidateQueries({
+        queryKey: ['expected-fixed-expenses'],
+      });
     },
   });
 
@@ -126,37 +282,77 @@ export function Dashboard() {
     setEditOpen(open);
     if (open) {
       setEditAmount(
-        hasOverride ? String(override.amount) : String(defaultIncome || "")
+        hasOverride
+          ? String(override.amount)
+          : String(defaultIncome || ''),
       );
+      setAddAmount('');
+      setAddDescription('');
     }
+  };
+
+  const handleAddAdditional = (e: React.FormEvent) => {
+    e.preventDefault();
+    const amt = parseFloat(addAmount);
+    if (isNaN(amt) || amt <= 0) return;
+    addIncomeMutation.mutate({
+      year,
+      month: effectiveMonth,
+      amount: amt,
+      description: addDescription.trim() || undefined,
+    });
   };
 
   const handleSaveOverride = (e: React.FormEvent) => {
     e.preventDefault();
     const amt = parseFloat(editAmount);
     if (isNaN(amt) || amt < 0) return;
-    upsertMutation.mutate({ year, month: effectiveMonth, amount: amt });
+    upsertMutation.mutate({
+      year,
+      month: effectiveMonth,
+      amount: amt,
+    });
   };
 
   const handleUseDefault = () => {
     deleteMutation.mutate();
   };
 
-  const monthName = new Date(year, effectiveMonth - 1).toLocaleString("default", {
-    month: "long",
-  });
+  const handleAddExpectedFixed = (e: React.FormEvent) => {
+    e.preventDefault();
+    const amt = parseFloat(expectedAmount);
+    if (isNaN(amt) || amt <= 0 || !expectedCategoryId) return;
+    addExpectedFixedMutation.mutate({
+      year,
+      month: effectiveMonth,
+      categoryId: expectedCategoryId,
+      amount: amt,
+    });
+  };
 
-  const availableYears = [currentYear, currentYear - 1, currentYear - 2];
+  const monthName = new Date(year, effectiveMonth - 1).toLocaleString(
+    'default',
+    {
+      month: 'long',
+    },
+  );
+
+  const availableYears = [
+    currentYear,
+    currentYear - 1,
+    currentYear - 2,
+  ];
   const availableMonths =
     year === currentYear
       ? Array.from({ length: currentMonth }, (_, i) => i + 1)
       : [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12];
 
-  useEffect(() => {
-    if (month > maxMonthForYear) {
-      setMonth(maxMonthForYear);
-    }
-  }, [year, month, maxMonthForYear]);
+  const handleYearChange = (v: string) => {
+    const newYear = parseInt(v, 10);
+    setYear(newYear);
+    const maxMonth = newYear === currentYear ? currentMonth : 12;
+    if (month > maxMonth) setMonth(maxMonth);
+  };
 
   if (isLoading) {
     return (
@@ -169,6 +365,7 @@ export function Dashboard() {
 
   const chartData =
     data?.byCategory.map((c) => ({
+      id: c.id,
       name: c.name,
       total: c.total,
       budget: c.budget,
@@ -176,10 +373,21 @@ export function Dashboard() {
       over: c.budget > 0 && c.total > c.budget,
     })) ?? [];
 
+  const expectedByCategoryId = Object.fromEntries(
+    expectedFixed.map((e) => [e.categoryId, e]),
+  );
+  const fixedCategoriesForPicker = categories.filter((c) => c.isFixed);
+
   const fixedCategories = chartData.filter((c) => c.isFixed);
   const variableCategories = chartData.filter((c) => !c.isFixed);
-  const fixedTotal = fixedCategories.reduce((sum, c) => sum + c.total, 0);
-  const variableTotal = variableCategories.reduce((sum, c) => sum + c.total, 0);
+  const fixedTotal = fixedCategories.reduce(
+    (sum, c) => sum + c.total,
+    0,
+  );
+  const variableTotal = variableCategories.reduce(
+    (sum, c) => sum + c.total,
+    0,
+  );
 
   return (
     <div>
@@ -199,17 +407,14 @@ export function Dashboard() {
           <SelectContent>
             {availableMonths.map((m) => (
               <SelectItem key={m} value={String(m)}>
-                {new Date(2000, m - 1).toLocaleString("default", {
-                  month: "long",
+                {new Date(2000, m - 1).toLocaleString('default', {
+                  month: 'long',
                 })}
               </SelectItem>
             ))}
           </SelectContent>
         </Select>
-        <Select
-          value={String(year)}
-          onValueChange={(v) => setYear(parseInt(v, 10))}
-        >
+        <Select value={String(year)} onValueChange={handleYearChange}>
           <SelectTrigger className="h-9 w-[100px] bg-background text-foreground">
             <SelectValue placeholder="Year" />
           </SelectTrigger>
@@ -232,18 +437,20 @@ export function Dashboard() {
           <p
             className={`text-4xl font-bold sm:text-5xl ${
               (data?.savings ?? 0) >= 0
-                ? "text-green-600 dark:text-green-400"
-                : "text-red-600 dark:text-red-400"
+                ? 'text-green-600 dark:text-green-400'
+                : 'text-red-600 dark:text-red-400'
             }`}
           >
-            ${data?.savings?.toFixed(2) ?? "0.00"}
+            ${data?.savings?.toFixed(2) ?? '0.00'}
           </p>
           <p className="text-muted-foreground mt-1 text-sm">
-            Total spend: ${data?.totalSpend?.toFixed(2) ?? "0.00"}
+            Total spend: ${data?.totalSpend?.toFixed(2) ?? '0.00'}
           </p>
         </div>
         <div className="flex items-center gap-2">
-          <span className="text-muted-foreground text-sm">Income:</span>
+          <span className="text-muted-foreground text-sm">
+            Income:
+          </span>
           <Dialog open={editOpen} onOpenChange={handleEditOpen}>
             <DialogTrigger asChild>
               <Button
@@ -251,29 +458,29 @@ export function Dashboard() {
                 size="sm"
                 className={`h-auto p-0 font-medium ${
                   hasOverride
-                    ? "text-primary"
-                    : "text-muted-foreground hover:text-foreground"
+                    ? 'text-primary'
+                    : 'text-muted-foreground hover:text-foreground'
                 }`}
               >
-                ${data?.totalRevenue?.toFixed(2) ?? "0.00"}
+                ${data?.totalRevenue?.toFixed(2) ?? '0.00'}
                 <Pencil className="ml-1 h-3.5 w-3.5 opacity-70" />
               </Button>
             </DialogTrigger>
-            <DialogContent>
+            <DialogContent className="text-foreground">
               <form onSubmit={handleSaveOverride}>
                 <DialogHeader>
                   <DialogTitle>
-                    Override revenue for {monthName} {year}
+                    Income for {monthName} {year}
                   </DialogTitle>
                 </DialogHeader>
                 <p className="text-muted-foreground text-sm mt-2">
                   {defaultIncome > 0
-                    ? `Your default is $${defaultIncome.toFixed(2)}/month. Enter a different amount to override for this month.`
-                    : "Set your default monthly income in Settings first, or enter an amount for this month."}
+                    ? `Your default is $${defaultIncome.toFixed(2)}/month. Override below if different this month.`
+                    : 'Set your default monthly income in Settings first, or enter an amount for this month.'}
                 </p>
                 <div className="grid gap-4 py-4">
                   <div className="grid gap-2">
-                    <Label htmlFor="amount">Amount</Label>
+                    <Label htmlFor="amount">Base income</Label>
                     <Input
                       id="amount"
                       type="number"
@@ -284,8 +491,81 @@ export function Dashboard() {
                       onChange={(e) => setEditAmount(e.target.value)}
                     />
                   </div>
+                  {additionalIncome.length > 0 && (
+                    <div className="space-y-2">
+                      <Label>Additional income</Label>
+                      <ul className="space-y-1.5 text-sm">
+                        {additionalIncome.map((item) => (
+                          <li
+                            key={item.id}
+                            className="flex items-center justify-between gap-2 rounded-md border border-border bg-muted/30 px-2 py-1.5"
+                          >
+                            <span>
+                              {item.description || 'Other'}: $
+                              {item.amount.toFixed(2)}
+                            </span>
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="icon"
+                              className="h-7 w-7 text-muted-foreground hover:text-destructive"
+                              onClick={() =>
+                                removeAdditionalMutation.mutate(
+                                  item.id,
+                                )
+                              }
+                              disabled={
+                                removeAdditionalMutation.isPending
+                              }
+                            >
+                              <Trash2 className="h-3.5 w-3.5" />
+                            </Button>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                  <div className="space-y-2">
+                    <Label>Add extra income</Label>
+                    <form
+                      onSubmit={handleAddAdditional}
+                      className="flex flex-wrap gap-2"
+                    >
+                      <Input
+                        type="text"
+                        placeholder="e.g. Sold item, Headshots"
+                        value={addDescription}
+                        onChange={(e) =>
+                          setAddDescription(e.target.value)
+                        }
+                        className="w-[140px]"
+                      />
+                      <Input
+                        type="number"
+                        step="0.01"
+                        min="0.01"
+                        placeholder="Amount"
+                        value={addAmount}
+                        onChange={(e) => setAddAmount(e.target.value)}
+                        className="w-[100px]"
+                      />
+                      <Button
+                        type="submit"
+                        variant="outline"
+                        size="sm"
+                        disabled={
+                          addIncomeMutation.isPending ||
+                          !addAmount ||
+                          parseFloat(addAmount) <= 0
+                        }
+                      >
+                        <Plus className="mr-1 h-3.5 w-3.5" />
+                        Add
+                      </Button>
+                    </form>
+                  </div>
                 </div>
-                <DialogFooter>
+                <DialogFooter className="gap-2 sm:gap-0">
                   {hasOverride && (
                     <Button
                       type="button"
@@ -307,19 +587,21 @@ export function Dashboard() {
                     type="submit"
                     disabled={
                       upsertMutation.isPending ||
-                      editAmount === "" ||
+                      editAmount === '' ||
                       isNaN(parseFloat(editAmount)) ||
                       parseFloat(editAmount) < 0
                     }
                   >
-                    {upsertMutation.isPending ? "Saving..." : "Save"}
+                    {upsertMutation.isPending ? 'Saving...' : 'Save'}
                   </Button>
                 </DialogFooter>
               </form>
             </DialogContent>
           </Dialog>
           {hasOverride && (
-            <span className="text-muted-foreground text-xs">(override)</span>
+            <span className="text-muted-foreground text-xs">
+              (override)
+            </span>
           )}
         </div>
       </div>
@@ -328,44 +610,184 @@ export function Dashboard() {
         <Card className="mt-4 border-amber-500/50 bg-amber-500/5">
           <CardContent className="py-4">
             <p className="text-sm">
-              Set your default monthly income in{" "}
+              Set your default monthly income in{' '}
               <Link to="/settings" className="underline font-medium">
                 Settings
-              </Link>{" "}
-              to see savings. You can override it for specific months by
-              clicking the income amount above.
+              </Link>{' '}
+              to see savings. You can override it for specific months
+              by clicking the income amount above.
             </p>
           </CardContent>
         </Card>
       )}
 
       {/* Fixed bills section - compact */}
-      {fixedCategories.length > 0 && (
+      {(fixedCategories.length > 0 || expectedFixed.length > 0) && (
         <Card className="mt-6">
           <CardHeader className="pb-2">
-            <CardTitle className="text-base">Fixed bills this month</CardTitle>
-            <p className="text-muted-foreground text-sm">
-              Rent, subscriptions, insurance — predictable costs
-            </p>
+            <div className="flex items-center justify-between gap-2">
+              <div>
+                <CardTitle className="text-base">
+                  Fixed bills this month
+                </CardTitle>
+                <p className="text-muted-foreground text-sm">
+                  Rent, subscriptions, insurance — predictable costs
+                </p>
+              </div>
+              <Dialog
+                open={expectedFixedOpen}
+                onOpenChange={(o) => {
+                  setExpectedFixedOpen(o);
+                  if (!o) {
+                    setExpectedCategoryId('');
+                    setExpectedAmount('');
+                  }
+                }}
+              >
+                <DialogTrigger asChild>
+                  <Button variant="outline" size="sm">
+                    <Plus className="h-4 w-4 mr-1" />
+                    Add expected
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="text-foreground">
+                  <form onSubmit={handleAddExpectedFixed}>
+                    <DialogHeader>
+                      <DialogTitle>Add expected fixed expense</DialogTitle>
+                    </DialogHeader>
+                    <p className="text-muted-foreground text-sm mt-2">
+                      For expenses paid from accounts you don&apos;t track (e.g.
+                      rent). Add a fixed category in{' '}
+                      <Link
+                        to="/categories"
+                        className="underline"
+                        onClick={() => setExpectedFixedOpen(false)}
+                      >
+                        Categories
+                      </Link>{' '}
+                      first if needed.
+                    </p>
+                    <div className="grid gap-4 py-4">
+                      <div className="grid gap-2">
+                        <Label htmlFor="expected-category">Category</Label>
+                        {fixedCategoriesForPicker.length === 0 ? (
+                          <p className="text-sm text-muted-foreground">
+                            No fixed categories yet. Create one (e.g. Rent) in{' '}
+                            <Link
+                              to="/categories"
+                              className="underline"
+                              onClick={() => setExpectedFixedOpen(false)}
+                            >
+                              Categories
+                            </Link>{' '}
+                            and mark it as fixed.
+                          </p>
+                        ) : (
+                        <Select
+                          value={expectedCategoryId}
+                          onValueChange={setExpectedCategoryId}
+                        >
+                          <SelectTrigger
+                            id="expected-category"
+                            className="bg-background text-foreground"
+                          >
+                            <SelectValue placeholder="Select category" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {fixedCategoriesForPicker.map((cat) => (
+                              <SelectItem
+                                key={cat.id}
+                                value={cat.id}
+                                className="text-foreground"
+                              >
+                                {cat.name}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        )}
+                      </div>
+                      <div className="grid gap-2">
+                        <Label htmlFor="expected-amount">Amount</Label>
+                        <Input
+                          id="expected-amount"
+                          type="number"
+                          step="0.01"
+                          min="0"
+                          placeholder="0.00"
+                          value={expectedAmount}
+                          onChange={(e) =>
+                            setExpectedAmount(e.target.value)
+                          }
+                          className="bg-background text-foreground"
+                        />
+                      </div>
+                    </div>
+                    <DialogFooter>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={() => setExpectedFixedOpen(false)}
+                      >
+                        Cancel
+                      </Button>
+                      <Button
+                        type="submit"
+                        disabled={
+                          addExpectedFixedMutation.isPending ||
+                          !expectedCategoryId ||
+                          !expectedAmount ||
+                          parseFloat(expectedAmount) <= 0
+                        }
+                      >
+                        Add
+                      </Button>
+                    </DialogFooter>
+                  </form>
+                </DialogContent>
+              </Dialog>
+            </div>
           </CardHeader>
           <CardContent>
             <div className="space-y-1.5">
-              {fixedCategories.map((c) => (
-                <div
-                  key={c.name}
-                  className="flex items-center justify-between text-sm"
-                >
-                  <span className="text-muted-foreground">{c.name}</span>
-                  <span>
-                    ${c.total.toFixed(2)}
-                    {c.budget > 0 && (
-                      <span className="text-muted-foreground ml-1">
-                        / ${c.budget.toFixed(2)} expected
-                      </span>
-                    )}
-                  </span>
-                </div>
-              ))}
+              {fixedCategories.map((c) => {
+                const expected = expectedByCategoryId[c.id];
+                return (
+                  <div
+                    key={c.id}
+                    className="flex items-center justify-between text-sm group"
+                  >
+                    <span className="text-muted-foreground">{c.name}</span>
+                    <span className="flex items-center gap-2">
+                      ${c.total.toFixed(2)}
+                      {expected && (
+                        <span className="text-muted-foreground text-xs">
+                          (expected)
+                        </span>
+                      )}
+                      {c.budget > 0 && !expected && (
+                        <span className="text-muted-foreground ml-1">
+                          / ${c.budget.toFixed(2)} expected
+                        </span>
+                      )}
+                      {expected && (
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-6 w-6 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
+                          onClick={() =>
+                            removeExpectedFixedMutation.mutate(expected.id)
+                          }
+                          disabled={removeExpectedFixedMutation.isPending}
+                          title="Remove expected expense"
+                        >
+                          <Trash2 className="h-3 w-3" />
+                        </Button>
+                      )}
+                    </span>
+                  </div>
+                );
+              })}
               <div className="flex items-center justify-between border-t border-border pt-2 mt-2 font-medium">
                 <span>Total fixed</span>
                 <span>${fixedTotal.toFixed(2)}</span>
@@ -381,7 +803,7 @@ export function Dashboard() {
           <CardHeader>
             <CardTitle>Variable spending</CardTitle>
             <p className="text-muted-foreground text-sm">
-              Groceries, dining, shopping — set budgets in{" "}
+              Groceries, dining, shopping — set budgets in{' '}
               <Link to="/categories" className="underline">
                 Categories
               </Link>
@@ -392,15 +814,17 @@ export function Dashboard() {
             <div className="space-y-3">
               {variableCategories.map((c) => {
                 const pct =
-                  c.budget > 0 ? Math.min((c.total / c.budget) * 100, 100) : 0;
+                  c.budget > 0
+                    ? Math.min((c.total / c.budget) * 100, 100)
+                    : 0;
                 return (
                   <div key={c.name} className="space-y-1">
                     <div className="flex items-center justify-between text-sm">
                       <span
                         className={
                           c.over
-                            ? "font-medium text-red-600 dark:text-red-400"
-                            : "font-medium"
+                            ? 'font-medium text-red-600 dark:text-red-400'
+                            : 'font-medium'
                         }
                       >
                         {c.name}
@@ -409,16 +833,16 @@ export function Dashboard() {
                         ${c.total.toFixed(2)}
                         {c.budget > 0 && (
                           <>
-                            {" "}
+                            {' '}
                             / ${c.budget.toFixed(2)}
                             <span
                               className={
                                 c.over
-                                  ? "ml-1 font-medium text-red-600 dark:text-red-400"
-                                  : "ml-1 text-green-600 dark:text-green-400"
+                                  ? 'ml-1 font-medium text-red-600 dark:text-red-400'
+                                  : 'ml-1 text-green-600 dark:text-green-400'
                               }
                             >
-                              {c.over ? "Over" : "Under"}
+                              {c.over ? 'Over' : 'Under'}
                             </span>
                           </>
                         )}
@@ -429,8 +853,8 @@ export function Dashboard() {
                         <div
                           className={`h-full rounded-full transition-all ${
                             c.over
-                              ? "bg-red-500 dark:bg-red-400"
-                              : "bg-primary"
+                              ? 'bg-red-500 dark:bg-red-400'
+                              : 'bg-primary'
                           }`}
                           style={{ width: `${Math.min(pct, 100)}%` }}
                         />
@@ -460,7 +884,11 @@ export function Dashboard() {
                     axisLine={false}
                     tickMargin={8}
                   />
-                  <YAxis tickLine={false} axisLine={false} tickMargin={8} />
+                  <YAxis
+                    tickLine={false}
+                    axisLine={false}
+                    tickMargin={8}
+                  />
                   <Bar
                     dataKey="total"
                     fill="var(--color-total)"
@@ -477,9 +905,11 @@ export function Dashboard() {
         <Card className="mt-6">
           <CardContent className="py-8">
             <p className="text-muted-foreground text-center">
-              No spending data yet. Import a CSV from the{" "}
-              <Link to="/import" className="underline">Import</Link> page to get
-              started.
+              No spending data yet. Import a CSV from the{' '}
+              <Link to="/import" className="underline">
+                Import
+              </Link>{' '}
+              page to get started.
             </p>
           </CardContent>
         </Card>

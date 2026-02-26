@@ -9,7 +9,13 @@ export class AnalyticsService {
     const start = new Date(year, month - 1, 1);
     const end = new Date(year, month, 0, 23, 59, 59);
 
-    const [transactions, revenueOverride, user] = await Promise.all([
+    const [
+      transactions,
+      revenueOverride,
+      user,
+      additionalIncomes,
+      expectedFixedExpenses,
+    ] = await Promise.all([
       this.prisma.transaction.findMany({
         where: {
           userId,
@@ -30,17 +36,31 @@ export class AnalyticsService {
         where: { id: userId },
         select: { monthlyIncome: true },
       }),
+      this.prisma.additionalIncome.findMany({
+        where: { userId, year, month },
+      }),
+      this.prisma.expectedFixedExpense.findMany({
+        where: { userId, year, month },
+        include: {
+          category: {
+            select: { id: true, name: true, isFixed: true, isActive: true },
+          },
+        },
+      }),
     ]);
 
     const budgets = await this.prisma.categoryBudget.findMany({
       where: { userId },
       include: {
-        category: { select: { id: true, name: true, isFixed: true } },
+        category: {
+          select: { id: true, name: true, isFixed: true, isActive: true },
+        },
       },
     });
     const budgetByCategory: Record<string, number> = {};
     const isFixedByCategory: Record<string, boolean> = {};
     for (const b of budgets) {
+      if (!b.category.isActive) continue;
       budgetByCategory[b.categoryId] = Number(b.amount);
       isFixedByCategory[b.categoryId] = b.category.isFixed;
     }
@@ -66,10 +86,11 @@ export class AnalyticsService {
       byCategory[key].total += Math.abs(amt);
     }
     for (const [catId, budget] of Object.entries(budgetByCategory)) {
+      const cat = budgets.find((b) => b.categoryId === catId)?.category;
+      if (!cat?.isActive) continue;
       if (!byCategory[catId]) {
-        const cat = budgets.find((b) => b.categoryId === catId)?.category;
         byCategory[catId] = {
-          name: cat?.name ?? 'Unknown',
+          name: cat.name ?? 'Unknown',
           total: 0,
           budget,
           isFixed: isFixedByCategory[catId] ?? false,
@@ -77,11 +98,35 @@ export class AnalyticsService {
       }
     }
 
-    const totalRevenue = revenueOverride
+    // Add expected fixed expenses (for untracked accounts like rent)
+    for (const exp of expectedFixedExpenses) {
+      if (!exp.category.isActive) continue;
+      const amt = Number(exp.amount);
+      const key = exp.categoryId;
+      if (!byCategory[key]) {
+        byCategory[key] = {
+          name: exp.category.name,
+          total: amt,
+          budget: budgetByCategory[key] ?? amt,
+          isFixed: exp.category.isFixed ?? true,
+        };
+        totalSpend += amt;
+      } else if (byCategory[key].total === 0) {
+        byCategory[key].total = amt;
+        totalSpend += amt;
+      }
+    }
+
+    const baseRevenue = revenueOverride
       ? Number(revenueOverride.amount)
       : user?.monthlyIncome != null
         ? Number(user.monthlyIncome)
         : 0;
+    const additionalTotal = additionalIncomes.reduce(
+      (sum, i) => sum + Number(i.amount),
+      0,
+    );
+    const totalRevenue = baseRevenue + additionalTotal;
     const savings = totalRevenue - totalSpend;
 
     return {

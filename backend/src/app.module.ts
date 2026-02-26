@@ -8,6 +8,7 @@ import { AuthModule } from './auth/auth.module';
 import { CategoriesModule } from './categories/categories.module';
 import { ImportsModule } from './imports/imports.module';
 import { PrismaModule } from './prisma/prisma.module';
+import { ExpectedFixedExpensesModule } from './expected-fixed-expenses/expected-fixed-expenses.module';
 import { RevenueModule } from './revenue/revenue.module';
 import { TransactionsModule } from './transactions/transactions.module';
 
@@ -21,6 +22,7 @@ import { TransactionsModule } from './transactions/transactions.module';
     TransactionsModule,
     ImportsModule,
     RevenueModule,
+    ExpectedFixedExpensesModule,
     AnalyticsModule,
   ],
   controllers: [AppController],

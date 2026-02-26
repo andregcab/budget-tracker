@@ -17,8 +17,10 @@ model User {
   categories      Category[]
   transactions    Transaction[]
   importJobs      ImportJob[]
-  revenues        Revenue[]
-  categoryBudgets CategoryBudget[]
+  revenues           Revenue[]
+  additionalIncomes       AdditionalIncome[]
+  categoryBudgets         CategoryBudget[]
+  expectedFixedExpenses   ExpectedFixedExpense[]
 }
 
 model Revenue {
@@ -31,6 +33,19 @@ model Revenue {
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([userId, year, month])
+  @@index([userId, year, month])
+}
+
+model AdditionalIncome {
+  id          String   @id @default(cuid())
+  userId      String
+  year        Int
+  month       Int
+  amount      Decimal  @db.Decimal(12, 2)
+  description String?  @db.Text
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
   @@index([userId, year, month])
 }
 
@@ -59,8 +74,9 @@ model Category {
   createdAt DateTime @default(now())
 
   user          User?            @relation(fields: [userId], references: [id], onDelete: Cascade)
-  transactions  Transaction[]
-  categoryBudgets CategoryBudget[]
+  transactions           Transaction[]
+  categoryBudgets        CategoryBudget[]
+  expectedFixedExpenses  ExpectedFixedExpense[]
 }
 
 model CategoryBudget {
@@ -98,6 +114,21 @@ model Transaction {
   @@unique([accountId, externalId])
   @@index([userId, date])
   @@index([accountId, date])
+}
+
+model ExpectedFixedExpense {
+  id         String  @id @default(cuid())
+  userId     String
+  categoryId String
+  year       Int
+  month      Int
+  amount     Decimal @db.Decimal(12, 2)
+
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  category Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, categoryId, year, month])
+  @@index([userId, year, month])
 }
 
 model ImportJob {

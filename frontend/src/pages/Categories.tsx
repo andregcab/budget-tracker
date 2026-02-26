@@ -1,8 +1,17 @@
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { useState } from "react";
-import { api } from "@/api/client";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  useQuery,
+  useMutation,
+  useQueryClient,
+} from '@tanstack/react-query';
+import { useState } from 'react';
+import { api } from '@/api/client';
+import { Button } from '@/components/ui/button';
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
 import {
   Dialog,
   DialogContent,
@@ -10,10 +19,10 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from "@/components/ui/dialog";
-import { Combobox } from "@/components/ui/combobox";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+} from '@/components/ui/dialog';
+import { Combobox } from '@/components/ui/combobox';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import {
   Table,
   TableBody,
@@ -21,8 +30,8 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "@/components/ui/table";
-import { Pencil, Trash2 } from "lucide-react";
+} from '@/components/ui/table';
+import { Pencil, Trash2 } from 'lucide-react';
 
 type Category = {
   id: string;
@@ -34,14 +43,18 @@ type Category = {
   userId: string | null;
 };
 
-type CategoryBudget = { categoryId: string; categoryName: string; amount: number };
+type CategoryBudget = {
+  categoryId: string;
+  categoryName: string;
+  amount: number;
+};
 
 async function getCategories(): Promise<Category[]> {
-  return api("/categories");
+  return api('/categories');
 }
 
 async function getBudgets(): Promise<CategoryBudget[]> {
-  return api("/category-budgets");
+  return api('/category-budgets');
 }
 
 async function createCategory(body: {
@@ -49,7 +62,10 @@ async function createCategory(body: {
   isFixed?: boolean;
   keywords?: string[];
 }) {
-  return api("/categories", { method: "POST", body: JSON.stringify(body) });
+  return api('/categories', {
+    method: 'POST',
+    body: JSON.stringify(body),
+  });
 }
 
 async function updateCategory(
@@ -59,76 +75,84 @@ async function updateCategory(
     isActive?: boolean;
     isFixed?: boolean;
     keywords?: string[];
-  }
+  },
 ) {
-  return api(`/categories/${id}`, { method: "PATCH", body: JSON.stringify(body) });
+  return api(`/categories/${id}`, {
+    method: 'PATCH',
+    body: JSON.stringify(body),
+  });
 }
 
 async function deleteCategory(id: string, migrateTo?: string) {
   const url = migrateTo
     ? `/categories/${id}?migrateTo=${encodeURIComponent(migrateTo)}`
     : `/categories/${id}`;
-  return api(url, { method: "DELETE" });
+  return api(url, { method: 'DELETE' });
 }
 
 async function getCategoryWithCount(id: string) {
   return api<{ id: string; name: string; transactionCount: number }>(
-    `/categories/${id}`
+    `/categories/${id}`,
   );
 }
 
 async function upsertBudget(categoryId: string, amount: number) {
-  return api("/category-budgets", {
-    method: "PUT",
+  return api('/category-budgets', {
+    method: 'PUT',
     body: JSON.stringify({ categoryId, amount }),
   });
 }
 
 async function removeBudget(categoryId: string) {
-  return api(`/category-budgets/${categoryId}`, { method: "DELETE" });
+  return api(`/category-budgets/${categoryId}`, { method: 'DELETE' });
 }
 
 export function Categories() {
   const queryClient = useQueryClient();
   const { data: categories = [], isLoading } = useQuery({
-    queryKey: ["categories"],
+    queryKey: ['categories'],
     queryFn: getCategories,
   });
   const { data: budgets = [] } = useQuery({
-    queryKey: ["category-budgets"],
+    queryKey: ['category-budgets'],
     queryFn: getBudgets,
   });
   const budgetByCategory = Object.fromEntries(
-    budgets.map((b) => [b.categoryId, b.amount])
+    budgets.map((b) => [b.categoryId, b.amount]),
   );
 
   const [createOpen, setCreateOpen] = useState(false);
-  const [createName, setCreateName] = useState("");
+  const [createName, setCreateName] = useState('');
   const [createIsFixed, setCreateIsFixed] = useState(false);
-  const [createKeywords, setCreateKeywords] = useState("");
+  const [createKeywords, setCreateKeywords] = useState('');
   const [editId, setEditId] = useState<string | null>(null);
-  const [editName, setEditName] = useState("");
+  const [editName, setEditName] = useState('');
   const [editIsFixed, setEditIsFixed] = useState(false);
-  const [budgetEditId, setBudgetEditId] = useState<string | null>(null);
-  const [keywordsEditId, setKeywordsEditId] = useState<string | null>(null);
-  const [keywordsInput, setKeywordsInput] = useState("");
-  const [budgetAmount, setBudgetAmount] = useState("");
+  const [budgetEditId, setBudgetEditId] = useState<string | null>(
+    null,
+  );
+  const [keywordsEditId, setKeywordsEditId] = useState<string | null>(
+    null,
+  );
+  const [keywordsInput, setKeywordsInput] = useState('');
+  const [budgetAmount, setBudgetAmount] = useState('');
   const [deleteTarget, setDeleteTarget] = useState<{
     id: string;
     name: string;
     transactionCount: number;
   } | null>(null);
-  const [migrateToId, setMigrateToId] = useState("");
-  const [deactivateTarget, setDeactivateTarget] = useState<Category | null>(null);
+  const [migrateToId, setMigrateToId] = useState('');
+  const [deactivateTarget, setDeactivateTarget] =
+    useState<Category | null>(null);
 
   const createMutation = useMutation({
     mutationFn: createCategory,
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["categories"] });
+      queryClient.invalidateQueries({ queryKey: ['categories'] });
       setCreateOpen(false);
-      setCreateName("");
+      setCreateName('');
       setCreateIsFixed(false);
-      setCreateKeywords("");
+      setCreateKeywords('');
     },
   });
 
@@ -146,22 +170,31 @@ export function Categories() {
       };
     }) => updateCategory(id, body),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["categories"] });
-      queryClient.invalidateQueries({ queryKey: ["transactions"] });
+      queryClient.invalidateQueries({ queryKey: ['categories'] });
+      queryClient.invalidateQueries({ queryKey: ['transactions'] });
       setEditId(null);
     },
   });
 
   const deleteMutation = useMutation({
-    mutationFn: ({ id, migrateTo }: { id: string; migrateTo?: string }) =>
-      deleteCategory(id, migrateTo),
+    mutationFn: ({
+      id,
+      migrateTo,
+    }: {
+      id: string;
+      migrateTo?: string;
+    }) => deleteCategory(id, migrateTo),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["categories"] });
-      queryClient.invalidateQueries({ queryKey: ["transactions"] });
-      queryClient.invalidateQueries({ queryKey: ["category-budgets"] });
-      queryClient.invalidateQueries({ queryKey: ["analytics", "monthly"] });
+      queryClient.invalidateQueries({ queryKey: ['categories'] });
+      queryClient.invalidateQueries({ queryKey: ['transactions'] });
+      queryClient.invalidateQueries({
+        queryKey: ['category-budgets'],
+      });
+      queryClient.invalidateQueries({
+        queryKey: ['analytics', 'monthly'],
+      });
       setDeleteTarget(null);
-      setMigrateToId("");
+      setMigrateToId('');
     },
   });
 
@@ -172,15 +205,24 @@ export function Categories() {
       name: data.name,
       transactionCount: data.transactionCount,
     });
-    setMigrateToId("");
+    setMigrateToId('');
   }
 
   const budgetMutation = useMutation({
-    mutationFn: ({ categoryId, amount }: { categoryId: string; amount: number }) =>
-      upsertBudget(categoryId, amount),
+    mutationFn: ({
+      categoryId,
+      amount,
+    }: {
+      categoryId: string;
+      amount: number;
+    }) => upsertBudget(categoryId, amount),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["category-budgets"] });
-      queryClient.invalidateQueries({ queryKey: ["analytics", "monthly"] });
+      queryClient.invalidateQueries({
+        queryKey: ['category-budgets'],
+      });
+      queryClient.invalidateQueries({
+        queryKey: ['analytics', 'monthly'],
+      });
       setBudgetEditId(null);
     },
   });
@@ -188,8 +230,12 @@ export function Categories() {
   const removeBudgetMutation = useMutation({
     mutationFn: removeBudget,
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["category-budgets"] });
-      queryClient.invalidateQueries({ queryKey: ["analytics", "monthly"] });
+      queryClient.invalidateQueries({
+        queryKey: ['category-budgets'],
+      });
+      queryClient.invalidateQueries({
+        queryKey: ['analytics', 'monthly'],
+      });
       setBudgetEditId(null);
     },
   });
@@ -229,7 +275,7 @@ export function Categories() {
       keywords: string[];
     }) => updateCategory(id, { keywords }),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["categories"] });
+      queryClient.invalidateQueries({ queryKey: ['categories'] });
       setKeywordsEditId(null);
     },
   });
@@ -249,12 +295,18 @@ export function Categories() {
     if (budgetEditId) {
       const amt = parseFloat(budgetAmount);
       if (!isNaN(amt) && amt >= 0) {
-        budgetMutation.mutate({ categoryId: budgetEditId, amount: amt });
+        budgetMutation.mutate({
+          categoryId: budgetEditId,
+          amount: amt,
+        });
       }
     }
   }
 
-  if (isLoading) return <p className="text-muted-foreground">Loading categories...</p>;
+  if (isLoading)
+    return (
+      <p className="text-muted-foreground">Loading categories...</p>
+    );
 
   return (
     <div>
@@ -262,7 +314,9 @@ export function Categories() {
         <h1 className="text-2xl font-semibold">Categories</h1>
         <Dialog open={createOpen} onOpenChange={setCreateOpen}>
           <DialogTrigger asChild>
-            <Button onClick={() => setCreateOpen(true)}>Add category</Button>
+            <Button onClick={() => setCreateOpen(true)}>
+              Add category
+            </Button>
           </DialogTrigger>
           <DialogContent>
             <form onSubmit={handleCreate}>
@@ -284,9 +338,13 @@ export function Categories() {
                     type="checkbox"
                     id="create-fixed"
                     checked={createIsFixed}
-                    onChange={(e) => setCreateIsFixed(e.target.checked)}
+                    onChange={(e) =>
+                      setCreateIsFixed(e.target.checked)
+                    }
                   />
-                  <Label htmlFor="create-fixed">Fixed monthly cost</Label>
+                  <Label htmlFor="create-fixed">
+                    Fixed monthly cost
+                  </Label>
                 </div>
                 <div className="grid gap-2">
                   <Label htmlFor="create-keywords">
@@ -295,22 +353,32 @@ export function Categories() {
                   <Input
                     id="create-keywords"
                     value={createKeywords}
-                    onChange={(e) => setCreateKeywords(e.target.value)}
+                    onChange={(e) =>
+                      setCreateKeywords(e.target.value)
+                    }
                     placeholder="dining, Food & Drink"
                   />
                   <p className="text-xs text-muted-foreground">
-                    The category name is always used for matching. Add extras
-                    here to map Chase categories or match descriptions (e.g.
-                    &quot;dining&quot; for Eating Out, &quot;Food &amp;
-                    Drink&quot; for Chase&apos;s type).
+                    The category name is always used for matching. Add
+                    extras here to map Chase categories or match
+                    descriptions (e.g. &quot;dining&quot; for Eating
+                    Out, &quot;Food &amp; Drink&quot; for Chase&apos;s
+                    type).
                   </p>
                 </div>
               </div>
               <DialogFooter>
-                <Button type="button" variant="outline" onClick={() => setCreateOpen(false)}>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setCreateOpen(false)}
+                >
                   Cancel
                 </Button>
-                <Button type="submit" disabled={createMutation.isPending}>
+                <Button
+                  type="submit"
+                  disabled={createMutation.isPending}
+                >
                   Create
                 </Button>
               </DialogFooter>
@@ -323,14 +391,16 @@ export function Categories() {
         >
           <DialogContent>
             <DialogHeader>
-              <DialogTitle>Delete &quot;{deleteTarget?.name}&quot;</DialogTitle>
+              <DialogTitle>
+                Delete &quot;{deleteTarget?.name}&quot;
+              </DialogTitle>
             </DialogHeader>
             {deleteTarget && (
               <>
                 <p className="text-muted-foreground text-sm">
                   {deleteTarget.transactionCount === 0
-                    ? "No transactions use this category."
-                    : `${deleteTarget.transactionCount} transaction${deleteTarget.transactionCount === 1 ? "" : "s"} use this category.`}
+                    ? 'No transactions use this category.'
+                    : `${deleteTarget.transactionCount} transaction${deleteTarget.transactionCount === 1 ? '' : 's'} use this category.`}
                 </p>
                 {deleteTarget.transactionCount > 0 && (
                   <div className="grid gap-2 py-2">
@@ -340,11 +410,14 @@ export function Categories() {
                         .filter((c) => c.id !== deleteTarget.id)
                         .map((c) => ({ value: c.id, label: c.name }))}
                       value={migrateToId || null}
-                      onValueChange={(v) => setMigrateToId(v ?? "")}
+                      onValueChange={(v) => setMigrateToId(v ?? '')}
                       placeholder="Select category (optional)"
                       searchPlaceholder="Type to search..."
                       allowEmpty
-                      emptyOption={{ value: null, label: "Don't migrate" }}
+                      emptyOption={{
+                        value: null,
+                        label: "Don't migrate",
+                      }}
                     />
                   </div>
                 )}
@@ -370,8 +443,8 @@ export function Categories() {
                 disabled={deleteMutation.isPending}
               >
                 {migrateToId
-                  ? "Migrate and delete"
-                  : "Delete and uncategorize"}
+                  ? 'Migrate and delete'
+                  : 'Delete and uncategorize'}
               </Button>
             </DialogFooter>
           </DialogContent>
@@ -387,8 +460,9 @@ export function Categories() {
               </DialogTitle>
             </DialogHeader>
             <p className="text-muted-foreground text-sm">
-              Deactivating hides this category from dropdowns. Transactions keep
-              their category. You can reactivate anytime.
+              Deactivating hides this category from dropdowns.
+              Transactions keep their category. You can reactivate
+              anytime.
             </p>
             <DialogFooter>
               <Button
@@ -420,10 +494,11 @@ export function Categories() {
         <CardHeader>
           <CardTitle>Categories</CardTitle>
           <p className="text-muted-foreground text-sm">
-            Edit names, set monthly budgets, or delete. Import keywords
-            auto-categorize transactions: the category name is always used (e.g.
-            &quot;Netflix&quot; matches &quot;netflix&quot;), and you can add
-            extras like &quot;dining&quot; or &quot;Food &amp; Drink&quot; to map
+            Edit names, set monthly budgets, or delete. Import
+            keywords auto-categorize transactions: the category name
+            is always used (e.g. &quot;Netflix&quot; matches
+            &quot;netflix&quot;), and you can add extras like
+            &quot;dining&quot; or &quot;Food &amp; Drink&quot; to map
             Chase types.
           </p>
         </CardHeader>
@@ -433,7 +508,9 @@ export function Categories() {
               <TableRow>
                 <TableHead>Name</TableHead>
                 <TableHead>Monthly budget</TableHead>
-                <TableHead className="w-[60px]">Fixed</TableHead>
+                <TableHead className="w-[60px] text-center">
+                  Fixed
+                </TableHead>
                 <TableHead className="min-w-[120px]">
                   Import keywords
                 </TableHead>
@@ -449,23 +526,18 @@ export function Categories() {
                       <form
                         id={`edit-form-${cat.id}`}
                         onSubmit={handleEditSave}
-                        className="flex items-center gap-2"
+                        className="flex items-center"
                         onClick={(e) => e.stopPropagation()}
+                        onPointerDown={(e) => e.stopPropagation()}
                       >
                         <Input
                           value={editName}
-                          onChange={(e) => setEditName(e.target.value)}
-                          className="w-full min-w-0"
+                          onChange={(e) =>
+                            setEditName(e.target.value)
+                          }
+                          className="h-8 w-[140px] max-w-[180px] text-sm"
                           autoFocus
                         />
-                        <label className="flex items-center gap-1.5 text-sm shrink-0">
-                          <input
-                            type="checkbox"
-                            checked={editIsFixed}
-                            onChange={(e) => setEditIsFixed(e.target.checked)}
-                          />
-                          Fixed
-                        </label>
                       </form>
                     ) : (
                       <span>{cat.name}</span>
@@ -473,13 +545,20 @@ export function Categories() {
                   </TableCell>
                   <TableCell>
                     {budgetEditId === cat.id ? (
-                      <form onSubmit={handleBudgetSave} className="flex gap-2 items-center">
+                      <form
+                        onSubmit={handleBudgetSave}
+                        className="flex gap-2 items-center"
+                        onClick={(e) => e.stopPropagation()}
+                        onPointerDown={(e) => e.stopPropagation()}
+                      >
                         <Input
                           type="number"
                           step="0.01"
                           min="0"
                           value={budgetAmount}
-                          onChange={(e) => setBudgetAmount(e.target.value)}
+                          onChange={(e) =>
+                            setBudgetAmount(e.target.value)
+                          }
                           className="max-w-[120px]"
                           autoFocus
                         />
@@ -491,7 +570,9 @@ export function Categories() {
                             type="button"
                             variant="ghost"
                             size="sm"
-                            onClick={() => removeBudgetMutation.mutate(cat.id)}
+                            onClick={() =>
+                              removeBudgetMutation.mutate(cat.id)
+                            }
                             disabled={removeBudgetMutation.isPending}
                           >
                             Clear
@@ -509,12 +590,13 @@ export function Categories() {
                     ) : (
                       <button
                         type="button"
-                        onClick={() => {
+                        onClick={(e) => {
+                          e.stopPropagation();
                           setBudgetEditId(cat.id);
                           setBudgetAmount(
                             budgetByCategory[cat.id] != null
                               ? String(budgetByCategory[cat.id])
-                              : ""
+                              : '',
                           );
                         }}
                         className="text-left hover:underline text-muted-foreground"
@@ -522,21 +604,48 @@ export function Categories() {
                         {budgetByCategory[cat.id] != null
                           ? `$${budgetByCategory[cat.id].toFixed(2)}`
                           : cat.isFixed
-                            ? "Set amount"
-                            : "Set budget"}
+                            ? 'Set amount'
+                            : 'Set budget'}
                       </button>
                     )}
                   </TableCell>
-                  <TableCell>{cat.isFixed ? "Yes" : "—"}</TableCell>
+                  <TableCell className="text-center">
+                    {editId === cat.id ? (
+                      <div
+                        className="flex items-center justify-center"
+                        onClick={(e) => e.stopPropagation()}
+                        onPointerDown={(e) => e.stopPropagation()}
+                      >
+                        <input
+                          type="checkbox"
+                          form={`edit-form-${cat.id}`}
+                          name="isFixed"
+                          checked={editIsFixed}
+                          onChange={(e) =>
+                            setEditIsFixed(e.target.checked)
+                          }
+                          title="Fixed monthly cost"
+                        />
+                      </div>
+                    ) : cat.isFixed ? (
+                      'Yes'
+                    ) : (
+                      '—'
+                    )}
+                  </TableCell>
                   <TableCell className="min-w-[120px]">
                     {keywordsEditId === cat.id ? (
                       <form
                         onSubmit={handleKeywordsSave}
                         className="flex gap-2 items-center"
+                        onClick={(e) => e.stopPropagation()}
+                        onPointerDown={(e) => e.stopPropagation()}
                       >
                         <Input
                           value={keywordsInput}
-                          onChange={(e) => setKeywordsInput(e.target.value)}
+                          onChange={(e) =>
+                            setKeywordsInput(e.target.value)
+                          }
                           placeholder="dining, Food & Drink"
                           className="max-w-[160px]"
                           autoFocus
@@ -556,22 +665,25 @@ export function Categories() {
                     ) : (
                       <button
                         type="button"
-                        onClick={() => {
+                        onClick={(e) => {
+                          e.stopPropagation();
                           setKeywordsEditId(cat.id);
-                          setKeywordsInput((cat.keywords ?? []).join(", "));
+                          setKeywordsInput(
+                            (cat.keywords ?? []).join(', '),
+                          );
                         }}
                         className="text-left hover:underline text-muted-foreground text-sm"
                       >
                         {(cat.keywords ?? []).length > 0
-                          ? (cat.keywords ?? []).join(", ")
-                          : "Add (name used by default)"}
+                          ? (cat.keywords ?? []).join(', ')
+                          : 'Add (name used by default)'}
                       </button>
                     )}
                   </TableCell>
-                  <TableCell>{cat.isActive ? "Yes" : "No"}</TableCell>
+                  <TableCell>{cat.isActive ? 'Yes' : 'No'}</TableCell>
                   <TableCell className="w-[140px]">
                     {editId === cat.id ? (
-                      <div className="flex gap-1">
+                      <div className="flex items-center gap-3">
                         <Button
                           type="submit"
                           form={`edit-form-${cat.id}`}
@@ -581,20 +693,28 @@ export function Categories() {
                         </Button>
                         <Button
                           type="button"
-                          variant="ghost"
+                          variant="outline"
                           size="sm"
+                          className="border-border"
                           onClick={() => setEditId(null)}
                         >
                           Cancel
                         </Button>
                       </div>
                     ) : budgetEditId !== cat.id ? (
-                      <div className="flex gap-1">
+                      <div
+                        className="flex gap-1"
+                        onClick={(e) => e.stopPropagation()}
+                        onPointerDown={(e) => e.stopPropagation()}
+                      >
                         <Button
+                          type="button"
                           variant="ghost"
                           size="icon"
                           className="h-8 w-8"
-                          onClick={() => {
+                          onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
                             setEditId(cat.id);
                             setEditName(cat.name);
                             setEditIsFixed(cat.isFixed);
@@ -604,30 +724,42 @@ export function Categories() {
                           <Pencil className="h-4 w-4" />
                         </Button>
                         <Button
+                          type="button"
                           variant="ghost"
                           size="icon"
                           className="h-8 w-8 text-destructive hover:text-destructive"
-                          onClick={() => handleDeleteClick(cat)}
+                          onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            handleDeleteClick(cat);
+                          }}
                           disabled={deleteMutation.isPending}
                           title="Delete"
                         >
                           <Trash2 className="h-4 w-4" />
                         </Button>
                         <Button
+                          type="button"
                           variant="outline"
                           size="sm"
-                          className={cat.isActive ? "border-destructive/50 text-destructive hover:bg-destructive/10 hover:border-destructive hover:text-destructive" : ""}
-                          onClick={() =>
+                          className={
+                            cat.isActive
+                              ? 'border-destructive/50 text-destructive hover:bg-destructive/10 hover:border-destructive hover:text-destructive'
+                              : ''
+                          }
+                          onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
                             cat.isActive
                               ? setDeactivateTarget(cat)
                               : updateMutation.mutate({
                                   id: cat.id,
                                   body: { isActive: true },
-                                })
-                          }
+                                });
+                          }}
                           disabled={updateMutation.isPending}
                         >
-                          {cat.isActive ? "Deactivate" : "Activate"}
+                          {cat.isActive ? 'Deactivate' : 'Activate'}
                         </Button>
                       </div>
                     ) : null}
