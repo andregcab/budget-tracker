@@ -1,11 +1,11 @@
-import { useState } from "react";
-import { Link, Outlet, useLocation } from "react-router-dom";
-import { Moon, Sun, Menu, X } from "lucide-react";
-import { useAuth } from "@/hooks/useAuth";
-import { useTheme } from "@/hooks/useTheme";
-import { Button } from "@/components/ui/button";
-import { GettingStartedCard } from "@/components/GettingStartedCard";
-import { cn } from "@/lib/utils";
+import { useState } from 'react';
+import { Link, Outlet, useLocation } from 'react-router-dom';
+import { Moon, Sun, Menu, X } from 'lucide-react';
+import { useAuth } from '@/hooks/useAuth';
+import { useTheme } from '@/hooks/useTheme';
+import { Button } from '@/components/ui/button';
+import { GettingStartedCard } from '@/components/GettingStartedCard';
+import { cn } from '@/lib/utils';
 
 function ThemeToggle() {
   const { theme, toggleTheme } = useTheme();
@@ -15,9 +15,13 @@ function ThemeToggle() {
       size="icon"
       onClick={toggleTheme}
       className="h-9 w-9 shrink-0"
-      aria-label={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
+      aria-label={
+        theme === 'dark'
+          ? 'Switch to light mode'
+          : 'Switch to dark mode'
+      }
     >
-      {theme === "dark" ? (
+      {theme === 'dark' ? (
         <Sun className="h-4 w-4" />
       ) : (
         <Moon className="h-4 w-4" />
@@ -27,12 +31,12 @@ function ThemeToggle() {
 }
 
 const nav = [
-  { to: "/", label: "Dashboard" },
-  { to: "/accounts", label: "Accounts" },
-  { to: "/transactions", label: "Transactions" },
-  { to: "/import", label: "Import" },
-  { to: "/categories", label: "Categories" },
-  { to: "/settings", label: "Settings" },
+  { to: '/', label: 'Dashboard' },
+  { to: '/accounts', label: 'Accounts' },
+  { to: '/transactions', label: 'Transactions' },
+  { to: '/import', label: 'Import' },
+  { to: '/categories', label: 'Categories' },
+  { to: '/settings', label: 'Settings' },
 ];
 
 export function Layout() {
@@ -49,16 +53,21 @@ export function Layout() {
             size="icon"
             className="md:hidden h-9 w-9 shrink-0"
             onClick={() => setMobileMenuOpen((o) => !o)}
-            aria-label={mobileMenuOpen ? "Close menu" : "Open menu"}
+            aria-label={mobileMenuOpen ? 'Close menu' : 'Open menu'}
           >
-            {mobileMenuOpen ? <X className="h-4 w-4" /> : <Menu className="h-4 w-4" />}
+            {mobileMenuOpen ? (
+              <X className="h-4 w-4" />
+            ) : (
+              <Menu className="h-4 w-4" />
+            )}
           </Button>
           <Link
             to="/"
-            className="font-semibold text-inherit hover:text-inherit shrink-0"
+            className="inline-flex items-baseline shrink-0 -translate-y-1 text-[var(--brand-piggy)] hover:text-[var(--brand-piggy)]"
             onClick={() => setMobileMenuOpen(false)}
           >
-            Budget Tracker
+            <span className="text-3xl font-semibold">Pigg</span>
+            <span className="font-piggy-tail text-5xl font-bold leading-none" style={{ marginBottom: '-0.2em' }}>y</span>
           </Link>
           <nav className="hidden flex-1 gap-2 md:flex">
             {nav.map(({ to, label }) => (
@@ -66,10 +75,10 @@ export function Layout() {
                 key={to}
                 to={to}
                 className={cn(
-                  "rounded-md px-3 py-2 text-sm font-medium transition-colors",
+                  'rounded-md px-3 py-2 text-sm font-medium transition-colors',
                   location.pathname === to
-                    ? "bg-primary text-primary-foreground"
-                    : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
+                    ? 'bg-primary text-primary-foreground'
+                    : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground',
                 )}
               >
                 {label}
@@ -97,10 +106,10 @@ export function Layout() {
                 to={to}
                 onClick={() => setMobileMenuOpen(false)}
                 className={cn(
-                  "rounded-md px-3 py-2 text-sm font-medium transition-colors",
+                  'rounded-md px-3 py-2 text-sm font-medium transition-colors',
                   location.pathname === to
-                    ? "bg-primary text-primary-foreground"
-                    : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
+                    ? 'bg-primary text-primary-foreground'
+                    : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground',
                 )}
               >
                 {label}

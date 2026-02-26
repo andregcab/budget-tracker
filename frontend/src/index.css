@@ -55,6 +55,7 @@ body[data-scroll-locked] {
   --chart-9: oklch(0.52 0.13 250);
   --chart-10: oklch(0.55 0.12 275);
   --positive: oklch(0.5 0.18 145);
+  --brand-piggy: oklch(0.6 0.12 350);
   --sidebar: oklch(0.985 0 0);
   --sidebar-foreground: oklch(0.145 0 0);
   --sidebar-primary: oklch(0.205 0 0);
@@ -101,6 +102,7 @@ body[data-scroll-locked] {
   --chart-9: oklch(0.64 0.13 250);
   --chart-10: oklch(0.68 0.12 275);
   --positive: oklch(0.65 0.18 145);
+  --brand-piggy: oklch(0.72 0.12 350);
   --sidebar: oklch(0.205 0 0);
   --sidebar-foreground: oklch(0.92 0 0);
   --sidebar-primary: oklch(0.488 0.243 264.376);
@@ -126,6 +128,10 @@ body[data-scroll-locked] {
 
 .pie-active-slice {
   animation: pie-slice-raise 0.25s linear forwards;
+}
+
+.font-piggy-tail {
+  font-family: 'Dancing Script', cursive;
 }
 
 @theme inline {
