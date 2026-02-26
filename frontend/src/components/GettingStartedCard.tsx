@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import confetti from "canvas-confetti";
@@ -9,7 +9,9 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import {
   getGettingStartedDismissed,
+  getGettingStartedConfettiShown,
   setGettingStartedDismissed,
+  setGettingStartedConfettiShown,
 } from "@/lib/user-preferences";
 
 async function getAccounts(): Promise<{ id: string }[]> {
@@ -26,7 +28,6 @@ async function getMonthlySummary(): Promise<{ totalSpend: number }> {
 export function GettingStartedCard() {
   const { user } = useAuth();
   const [dismissed, setDismissed] = useState(getGettingStartedDismissed);
-  const confettiFiredRef = useRef(false);
 
   const { data: accounts = [] } = useQuery({
     queryKey: ["accounts"],
@@ -45,8 +46,8 @@ export function GettingStartedCard() {
   const allDone = hasAccounts && hasTransactions && hasIncome;
 
   useEffect(() => {
-    if (allDone && !confettiFiredRef.current) {
-      confettiFiredRef.current = true;
+    if (allDone && !getGettingStartedConfettiShown()) {
+      setGettingStartedConfettiShown(true);
       confetti({
         particleCount: 80,
         spread: 60,

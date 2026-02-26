@@ -71,3 +71,14 @@ export function setGettingStartedDismissed(dismissed: boolean) {
   prefs.gettingStartedDismissed = dismissed;
   setStoredPreferences(prefs);
 }
+
+export function getGettingStartedConfettiShown(): boolean {
+  const prefs = getStoredPreferences();
+  return prefs.gettingStartedConfettiShown === true;
+}
+
+export function setGettingStartedConfettiShown(shown: boolean) {
+  const prefs = getStoredPreferences();
+  prefs.gettingStartedConfettiShown = shown;
+  setStoredPreferences(prefs);
+}
