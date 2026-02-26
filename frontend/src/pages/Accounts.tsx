@@ -14,6 +14,13 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
   Table,
   TableBody,
   TableCell,
@@ -53,6 +60,16 @@ async function updateAccount(
 
 async function deleteAccount(id: string) {
   return api(`/accounts/${id}`, { method: "DELETE" });
+}
+
+const ACCOUNT_TYPES = [
+  { value: "checking", label: "Checking" },
+  { value: "savings", label: "Savings" },
+  { value: "credit_card", label: "Credit card" },
+] as const;
+
+function getTypeLabel(type: string): string {
+  return ACCOUNT_TYPES.find((t) => t.value === type)?.label ?? type;
 }
 
 export function Accounts() {
@@ -102,7 +119,9 @@ export function Accounts() {
   function openEdit(acc: Account) {
     setEditing(acc);
     setName(acc.name);
-    setType(acc.type);
+    const matched =
+      ACCOUNT_TYPES.find((t) => t.value === acc.type || t.label.toLowerCase() === acc.type.toLowerCase());
+    setType(matched?.value ?? "checking");
     setInstitution(acc.institution ?? "");
     setIsDefault(acc.isDefault);
   }
@@ -151,12 +170,18 @@ export function Accounts() {
                 </div>
                 <div className="grid gap-2">
                   <Label htmlFor="type">Type</Label>
-                  <Input
-                    id="type"
-                    value={type}
-                    onChange={(e) => setType(e.target.value)}
-                    placeholder="e.g. checking, savings"
-                  />
+                  <Select value={type} onValueChange={(v) => setType(v)}>
+                    <SelectTrigger id="type">
+                      <SelectValue placeholder="Select type" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {ACCOUNT_TYPES.map((t) => (
+                        <SelectItem key={t.value} value={t.value}>
+                          {t.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
                 <div className="grid gap-2">
                   <Label htmlFor="institution">Institution</Label>
@@ -211,7 +236,7 @@ export function Accounts() {
                 {accounts.map((acc) => (
                   <TableRow key={acc.id}>
                     <TableCell>{acc.name}</TableCell>
-                    <TableCell>{acc.type}</TableCell>
+                    <TableCell>{getTypeLabel(acc.type)}</TableCell>
                     <TableCell>{acc.institution ?? "—"}</TableCell>
                     <TableCell>{acc.isDefault ? "Yes" : "—"}</TableCell>
                     <TableCell>
