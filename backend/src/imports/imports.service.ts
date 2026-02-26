@@ -69,26 +69,28 @@ export class ImportsService {
       });
       list.forEach((c) => categoryByName.set(c.name.toLowerCase(), c.id));
       list.forEach((c) => {
-        const kw = c.keywords?.filter((k) => k?.trim()) ?? [];
-        if (kw.length > 0) {
-          categoriesWithKeywords.push({ id: c.id, keywords: kw });
-        }
+        const explicit = c.keywords?.filter((k) => k?.trim()) ?? [];
+        const nameLower = c.name.toLowerCase().trim();
+        const effective = [
+          ...new Set([
+            nameLower,
+            ...explicit.map((k) => k.toLowerCase().trim()),
+          ]),
+        ].filter(Boolean);
+        categoriesWithKeywords.push({ id: c.id, keywords: effective });
       });
     };
     await loadCategories();
 
-    function matchCategoryByKeyword(
-      text: string,
-      exactMatch = false,
-    ): string | null {
+    function matchCategoryByKeyword(text: string): string | null {
+      if (!text?.trim()) return null;
       const textLower = text.toLowerCase();
       for (const cat of categoriesWithKeywords) {
         for (const kw of cat.keywords) {
           if (!kw?.trim()) continue;
           const kwLower = kw.toLowerCase();
-          const matches = exactMatch
-            ? textLower === kwLower
-            : textLower.includes(kwLower);
+          const matches =
+            textLower.includes(kwLower) || kwLower.includes(textLower);
           if (matches) return cat.id;
         }
       }
@@ -107,15 +109,15 @@ export class ImportsService {
         }
 
         let categoryId: string | null = null;
-        if (row.category) {
+        categoryId = matchCategoryByKeyword(row.description);
+        if (!categoryId && row.category) {
+          // Exact name match first (pre-keywords behavior); keyword match for fuzzy mapping (e.g. "Food & Drink" → Restaurants)
           categoryId =
-            matchCategoryByKeyword(row.category, false) ??
-            categoryByName.get(row.category.toLowerCase()) ??
+            categoryByName.get(row.category.toLowerCase().trim()) ??
+            matchCategoryByKeyword(row.category) ??
             uncategorizedId;
-        } else {
-          categoryId =
-            matchCategoryByKeyword(row.description, false) ?? uncategorizedId;
         }
+        if (!categoryId) categoryId = uncategorizedId;
 
         try {
           await this.prisma.transaction.create({

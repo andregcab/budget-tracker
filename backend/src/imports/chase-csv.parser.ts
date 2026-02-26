@@ -19,6 +19,7 @@ const HEADER_ALIASES: Record<string, string> = {
   type: 'type',
   balance: 'balance',
   category: 'category',
+  'chase category': 'category',
 };
 
 function normalizeHeader(h: string): string {

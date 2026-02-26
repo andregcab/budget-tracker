@@ -27,6 +27,15 @@ a,b`;
     expect(rows[0].category).toBe('Groceries');
   });
 
+  it('recognizes Chase Category column (Chase export format)', () => {
+    const csv = `Transaction Date,Post Date,Description,Amount,Chase Category
+2024-01-15,2024-01-16,AMAZON MKTPL*077QS1DE3,-42.99,Shopping`;
+    const rows = parseChaseCsv(csv);
+    expect(rows).toHaveLength(1);
+    expect(rows[0].description).toBe('AMAZON MKTPL*077QS1DE3');
+    expect(rows[0].category).toBe('Shopping');
+  });
+
   it('strips dollar signs and commas from amount', () => {
     const csv = `Date,Description,Amount
 2024-01-01,Test,"$1,234.56"`;
