@@ -178,16 +178,16 @@ const chartConfig = {
   total: { label: 'Spend', color: 'var(--chart-1)' },
 } satisfies ChartConfig;
 
-// Wider hue spread (teal→blue→purple) for better distinguishability; uses CSS vars for dark mode
+// Fixed palette - same in light/dark, lighter for visibility on light backgrounds
 const PIE_COLORS = [
-  'var(--chart-6)',
-  'var(--chart-1)',
-  'var(--chart-7)',
-  'var(--chart-8)',
-  'var(--chart-9)',
-  'var(--chart-10)',
-  'var(--chart-4)',
-  'var(--chart-2)',
+  'oklch(0.68 0.16 165)',
+  'oklch(0.65 0.15 185)',
+  'oklch(0.62 0.14 205)',
+  'oklch(0.6 0.13 225)',
+  'oklch(0.62 0.12 250)',
+  'oklch(0.65 0.11 275)',
+  'oklch(0.7 0.14 170)',
+  'oklch(0.6 0.14 195)',
 ];
 
 export function Dashboard() {
@@ -892,7 +892,7 @@ export function Dashboard() {
         <Card className="mt-6">
           <CardHeader>
             <div className="flex items-center gap-1.5">
-              <CardTitle>Variable spending</CardTitle>
+              <CardTitle>Spending</CardTitle>
               <Popover>
                 <PopoverTrigger asChild>
                   <button
@@ -914,64 +914,66 @@ export function Dashboard() {
             </div>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="space-y-3">
-              {variableCategories.map((c) => {
-                const pct =
-                  c.budget > 0
-                    ? Math.min((c.total / c.budget) * 100, 100)
-                    : 0;
-                return (
-                  <div key={c.name} className="space-y-1">
-                    <div className="flex items-center justify-between text-sm">
-                      <span
-                        className={
-                          c.over
-                            ? 'font-medium text-destructive'
-                            : 'font-medium'
-                        }
-                      >
-                        {c.name}
-                      </span>
-                      <span className="text-muted-foreground">
-                        ${c.total.toFixed(2)}
-                        {c.budget > 0 && (
-                          <>
-                            {' '}
-                            / ${c.budget.toFixed(2)}
-                            <span
-                              className={
-                                c.over
-                                  ? 'ml-1 font-medium text-destructive'
-                                  : 'ml-1 text-[var(--positive)]'
-                              }
-                            >
-                              {c.over ? 'Over' : 'Under'}
-                            </span>
-                          </>
-                        )}
-                      </span>
-                    </div>
-                    {c.budget > 0 && (
-                      <div className="h-1.5 w-full overflow-hidden rounded-full bg-muted">
-                        <div
-                          className={`h-full rounded-full transition-all ${
-                            c.over ? 'bg-destructive' : 'bg-primary'
-                          }`}
-                          style={{ width: `${Math.min(pct, 100)}%` }}
-                        />
+            <div className="w-full max-w-[50%] min-w-0 space-y-2">
+              <div className="space-y-3">
+                {variableCategories.map((c) => {
+                  const pct =
+                    c.budget > 0
+                      ? Math.min((c.total / c.budget) * 100, 100)
+                      : 0;
+                  return (
+                    <div key={c.name} className="space-y-1">
+                      <div className="flex items-center justify-between text-sm">
+                        <span
+                          className={
+                            c.over
+                              ? 'font-medium text-destructive'
+                              : 'font-medium'
+                          }
+                        >
+                          {c.name}
+                        </span>
+                        <span className="text-muted-foreground">
+                          ${c.total.toFixed(2)}
+                          {c.budget > 0 && (
+                            <>
+                              {' '}
+                              / ${c.budget.toFixed(2)}
+                              <span
+                                className={
+                                  c.over
+                                    ? 'ml-1 font-medium text-destructive'
+                                    : 'ml-1 text-[var(--positive)]'
+                                }
+                              >
+                                {c.over ? 'Over' : 'Under'}
+                              </span>
+                            </>
+                          )}
+                        </span>
                       </div>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
-            <div className="flex items-center justify-between border-t border-border pt-3 text-sm font-medium">
-              <span>Total variable</span>
-              <span>${variableTotal.toFixed(2)}</span>
+                      {c.budget > 0 && (
+                        <div className="h-1.5 w-full overflow-hidden rounded-full bg-muted">
+                          <div
+                            className={`h-full rounded-full transition-all ${
+                              c.over ? 'bg-destructive' : 'bg-primary'
+                            }`}
+                            style={{ width: `${Math.min(pct, 100)}%` }}
+                          />
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+              <div className="flex items-center justify-between border-t border-border pt-2 text-sm font-medium">
+                <span>Total</span>
+                <span>${variableTotal.toFixed(2)}</span>
+              </div>
             </div>
 
             {variableCategories.length > 0 && (
-              <div className="space-y-3">
+              <div className="space-y-3 min-w-0 overflow-x-hidden">
                 <div className="flex gap-1">
                   {(['bar', 'pie'] as const).map((type) => (
                     <Button
@@ -1042,20 +1044,29 @@ export function Dashboard() {
                             outerRadius?: number;
                             cx?: number;
                             cy?: number;
+                            startAngle?: number;
+                            endAngle?: number;
                             [key: string]: unknown;
                           };
                           const { cx = 0, cy = 0 } = p;
+                          const midAngle =
+                            ((p.startAngle ?? 0) + (p.endAngle ?? 0)) / 2;
+                          const rad = (midAngle * Math.PI) / 180;
+                          const slideOutPx = 4;
+                          const dx = Math.cos(rad) * slideOutPx;
+                          const dy = -Math.sin(rad) * slideOutPx;
                           return (
                             <g
                               className="pie-active-slice"
                               style={{
                                 transformOrigin: `${cx}px ${cy}px`,
-                              }}
+                                '--slide-dx': `${dx}px`,
+                                '--slide-dy': `${dy}px`,
+                              } as React.CSSProperties}
                             >
                               <Sector
                                 {...p}
-                                outerRadius={(p.outerRadius ?? 0) + 3}
-                                stroke="rgba(0,0,0,0.4)"
+                                stroke="rgba(0,0,0,0.35)"
                                 strokeWidth={1}
                                 vectorEffect="non-scaling-stroke"
                                 style={{
@@ -1088,6 +1099,11 @@ export function Dashboard() {
                           <ChartLegendContent
                             nameKey="name"
                             onItemHover={setLegendHoverIndex}
+                            onItemClick={(index) =>
+                              setLegendHoverIndex((prev) =>
+                                prev === index ? undefined : index,
+                              )
+                            }
                           />
                         }
                         verticalAlign="bottom"

@@ -112,13 +112,14 @@ body[data-scroll-locked] {
 }
 
 /* Pie slice raise animation - runs when active slice mounts */
+/* Translate only = constant pixel gap for all slice sizes (no scale) */
 @keyframes pie-slice-raise {
   from {
-    transform: scale(1);
+    transform: translate(0, 0);
     opacity: 0.98;
   }
   to {
-    transform: scale(1.04);
+    transform: translate(var(--slide-dx, 0), var(--slide-dy, 0));
     opacity: 1;
   }
 }
