@@ -1,6 +1,7 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
+import { CreateTransactionDto } from './dto/create-transaction.dto';
 import { UpdateTransactionDto } from './dto/update-transaction.dto';
 
 export interface TransactionFilters {
@@ -59,6 +60,40 @@ export class TransactionsService {
       total,
       page,
       limit,
+    };
+  }
+
+  async create(userId: string, dto: CreateTransactionDto) {
+    const account = await this.prisma.account.findFirst({
+      where: { id: dto.accountId, userId },
+    });
+    if (!account) {
+      throw new BadRequestException('Account not found');
+    }
+
+    const amount =
+      dto.type === 'debit'
+        ? -Math.abs(dto.amount)
+        : Math.abs(dto.amount);
+
+    const tx = await this.prisma.transaction.create({
+      data: {
+        userId,
+        accountId: dto.accountId,
+        date: new Date(dto.date),
+        description: dto.description.trim(),
+        amount: new Prisma.Decimal(amount),
+        type: dto.type,
+        categoryId: dto.categoryId || null,
+        notes: dto.notes?.trim() || null,
+      },
+      include: { category: { select: { id: true, name: true } } },
+    });
+
+    return {
+      ...tx,
+      amount: tx.amount.toString(),
+      balanceAfter: tx.balanceAfter?.toString() ?? null,
     };
   }
 

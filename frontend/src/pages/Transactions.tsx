@@ -29,7 +29,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Trash2 } from "lucide-react";
+import { Plus, Trash2 } from "lucide-react";
 import { getTransactionsPerPage, setTransactionsPerPage } from "@/lib/user-preferences";
 
 type Category = { id: string; name: string };
@@ -83,6 +83,21 @@ async function deleteTransaction(id: string) {
   return api(`/transactions/${id}`, { method: "DELETE" });
 }
 
+async function createTransaction(body: {
+  accountId: string;
+  date: string;
+  description: string;
+  amount: number;
+  type: "debit" | "credit";
+  categoryId?: string | null;
+  notes?: string | null;
+}) {
+  return api<TransactionRow>("/transactions", {
+    method: "POST",
+    body: JSON.stringify(body),
+  });
+}
+
 async function deleteTransactionsByDateRange(fromDate: string, toDate: string) {
   return api<{ deleted: number }>(
     `/transactions?fromDate=${encodeURIComponent(fromDate)}&toDate=${encodeURIComponent(toDate)}`,
@@ -120,6 +135,16 @@ export function Transactions() {
   }, [userId]);
   const [deleteTarget, setDeleteTarget] = useState<TransactionRow | null>(null);
   const [deleteMonthOpen, setDeleteMonthOpen] = useState(false);
+  const [addOpen, setAddOpen] = useState(false);
+  const [addForm, setAddForm] = useState({
+    accountId: "",
+    date: new Date().toISOString().slice(0, 10),
+    description: "",
+    amount: "",
+    type: "debit" as "debit" | "credit",
+    categoryId: "" as string | null,
+    notes: "",
+  });
 
   const { data: accounts = [] } = useQuery({
     queryKey: ["accounts"],
@@ -188,6 +213,15 @@ export function Transactions() {
     },
   });
 
+  const createMutation = useMutation({
+    mutationFn: createTransaction,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["transactions"] });
+      queryClient.invalidateQueries({ queryKey: ["analytics", "monthly"] });
+      handleAddOpen(false);
+    },
+  });
+
   const items = data?.items ?? [];
   const total = data?.total ?? 0;
   const totalPages = Math.ceil(total / limit);
@@ -198,6 +232,35 @@ export function Transactions() {
   const handleDeleteMonth = () => {
     const { from, to } = getMonthRange();
     deleteMonthMutation.mutate({ from, to });
+  };
+
+  const handleAddOpen = (open: boolean) => {
+    setAddOpen(open);
+    if (!open) return;
+    setAddForm({
+      accountId: accountId || (accounts[0]?.id ?? ""),
+      date: new Date().toISOString().slice(0, 10),
+      description: "",
+      amount: "",
+      type: "debit",
+      categoryId: categoryId || null,
+      notes: "",
+    });
+  };
+
+  const handleAddSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    const amt = parseFloat(addForm.amount);
+    if (!addForm.accountId || !addForm.description || !addForm.amount || isNaN(amt) || amt <= 0) return;
+    createMutation.mutate({
+      accountId: addForm.accountId,
+      date: addForm.date,
+      description: addForm.description.trim(),
+      amount: amt,
+      type: addForm.type,
+      categoryId: addForm.categoryId || null,
+      notes: addForm.notes.trim() || null,
+    });
   };
 
   return (
@@ -258,6 +321,14 @@ export function Transactions() {
         <CardHeader className="flex flex-row items-center justify-between gap-4 flex-wrap">
           <CardTitle>Transactions ({total})</CardTitle>
           <div className="flex items-center gap-2 flex-wrap">
+            <Button
+              variant="default"
+              size="sm"
+              onClick={() => handleAddOpen(true)}
+            >
+              <Plus className="mr-1 h-4 w-4" />
+              Add
+            </Button>
             <Button
               variant="outline"
               size="sm"
@@ -520,6 +591,115 @@ export function Transactions() {
               Delete
             </Button>
           </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={addOpen} onOpenChange={handleAddOpen}>
+        <DialogContent className="sm:max-w-md">
+          <form onSubmit={handleAddSubmit}>
+            <DialogHeader>
+              <DialogTitle>Add transaction</DialogTitle>
+            </DialogHeader>
+            <div className="grid gap-4 py-4">
+              <div className="grid gap-2">
+                <Label>Account</Label>
+                <Combobox
+                  options={accounts.map((a) => ({ value: a.id, label: a.name }))}
+                  value={addForm.accountId || null}
+                  onValueChange={(v) => setAddForm((f) => ({ ...f, accountId: v ?? "" }))}
+                  placeholder="Select account"
+                  searchPlaceholder="Type to search..."
+                  triggerClassName="w-full"
+                />
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="add-date">Date</Label>
+                <Input
+                  id="add-date"
+                  type="date"
+                  value={addForm.date}
+                  onChange={(e) => setAddForm((f) => ({ ...f, date: e.target.value }))}
+                />
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="add-description">Description</Label>
+                <Input
+                  id="add-description"
+                  placeholder="e.g. Coffee shop"
+                  value={addForm.description}
+                  onChange={(e) => setAddForm((f) => ({ ...f, description: e.target.value }))}
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="grid gap-2">
+                  <Label htmlFor="add-amount">Amount</Label>
+                  <Input
+                    id="add-amount"
+                    type="number"
+                    step="0.01"
+                    min="0.01"
+                    placeholder="0.00"
+                    value={addForm.amount}
+                    onChange={(e) => setAddForm((f) => ({ ...f, amount: e.target.value }))}
+                  />
+                </div>
+                <div className="grid gap-2">
+                  <Label htmlFor="add-type">Type</Label>
+                  <Select
+                    value={addForm.type}
+                    onValueChange={(v: "debit" | "credit") => setAddForm((f) => ({ ...f, type: v }))}
+                  >
+                    <SelectTrigger id="add-type">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="debit">Expense</SelectItem>
+                      <SelectItem value="credit">Income</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+              <div className="grid gap-2">
+                <Label>Category</Label>
+                <Combobox
+                  options={categories.map((c) => ({ value: c.id, label: c.name }))}
+                  value={addForm.categoryId}
+                  onValueChange={(v) => setAddForm((f) => ({ ...f, categoryId: v }))}
+                  placeholder="Optional"
+                  searchPlaceholder="Type to search..."
+                  allowEmpty
+                  emptyOption={{ value: null, label: "—" }}
+                  triggerClassName="w-full"
+                />
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="add-notes">Notes</Label>
+                <Input
+                  id="add-notes"
+                  placeholder="Optional"
+                  value={addForm.notes}
+                  onChange={(e) => setAddForm((f) => ({ ...f, notes: e.target.value }))}
+                />
+              </div>
+            </div>
+            <DialogFooter>
+              <Button type="button" variant="outline" onClick={() => handleAddOpen(false)}>
+                Cancel
+              </Button>
+              <Button
+                type="submit"
+                disabled={
+                  createMutation.isPending ||
+                  !addForm.accountId ||
+                  !addForm.description.trim() ||
+                  !addForm.amount ||
+                  parseFloat(addForm.amount) <= 0
+                }
+              >
+                {createMutation.isPending ? "Adding..." : "Add"}
+              </Button>
+            </DialogFooter>
+          </form>
         </DialogContent>
       </Dialog>
 

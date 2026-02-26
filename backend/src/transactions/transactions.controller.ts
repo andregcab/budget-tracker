@@ -13,6 +13,7 @@ import {
 import { CurrentUser } from '../auth/current-user.decorator';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { TransactionsService } from './transactions.service';
+import { CreateTransactionDto } from './dto/create-transaction.dto';
 import { UpdateTransactionDto } from './dto/update-transaction.dto';
 
 type UserPayload = { id: string; email: string };
@@ -21,6 +22,14 @@ type UserPayload = { id: string; email: string };
 @UseGuards(JwtAuthGuard)
 export class TransactionsController {
   constructor(private readonly transactionsService: TransactionsService) {}
+
+  @Post()
+  create(
+    @CurrentUser() user: UserPayload,
+    @Body() dto: CreateTransactionDto,
+  ) {
+    return this.transactionsService.create(user.id, dto);
+  }
 
   @Get()
   findAll(
