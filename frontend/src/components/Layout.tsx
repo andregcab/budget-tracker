@@ -1,7 +1,28 @@
 import { Link, Outlet, useLocation } from "react-router-dom";
+import { Moon, Sun } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
+import { useTheme } from "@/hooks/useTheme";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+
+function ThemeToggle() {
+  const { theme, toggleTheme } = useTheme();
+  return (
+    <Button
+      variant="ghost"
+      size="icon"
+      onClick={toggleTheme}
+      className="h-9 w-9"
+      aria-label={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
+    >
+      {theme === "dark" ? (
+        <Sun className="h-4 w-4" />
+      ) : (
+        <Moon className="h-4 w-4" />
+      )}
+    </Button>
+  );
+}
 
 const nav = [
   { to: "/", label: "Dashboard" },
@@ -18,9 +39,9 @@ export function Layout() {
 
   return (
     <div className="flex min-h-screen flex-col">
-      <header className="border-b bg-card">
+      <header className="border-b border-border bg-card text-card-foreground">
         <div className="flex h-14 items-center gap-4 px-4">
-          <Link to="/" className="font-semibold">
+          <Link to="/" className="font-semibold text-inherit hover:text-inherit">
             Budget Tracker
           </Link>
           <nav className="flex flex-1 gap-2">
@@ -40,7 +61,13 @@ export function Layout() {
             ))}
           </nav>
           <span className="text-muted-foreground text-sm">{user?.email}</span>
-          <Button variant="outline" size="sm" onClick={logout}>
+          <ThemeToggle />
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={logout}
+            className="border-border bg-transparent text-card-foreground hover:bg-accent hover:text-accent-foreground"
+          >
             Logout
           </Button>
         </div>
