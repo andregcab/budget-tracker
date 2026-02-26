@@ -19,7 +19,7 @@ const queryClient = new QueryClient();
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
-      <Toaster richColors position="top-center" />
+      <Toaster richColors position="bottom-center" />
       <ThemeProvider>
         <BrowserRouter>
           <AuthProvider>

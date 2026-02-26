@@ -58,22 +58,27 @@ export class CategoriesService {
   private async createDefaultCategoriesForUser(userId: string) {
     const globals = await this.prisma.category.findMany({
       where: { userId: null },
-      select: { id: true, name: true, isFixed: true },
+      select: { id: true, name: true, isFixed: true, keywords: true },
     });
-    const names =
-      globals.length > 0 ? globals.map((g) => g.name) : DEFAULT_CATEGORIES;
-    await this.prisma.category.createMany({
-      data: names.map((name) => {
-        const fromGlobal = globals.find((g) => g.name === name);
-        return {
-          userId,
-          name,
-          isDefault: true,
-          isActive: true,
-          isFixed: fromGlobal?.isFixed ?? isDefaultCategoryFixed(name),
-        };
-      }),
-    });
+    const data =
+      globals.length > 0
+        ? globals.map((g) => ({
+            userId,
+            name: g.name,
+            isDefault: true,
+            isActive: true,
+            isFixed: g.isFixed,
+            keywords: g.keywords ?? [],
+          }))
+        : DEFAULT_CATEGORIES.map((c) => ({
+            userId,
+            name: c.name,
+            isDefault: true,
+            isActive: true,
+            isFixed: c.isFixed,
+            keywords: c.keywords,
+          }));
+    await this.prisma.category.createMany({ data });
     if (globals.length > 0) {
       const userCats = await this.prisma.category.findMany({
         where: { userId },

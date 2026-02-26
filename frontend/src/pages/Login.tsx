@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
+import { Info } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -32,6 +33,16 @@ export function Login() {
     <div className="flex min-h-screen items-center justify-center bg-background">
       <div className="w-full max-w-sm space-y-6 rounded-lg border border-border bg-card p-6 text-foreground shadow-sm">
         <h1 className="text-center text-2xl font-semibold">Sign in</h1>
+        <div className="flex gap-2 rounded-md border border-border bg-muted/50 px-3 py-2 text-sm text-muted-foreground">
+          <Info className="h-4 w-4 shrink-0 mt-0.5" />
+          <p>
+            New here?{" "}
+            <Link to="/register" className="text-primary font-medium underline-offset-4 hover:underline">
+              Create an account
+            </Link>{" "}
+            to get started.
+          </p>
+        </div>
         <form onSubmit={handleSubmit} className="space-y-4">
           {error && (
             <p className="rounded-md bg-destructive/10 p-2 text-sm text-destructive">

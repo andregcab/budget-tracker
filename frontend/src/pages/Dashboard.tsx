@@ -552,7 +552,7 @@ export function Dashboard() {
                 <p className="text-muted-foreground text-sm mt-2">
                   {defaultIncome > 0
                     ? `Your default is $${defaultIncome.toFixed(2)}/month. Override below if different this month.`
-                    : 'Set your default monthly income in Settings first, or enter an amount for this month.'}
+                    : 'Enter an amount for this month.'}
                 </p>
                 <div className="grid gap-4 py-4">
                   <div className="grid gap-2">
@@ -680,21 +680,6 @@ export function Dashboard() {
           )}
         </div>
       </div>
-
-      {!user?.monthlyIncome && (
-        <Card className="mt-4 border-amber-500/50 bg-amber-500/5">
-          <CardContent className="py-4">
-            <p className="text-sm">
-              Set your default monthly income in{' '}
-              <Link to="/settings" className="underline font-medium">
-                Settings
-              </Link>{' '}
-              to see savings. You can override it for specific months
-              by clicking the income amount above.
-            </p>
-          </CardContent>
-        </Card>
-      )}
 
       {/* Fixed bills section - compact */}
       {(fixedCategories.length > 0 || expectedFixed.length > 0) && (

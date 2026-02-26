@@ -7,6 +7,7 @@ describe('CategoriesService', () => {
   let service: CategoriesService;
   const mockPrisma = {
     category: {
+      count: jest.fn(),
       findMany: jest.fn(),
       findFirst: jest.fn(),
       create: jest.fn(),
@@ -26,16 +27,16 @@ describe('CategoriesService', () => {
   });
 
   it('findAllActive returns active global and user categories', async () => {
-    mockPrisma.category.findMany.mockResolvedValue([
-      { id: 'cat-1', name: 'Groceries', userId: null },
-    ]);
+    mockPrisma.category.count.mockResolvedValue(1);
+    mockPrisma.category.findMany
+      .mockResolvedValueOnce([]) // migrateTransactionsFromGlobalToUser: no globals
+      .mockResolvedValue([
+        { id: 'cat-1', name: 'Groceries', userId: 'user-1' },
+      ]);
     const result = await service.findAllActive('user-1');
     expect(result).toHaveLength(1);
     expect(mockPrisma.category.findMany).toHaveBeenCalledWith({
-      where: {
-        isActive: true,
-        OR: [{ userId: null }, { userId: 'user-1' }],
-      },
+      where: { userId: 'user-1', isActive: true },
       orderBy: { name: 'asc' },
     });
   });
@@ -56,6 +57,8 @@ describe('CategoriesService', () => {
         name: 'Custom',
         isDefault: false,
         isActive: true,
+        isFixed: false,
+        keywords: [],
       },
     });
   });

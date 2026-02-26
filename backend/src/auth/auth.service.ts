@@ -6,10 +6,7 @@ import {
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
 import { PrismaService } from '../prisma/prisma.service';
-import {
-  DEFAULT_CATEGORIES,
-  isDefaultCategoryFixed,
-} from '../categories/default-categories';
+import { DEFAULT_CATEGORIES } from '../categories/default-categories';
 
 @Injectable()
 export class AuthService {
@@ -29,11 +26,12 @@ export class AuthService {
         email,
         passwordHash,
         categories: {
-          create: DEFAULT_CATEGORIES.map((name) => ({
-            name,
+          create: DEFAULT_CATEGORIES.map((c) => ({
+            name: c.name,
             isDefault: true,
             isActive: true,
-            isFixed: isDefaultCategoryFixed(name),
+            isFixed: c.isFixed,
+            keywords: c.keywords,
           })),
         },
       },

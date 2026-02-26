@@ -9,26 +9,7 @@ if (!connectionString) {
 const adapter = new PrismaPg({ connectionString });
 const prisma = new PrismaClient({ adapter });
 
-const DEFAULT_CATEGORIES = [
-  'Groceries',
-  'Restaurants',
-  'Rent',
-  'Utilities',
-  'Subscriptions',
-  'Gas',
-  'Travel',
-  'Healthcare',
-  'Insurance',
-  'Entertainment',
-  'Shopping',
-  'Personal Care',
-  'Education',
-  'Gifts & Donations',
-  'Transfer',
-  'Uncategorized',
-];
-
-const FIXED_CATEGORIES = ['Rent', 'Subscriptions', 'Insurance'];
+import { DEFAULT_CATEGORIES } from '../src/categories/default-categories';
 
 async function main() {
   const existing = await prisma.category.count({ where: { userId: null } });
@@ -37,12 +18,13 @@ async function main() {
     return;
   }
   await prisma.category.createMany({
-    data: DEFAULT_CATEGORIES.map((name) => ({
+    data: DEFAULT_CATEGORIES.map((c) => ({
       userId: null,
-      name,
+      name: c.name,
       isDefault: true,
       isActive: true,
-      isFixed: FIXED_CATEGORIES.includes(name),
+      isFixed: c.isFixed,
+      keywords: c.keywords,
     })),
   });
   console.log(`Seeded ${DEFAULT_CATEGORIES.length} default categories.`);

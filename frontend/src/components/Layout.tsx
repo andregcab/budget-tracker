@@ -4,6 +4,7 @@ import { Moon, Sun, Menu, X } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useTheme } from "@/hooks/useTheme";
 import { Button } from "@/components/ui/button";
+import { GettingStartedCard } from "@/components/GettingStartedCard";
 import { cn } from "@/lib/utils";
 
 function ThemeToggle() {
@@ -109,6 +110,7 @@ export function Layout() {
         )}
       </header>
       <main className="flex-1 p-3 sm:p-4 text-foreground min-w-0">
+        <GettingStartedCard />
         <Outlet />
       </main>
     </div>

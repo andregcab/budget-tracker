@@ -60,3 +60,14 @@ export function setSpendingChartType(type: SpendingChartType) {
   prefs.spendingChartType = type;
   setStoredPreferences(prefs);
 }
+
+export function getGettingStartedDismissed(): boolean {
+  const prefs = getStoredPreferences();
+  return prefs.gettingStartedDismissed === true;
+}
+
+export function setGettingStartedDismissed(dismissed: boolean) {
+  const prefs = getStoredPreferences();
+  prefs.gettingStartedDismissed = dismissed;
+  setStoredPreferences(prefs);
+}
