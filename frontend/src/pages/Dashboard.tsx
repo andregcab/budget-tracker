@@ -627,9 +627,159 @@ export function Dashboard() {
                     style={{ width: `${incomePct}%` }}
                   />
                 </div>
-                <span className="text-sm font-mono tabular-nums w-20 text-right shrink-0">
-                  ${income.toFixed(2)}
-                </span>
+                <div className="flex items-center gap-1.5 shrink-0 justify-end">
+                  <Dialog open={editOpen} onOpenChange={handleEditOpen}>
+                    <DialogTrigger asChild>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className={`h-auto min-w-0 p-0 font-mono text-sm tabular-nums ${
+                          hasOverride
+                            ? 'text-primary'
+                            : 'text-muted-foreground hover:text-foreground'
+                        }`}
+                      >
+                        ${income.toFixed(2)}
+                        <Pencil className="ml-1 h-3.5 w-3.5 opacity-70" />
+                      </Button>
+                    </DialogTrigger>
+                    <DialogContent className="text-foreground">
+                      <form onSubmit={handleSaveOverride}>
+                        <DialogHeader>
+                          <DialogTitle>
+                            Income for {monthName} {year}
+                          </DialogTitle>
+                        </DialogHeader>
+                        <p className="text-muted-foreground text-sm mt-2">
+                          {defaultIncome > 0
+                            ? `Your default is $${defaultIncome.toFixed(2)}/month. Override below if different this month.`
+                            : 'Enter an amount for this month.'}
+                        </p>
+                        <div className="grid gap-4 py-4">
+                          <div className="grid gap-2">
+                            <Label htmlFor="amount">Base income</Label>
+                            <Input
+                              id="amount"
+                              type="number"
+                              step="0.01"
+                              min="0"
+                              placeholder="0.00"
+                              value={editAmount}
+                              onChange={(e) => setEditAmount(e.target.value)}
+                            />
+                          </div>
+                          {additionalIncome.length > 0 && (
+                            <div className="space-y-2">
+                              <Label>Additional income</Label>
+                              <ul className="space-y-1.5 text-sm">
+                                {additionalIncome.map((item) => (
+                                  <li
+                                    key={item.id}
+                                    className="flex items-center justify-between gap-2 rounded-md border border-border bg-muted/30 px-2 py-1.5"
+                                  >
+                                    <span>
+                                      {item.description || 'Other'}: $
+                                      {item.amount.toFixed(2)}
+                                    </span>
+                                    <Button
+                                      type="button"
+                                      variant="ghost"
+                                      size="icon"
+                                      className="h-7 w-7 text-muted-foreground hover:text-destructive"
+                                      onClick={() =>
+                                        removeAdditionalMutation.mutate(
+                                          item.id,
+                                        )
+                                      }
+                                      disabled={
+                                        removeAdditionalMutation.isPending
+                                      }
+                                    >
+                                      <Trash2 className="h-3.5 w-3.5" />
+                                    </Button>
+                                  </li>
+                                ))}
+                              </ul>
+                            </div>
+                          )}
+                          <div className="space-y-2">
+                            <Label>Add extra income</Label>
+                            <form
+                              onSubmit={handleAddAdditional}
+                              className="flex flex-wrap gap-2 items-center"
+                            >
+                              <Input
+                                type="text"
+                                placeholder="e.g. Sold item, Birthday Money"
+                                value={addDescription}
+                                onChange={(e) =>
+                                  setAddDescription(e.target.value)
+                                }
+                                className="flex-1 min-w-[200px]"
+                              />
+                              <Input
+                                type="number"
+                                step="0.01"
+                                min="0.01"
+                                placeholder="Amount"
+                                value={addAmount}
+                                onChange={(e) => setAddAmount(e.target.value)}
+                                className="w-[100px]"
+                              />
+                              <Button
+                                type="submit"
+                                variant="outline"
+                                disabled={
+                                  addIncomeMutation.isPending ||
+                                  !addAmount ||
+                                  parseFloat(addAmount) <= 0
+                                }
+                              >
+                                <Plus className="mr-1 h-3.5 w-3.5" />
+                                Add
+                              </Button>
+                            </form>
+                          </div>
+                        </div>
+                        <DialogFooter className="gap-2 sm:gap-0">
+                          {hasOverride && (
+                            <Button
+                              type="button"
+                              variant="outline"
+                              onClick={handleUseDefault}
+                              disabled={deleteMutation.isPending}
+                            >
+                              Use default
+                            </Button>
+                          )}
+                          <Button
+                            type="button"
+                            variant="outline"
+                            onClick={() => setEditOpen(false)}
+                          >
+                            Cancel
+                          </Button>
+                          <Button
+                            type="submit"
+                            disabled={
+                              upsertMutation.isPending ||
+                              editAmount === '' ||
+                              isNaN(parseFloat(editAmount)) ||
+                              parseFloat(editAmount) < 0
+                            }
+                          >
+                            {upsertMutation.isPending ? 'Saving...' : 'Save'}
+                          </Button>
+                        </DialogFooter>
+                      </form>
+                    </DialogContent>
+                  </Dialog>
+                  {hasOverride && (
+                    <span className="text-muted-foreground text-xs">
+                      (override)
+                    </span>
+                  )}
+                </div>
               </div>
               <div className="flex items-center gap-3">
                 <span className="text-sm font-medium w-20 shrink-0">
@@ -673,183 +823,6 @@ export function Dashboard() {
         </Card>
         );
       })()}
-
-      {/* Hero: Savings + compact Income */}
-      <div className="mt-6 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-        <div>
-          <p className="text-muted-foreground text-sm font-medium">
-            Savings this month
-          </p>
-          <p
-            className={`text-4xl font-bold sm:text-5xl ${
-              (data?.savings ?? 0) >= 0
-                ? 'text-[var(--positive)]'
-                : 'text-destructive'
-            }`}
-          >
-            ${data?.savings?.toFixed(2) ?? '0.00'}
-          </p>
-          <p className="text-muted-foreground mt-1 text-sm">
-            Total spend: ${data?.totalSpend?.toFixed(2) ?? '0.00'}
-          </p>
-        </div>
-        <div className="flex items-center gap-2">
-          <span className="text-muted-foreground text-sm">
-            Income:
-          </span>
-          <Dialog open={editOpen} onOpenChange={handleEditOpen}>
-            <DialogTrigger asChild>
-              <Button
-                variant="ghost"
-                size="sm"
-                className={`h-auto p-0 font-medium ${
-                  hasOverride
-                    ? 'text-primary'
-                    : 'text-muted-foreground hover:text-foreground'
-                }`}
-              >
-                ${data?.totalRevenue?.toFixed(2) ?? '0.00'}
-                <Pencil className="ml-1 h-3.5 w-3.5 opacity-70" />
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="text-foreground">
-              <form onSubmit={handleSaveOverride}>
-                <DialogHeader>
-                  <DialogTitle>
-                    Income for {monthName} {year}
-                  </DialogTitle>
-                </DialogHeader>
-                <p className="text-muted-foreground text-sm mt-2">
-                  {defaultIncome > 0
-                    ? `Your default is $${defaultIncome.toFixed(2)}/month. Override below if different this month.`
-                    : 'Enter an amount for this month.'}
-                </p>
-                <div className="grid gap-4 py-4">
-                  <div className="grid gap-2">
-                    <Label htmlFor="amount">Base income</Label>
-                    <Input
-                      id="amount"
-                      type="number"
-                      step="0.01"
-                      min="0"
-                      placeholder="0.00"
-                      value={editAmount}
-                      onChange={(e) => setEditAmount(e.target.value)}
-                    />
-                  </div>
-                  {additionalIncome.length > 0 && (
-                    <div className="space-y-2">
-                      <Label>Additional income</Label>
-                      <ul className="space-y-1.5 text-sm">
-                        {additionalIncome.map((item) => (
-                          <li
-                            key={item.id}
-                            className="flex items-center justify-between gap-2 rounded-md border border-border bg-muted/30 px-2 py-1.5"
-                          >
-                            <span>
-                              {item.description || 'Other'}: $
-                              {item.amount.toFixed(2)}
-                            </span>
-                            <Button
-                              type="button"
-                              variant="ghost"
-                              size="icon"
-                              className="h-7 w-7 text-muted-foreground hover:text-destructive"
-                              onClick={() =>
-                                removeAdditionalMutation.mutate(
-                                  item.id,
-                                )
-                              }
-                              disabled={
-                                removeAdditionalMutation.isPending
-                              }
-                            >
-                              <Trash2 className="h-3.5 w-3.5" />
-                            </Button>
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                  )}
-                  <div className="space-y-2">
-                    <Label>Add extra income</Label>
-                    <form
-                      onSubmit={handleAddAdditional}
-                      className="flex flex-wrap gap-2 items-center"
-                    >
-                      <Input
-                        type="text"
-                        placeholder="e.g. Sold item, Birthday Money"
-                        value={addDescription}
-                        onChange={(e) =>
-                          setAddDescription(e.target.value)
-                        }
-                        className="flex-1 min-w-[200px]"
-                      />
-                      <Input
-                        type="number"
-                        step="0.01"
-                        min="0.01"
-                        placeholder="Amount"
-                        value={addAmount}
-                        onChange={(e) => setAddAmount(e.target.value)}
-                        className="w-[100px]"
-                      />
-                      <Button
-                        type="submit"
-                        variant="outline"
-                        disabled={
-                          addIncomeMutation.isPending ||
-                          !addAmount ||
-                          parseFloat(addAmount) <= 0
-                        }
-                      >
-                        <Plus className="mr-1 h-3.5 w-3.5" />
-                        Add
-                      </Button>
-                    </form>
-                  </div>
-                </div>
-                <DialogFooter className="gap-2 sm:gap-0">
-                  {hasOverride && (
-                    <Button
-                      type="button"
-                      variant="outline"
-                      onClick={handleUseDefault}
-                      disabled={deleteMutation.isPending}
-                    >
-                      Use default
-                    </Button>
-                  )}
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={() => setEditOpen(false)}
-                  >
-                    Cancel
-                  </Button>
-                  <Button
-                    type="submit"
-                    disabled={
-                      upsertMutation.isPending ||
-                      editAmount === '' ||
-                      isNaN(parseFloat(editAmount)) ||
-                      parseFloat(editAmount) < 0
-                    }
-                  >
-                    {upsertMutation.isPending ? 'Saving...' : 'Save'}
-                  </Button>
-                </DialogFooter>
-              </form>
-            </DialogContent>
-          </Dialog>
-          {hasOverride && (
-            <span className="text-muted-foreground text-xs">
-              (override)
-            </span>
-          )}
-        </div>
-      </div>
 
       {/* Fixed bills section - compact */}
       {(fixedCategories.length > 0 || expectedFixed.length > 0) && (
