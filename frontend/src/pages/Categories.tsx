@@ -289,17 +289,20 @@ export function Categories() {
                   <Label htmlFor="create-fixed">Fixed monthly cost</Label>
                 </div>
                 <div className="grid gap-2">
-                  <Label htmlFor="create-keywords">Keywords (optional)</Label>
+                  <Label htmlFor="create-keywords">
+                    Import keywords (optional)
+                  </Label>
                   <Input
                     id="create-keywords"
                     value={createKeywords}
                     onChange={(e) => setCreateKeywords(e.target.value)}
-                    placeholder="netflix, hulu, spotify"
+                    placeholder="dining, Food & Drink"
                   />
                   <p className="text-xs text-muted-foreground">
-                    Comma-separated. Import will auto-categorize when Chase
-                    category matches (e.g. &quot;Food &amp; Drink&quot;) or when
-                    transaction description contains a keyword (e.g. &quot;netflix&quot;).
+                    The category name is always used for matching. Add extras
+                    here to map Chase categories or match descriptions (e.g.
+                    &quot;dining&quot; for Eating Out, &quot;Food &amp;
+                    Drink&quot; for Chase&apos;s type).
                   </p>
                 </div>
               </div>
@@ -417,9 +420,11 @@ export function Categories() {
         <CardHeader>
           <CardTitle>Categories</CardTitle>
           <p className="text-muted-foreground text-sm">
-            Edit names, set monthly budgets, add keywords for import matching, or
-            delete. Keywords map Chase categories (e.g. &quot;Food &amp;
-            Drink&quot;) or match descriptions (e.g. &quot;netflix&quot;).
+            Edit names, set monthly budgets, or delete. Import keywords
+            auto-categorize transactions: the category name is always used (e.g.
+            &quot;Netflix&quot; matches &quot;netflix&quot;), and you can add
+            extras like &quot;dining&quot; or &quot;Food &amp; Drink&quot; to map
+            Chase types.
           </p>
         </CardHeader>
         <CardContent>
@@ -429,7 +434,9 @@ export function Categories() {
                 <TableHead>Name</TableHead>
                 <TableHead>Monthly budget</TableHead>
                 <TableHead className="w-[60px]">Fixed</TableHead>
-                <TableHead className="min-w-[120px]">Keywords</TableHead>
+                <TableHead className="min-w-[120px]">
+                  Import keywords
+                </TableHead>
                 <TableHead>Active</TableHead>
                 <TableHead className="w-[140px]">Actions</TableHead>
               </TableRow>
@@ -530,7 +537,7 @@ export function Categories() {
                         <Input
                           value={keywordsInput}
                           onChange={(e) => setKeywordsInput(e.target.value)}
-                          placeholder="netflix, hulu"
+                          placeholder="dining, Food & Drink"
                           className="max-w-[160px]"
                           autoFocus
                         />
@@ -557,7 +564,7 @@ export function Categories() {
                       >
                         {(cat.keywords ?? []).length > 0
                           ? (cat.keywords ?? []).join(", ")
-                          : "Add keywords"}
+                          : "Add (name used by default)"}
                       </button>
                     )}
                   </TableCell>
