@@ -336,24 +336,29 @@ export function Transactions() {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead className="w-10">
-                      <input
-                        type="checkbox"
-                        checked={isAllSelected}
-                        ref={(el) => {
-                          if (el) el.indeterminate = isSomeSelected && !isAllSelected;
-                        }}
-                        onChange={toggleSelectAll}
-                        title="Select all on page"
-                        className="h-4 w-4 rounded border-input"
-                      />
+                    <TableHead className="w-24">
+                      <label className="flex cursor-pointer items-center gap-2">
+                        <input
+                          type="checkbox"
+                          checked={isAllSelected}
+                          ref={(el) => {
+                            if (el) el.indeterminate = isSomeSelected && !isAllSelected;
+                          }}
+                          onChange={toggleSelectAll}
+                          title="Select all on page"
+                          className="h-4 w-4 rounded border-input"
+                        />
+                        <span className="text-xs font-medium text-muted-foreground">
+                          Select all
+                        </span>
+                      </label>
                     </TableHead>
-                    <TableHead className="w-10">Exclude</TableHead>
+                    <TableHead className="w-20">Exclude</TableHead>
                     <TableHead>Date</TableHead>
-                    <TableHead>Description</TableHead>
+                    <TableHead className="w-[220px]">Description</TableHead>
                     <TableHead className="text-right">Amount</TableHead>
-                    <TableHead>Category</TableHead>
-                    <TableHead>Notes</TableHead>
+                    <TableHead className="w-[160px]">Category</TableHead>
+                    <TableHead className="w-[240px]">Notes</TableHead>
                     <TableHead className="w-10"></TableHead>
                   </TableRow>
                 </TableHeader>
@@ -389,11 +394,16 @@ export function Transactions() {
                       <TableCell>
                         {new Date(tx.date).toLocaleDateString()}
                       </TableCell>
-                      <TableCell>{tx.description}</TableCell>
+                      <TableCell
+                        className="max-w-[220px] truncate"
+                        title={tx.description}
+                      >
+                        {tx.description}
+                      </TableCell>
                       <TableCell className="text-right font-mono">
                         {parseFloat(tx.amount) >= 0 ? tx.amount : `(${tx.amount})`}
                       </TableCell>
-                      <TableCell>
+                      <TableCell className="w-[160px]">
                         <Combobox
                           options={categories.map((c) => ({
                             value: c.id,
@@ -410,12 +420,12 @@ export function Transactions() {
                           searchPlaceholder="Type to search..."
                           allowEmpty
                           emptyOption={{ value: null, label: "—" }}
-                          triggerClassName="w-[140px]"
+                          triggerClassName="w-[160px]"
                         />
                       </TableCell>
-                      <TableCell>
+                      <TableCell className="w-[240px]">
                         <Input
-                          className="max-w-[200px]"
+                          className="w-full max-w-[240px]"
                           placeholder="Notes"
                           defaultValue={tx.notes ?? ""}
                           onBlur={(e) => {

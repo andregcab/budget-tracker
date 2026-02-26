@@ -64,13 +64,13 @@ export function Combobox<T extends string>({
           aria-expanded={open}
           disabled={disabled}
           className={cn(
-            "flex h-9 w-full justify-between font-normal",
+            "flex h-9 w-full min-w-0 justify-between gap-2 font-normal",
             !value && !(allowEmpty && value == null) && "text-muted-foreground",
             triggerClassName
           )}
         >
-          {displayValue}
-          <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+          <span className="min-w-0 truncate text-left">{displayValue}</span>
+          <ChevronDown className="h-4 w-4 shrink-0 opacity-50" />
         </Button>
       </PopoverTrigger>
       <PopoverContent className={cn("w-[var(--radix-popover-trigger-width)] p-0", className)} align="start">
