@@ -28,7 +28,7 @@ export const DEFAULT_CATEGORIES: DefaultCategory[] = [
       'coffee',
     ],
   },
-  { name: 'Rent', isFixed: true, keywords: ['rent', 'housing'] },
+  { name: 'Rent', isFixed: true, keywords: ['rent', 'housing', 'home'] },
   {
     name: 'Utilities',
     isFixed: true,
@@ -57,8 +57,12 @@ export const DEFAULT_CATEGORIES: DefaultCategory[] = [
     isFixed: false,
     keywords: [
       'travel',
+      'transportation',
       'airline',
+      'airlines',
+      'flight',
       'hotel',
+      'lodging',
       'car rental',
       'uber',
       'lyft',
@@ -109,7 +113,7 @@ export const DEFAULT_CATEGORIES: DefaultCategory[] = [
   {
     name: 'Uncategorized',
     isFixed: false,
-    keywords: ['uncategorized', 'other', 'miscellaneous'],
+    keywords: ['uncategorized', 'other', 'miscellaneous', 'professional services'],
   },
 ];
 

@@ -26,13 +26,11 @@ describe('CategoriesService', () => {
     service = module.get<CategoriesService>(CategoriesService);
   });
 
-  it('findAllActive returns active global and user categories', async () => {
+  it('findAllActive returns active user categories', async () => {
     mockPrisma.category.count.mockResolvedValue(1);
-    mockPrisma.category.findMany
-      .mockResolvedValueOnce([]) // migrateTransactionsFromGlobalToUser: no globals
-      .mockResolvedValue([
-        { id: 'cat-1', name: 'Groceries', userId: 'user-1' },
-      ]);
+    mockPrisma.category.findMany.mockResolvedValue([
+      { id: 'cat-1', name: 'Groceries', userId: 'user-1' },
+    ]);
     const result = await service.findAllActive('user-1');
     expect(result).toHaveLength(1);
     expect(mockPrisma.category.findMany).toHaveBeenCalledWith({

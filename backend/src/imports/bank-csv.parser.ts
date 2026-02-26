@@ -21,7 +21,10 @@ const HEADER_ALIASES: Record<string, string> = {
   type: 'type',
   balance: 'balance',
   category: 'category',
-  'chase category': 'category', // vendor-specific alias for category column
+  'chase category': 'category',
+  'transaction category': 'category',
+  'category type': 'category',
+  'category name': 'category',
 };
 
 function normalizeHeader(h: string): string {
@@ -92,7 +95,9 @@ export function parseBankCsv(csvContent: string): ParsedRow[] {
         amount: parseAmount(amountStr),
         type: typeCol ? (row[typeCol] ?? '').trim() : '',
         balance: balanceCol ? row[balanceCol] : undefined,
-        category: categoryCol ? (row[categoryCol] ?? '').trim() : undefined,
+        category: categoryCol
+          ? (row[categoryCol] ?? '').replace(/^["'\s]+|["'\s]+$/g, '').trim()
+          : undefined,
       });
     } catch {
       // skip bad row

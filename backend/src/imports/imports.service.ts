@@ -2,6 +2,7 @@ import { BadRequestException, Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CategoriesService } from '../categories/categories.service';
 import { externalId, parseBankCsv, ParsedRow } from './bank-csv.parser';
+import { matchCategory, type CategoryMatchInput } from './category-matcher';
 
 export interface ImportResult {
   jobId: string;
@@ -49,59 +50,47 @@ export class ImportsService {
       },
     });
 
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-call -- NestJS DI; CategoriesService type resolves at runtime
     await this.categoriesService.ensureUserCategories(userId);
 
     let imported = 0;
     let skipped = 0;
     let errors = 0;
 
-    const uncategorizedId = await this.prisma.category
-      .findFirst({
-        where: { name: 'Uncategorized', userId: null, isActive: true },
-        select: { id: true },
-      })
-      .then((c) => c?.id ?? null);
-
     const categoryByName = new Map<string, string>();
     const categoriesWithKeywords: { id: string; keywords: string[] }[] = [];
     const loadCategories = async () => {
+      // Use only user categories so transactions get user IDs and match the dropdown
       const list = await this.prisma.category.findMany({
-        where: {
-          isActive: true,
-          OR: [{ userId: null }, { userId }],
-        },
+        where: { userId, isActive: true },
         select: { id: true, name: true, keywords: true },
-        orderBy: { userId: 'desc' },
+        orderBy: { name: 'asc' },
       });
       list.forEach((c) => categoryByName.set(c.name.toLowerCase(), c.id));
       list.forEach((c) => {
         const explicit = c.keywords?.filter((k) => k?.trim()) ?? [];
-        const nameLower = c.name.toLowerCase().trim();
         const effective = [
-          ...new Set([
-            nameLower,
-            ...explicit.map((k) => k.toLowerCase().trim()),
-          ]),
+          ...new Set(explicit.map((k) => k.toLowerCase().trim())),
         ].filter(Boolean);
         categoriesWithKeywords.push({ id: c.id, keywords: effective });
       });
     };
     await loadCategories();
 
-    function matchCategoryByKeyword(text: string): string | null {
-      if (!text?.trim()) return null;
-      const textLower = text.toLowerCase();
-      for (const cat of categoriesWithKeywords) {
-        for (const kw of cat.keywords) {
-          if (!kw?.trim()) continue;
-          const kwLower = kw.toLowerCase();
-          const matches =
-            textLower.includes(kwLower) || kwLower.includes(textLower);
-          if (matches) return cat.id;
-        }
-      }
-      return null;
-    }
+    const matchInput: CategoryMatchInput = {
+      categoryByName,
+      categoriesWithKeywords,
+    };
+
+    const uncategorizedId =
+      categoryByName.get('uncategorized') ??
+      (await this.prisma.category
+        .findFirst({
+          where: { name: 'Uncategorized', isActive: true },
+          select: { id: true },
+        })
+        .then((c) => c?.id ?? null)) ??
+      null;
 
     try {
       for (const row of rows) {
@@ -115,13 +104,11 @@ export class ImportsService {
         }
 
         let categoryId: string | null = null;
-        categoryId = matchCategoryByKeyword(row.description);
-        if (!categoryId && row.category) {
-          // Exact name match first (pre-keywords behavior); keyword match for fuzzy mapping (e.g. "Food & Drink" → Restaurants)
-          categoryId =
-            categoryByName.get(row.category.toLowerCase().trim()) ??
-            matchCategoryByKeyword(row.category) ??
-            uncategorizedId;
+        if (row.category) {
+          categoryId = matchCategory(row.category, matchInput);
+        }
+        if (!categoryId) {
+          categoryId = matchCategory(row.description, matchInput);
         }
         if (!categoryId) categoryId = uncategorizedId;
 
