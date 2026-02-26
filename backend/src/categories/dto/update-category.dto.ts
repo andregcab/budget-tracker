@@ -1,4 +1,4 @@
-import { IsBoolean, IsOptional, IsString } from 'class-validator';
+import { IsArray, IsBoolean, IsOptional, IsString } from 'class-validator';
 
 export class UpdateCategoryDto {
   @IsString()
@@ -8,4 +8,13 @@ export class UpdateCategoryDto {
   @IsBoolean()
   @IsOptional()
   isActive?: boolean;
+
+  @IsBoolean()
+  @IsOptional()
+  isFixed?: boolean;
+
+  @IsArray()
+  @IsString({ each: true })
+  @IsOptional()
+  keywords?: string[];
 }

@@ -54,6 +54,8 @@ model Category {
   name      String
   isDefault Boolean  @default(true)
   isActive  Boolean  @default(true)
+  isFixed   Boolean  @default(false)
+  keywords  String[] @default([])
   createdAt DateTime @default(now())
 
   user          User?            @relation(fields: [userId], references: [id], onDelete: Cascade)

@@ -26,7 +26,11 @@ export class CategoryBudgetController {
 
   @Put()
   upsert(@CurrentUser() user: UserPayload, @Body() dto: UpsertBudgetDto) {
-    return this.categoryBudgetService.upsert(user.id, dto.categoryId, dto.amount);
+    return this.categoryBudgetService.upsert(
+      user.id,
+      dto.categoryId,
+      dto.amount,
+    );
   }
 
   @Delete(':categoryId')

@@ -57,17 +57,43 @@ export class ImportsService {
       .then((c) => c?.id ?? null);
 
     const categoryByName = new Map<string, string>();
+    const categoriesWithKeywords: { id: string; keywords: string[] }[] = [];
     const loadCategories = async () => {
       const list = await this.prisma.category.findMany({
         where: {
           isActive: true,
           OR: [{ userId: null }, { userId }],
         },
-        select: { id: true, name: true },
+        select: { id: true, name: true, keywords: true },
+        orderBy: { userId: 'desc' },
       });
       list.forEach((c) => categoryByName.set(c.name.toLowerCase(), c.id));
+      list.forEach((c) => {
+        const kw = c.keywords?.filter((k) => k?.trim()) ?? [];
+        if (kw.length > 0) {
+          categoriesWithKeywords.push({ id: c.id, keywords: kw });
+        }
+      });
     };
     await loadCategories();
+
+    function matchCategoryByKeyword(
+      text: string,
+      exactMatch = false,
+    ): string | null {
+      const textLower = text.toLowerCase();
+      for (const cat of categoriesWithKeywords) {
+        for (const kw of cat.keywords) {
+          if (!kw?.trim()) continue;
+          const kwLower = kw.toLowerCase();
+          const matches = exactMatch
+            ? textLower === kwLower
+            : textLower.includes(kwLower);
+          if (matches) return cat.id;
+        }
+      }
+      return null;
+    }
 
     try {
       for (const row of rows) {
@@ -83,9 +109,12 @@ export class ImportsService {
         let categoryId: string | null = null;
         if (row.category) {
           categoryId =
-            categoryByName.get(row.category.toLowerCase()) ?? uncategorizedId;
+            matchCategoryByKeyword(row.category, false) ??
+            categoryByName.get(row.category.toLowerCase()) ??
+            uncategorizedId;
         } else {
-          categoryId = uncategorizedId;
+          categoryId =
+            matchCategoryByKeyword(row.description, false) ?? uncategorizedId;
         }
 
         try {

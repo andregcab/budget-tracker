@@ -43,7 +43,7 @@ export class TransactionsService {
       this.prisma.transaction.findMany({
         where,
         include: { category: { select: { id: true, name: true } } },
-        orderBy: { date: 'desc' },
+        orderBy: [{ date: 'desc' }, { id: 'asc' }],
         skip,
         take: limit,
       }),

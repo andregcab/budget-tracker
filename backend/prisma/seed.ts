@@ -28,6 +28,8 @@ const DEFAULT_CATEGORIES = [
   'Uncategorized',
 ];
 
+const FIXED_CATEGORIES = ['Rent', 'Subscriptions', 'Insurance'];
+
 async function main() {
   const existing = await prisma.category.count({ where: { userId: null } });
   if (existing > 0) {
@@ -40,6 +42,7 @@ async function main() {
       name,
       isDefault: true,
       isActive: true,
+      isFixed: FIXED_CATEGORIES.includes(name),
     })),
   });
   console.log(`Seeded ${DEFAULT_CATEGORIES.length} default categories.`);

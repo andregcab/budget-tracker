@@ -6,7 +6,10 @@ import {
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
 import { PrismaService } from '../prisma/prisma.service';
-import { DEFAULT_CATEGORIES } from '../categories/default-categories';
+import {
+  DEFAULT_CATEGORIES,
+  isDefaultCategoryFixed,
+} from '../categories/default-categories';
 
 @Injectable()
 export class AuthService {
@@ -30,6 +33,7 @@ export class AuthService {
             name,
             isDefault: true,
             isActive: true,
+            isFixed: isDefaultCategoryFixed(name),
           })),
         },
       },
@@ -40,7 +44,8 @@ export class AuthService {
       user: {
         id: user.id,
         email: user.email,
-        monthlyIncome: user.monthlyIncome != null ? Number(user.monthlyIncome) : null,
+        monthlyIncome:
+          user.monthlyIncome != null ? Number(user.monthlyIncome) : null,
       },
       token,
     };
@@ -49,7 +54,12 @@ export class AuthService {
   async login(email: string, password: string) {
     const user = await this.prisma.user.findUnique({
       where: { email },
-      select: { id: true, email: true, passwordHash: true, monthlyIncome: true },
+      select: {
+        id: true,
+        email: true,
+        passwordHash: true,
+        monthlyIncome: true,
+      },
     });
     if (!user) {
       throw new UnauthorizedException('Invalid email or password');
@@ -63,7 +73,8 @@ export class AuthService {
       user: {
         id: user.id,
         email: user.email,
-        monthlyIncome: user.monthlyIncome != null ? Number(user.monthlyIncome) : null,
+        monthlyIncome:
+          user.monthlyIncome != null ? Number(user.monthlyIncome) : null,
       },
       token,
     };
@@ -80,14 +91,12 @@ export class AuthService {
     return {
       id: user.id,
       email: user.email,
-      monthlyIncome: user.monthlyIncome != null ? Number(user.monthlyIncome) : null,
+      monthlyIncome:
+        user.monthlyIncome != null ? Number(user.monthlyIncome) : null,
     };
   }
 
-  async updateMe(
-    userId: string,
-    dto: { monthlyIncome?: number },
-  ) {
+  async updateMe(userId: string, dto: { monthlyIncome?: number }) {
     const user = await this.prisma.user.update({
       where: { id: userId },
       data: {
@@ -100,7 +109,8 @@ export class AuthService {
     return {
       id: user.id,
       email: user.email,
-      monthlyIncome: user.monthlyIncome != null ? Number(user.monthlyIncome) : null,
+      monthlyIncome:
+        user.monthlyIncome != null ? Number(user.monthlyIncome) : null,
     };
   }
 }

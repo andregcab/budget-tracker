@@ -17,7 +17,9 @@ export class AnalyticsService {
           amount: { lt: 0 },
           isExcluded: false,
         },
-        include: { category: { select: { id: true, name: true } } },
+        include: {
+          category: { select: { id: true, name: true, isFixed: true } },
+        },
       }),
       this.prisma.revenue.findUnique({
         where: {
@@ -32,16 +34,20 @@ export class AnalyticsService {
 
     const budgets = await this.prisma.categoryBudget.findMany({
       where: { userId },
-      include: { category: { select: { id: true, name: true } } },
+      include: {
+        category: { select: { id: true, name: true, isFixed: true } },
+      },
     });
     const budgetByCategory: Record<string, number> = {};
+    const isFixedByCategory: Record<string, boolean> = {};
     for (const b of budgets) {
       budgetByCategory[b.categoryId] = Number(b.amount);
+      isFixedByCategory[b.categoryId] = b.category.isFixed;
     }
 
     const byCategory: Record<
       string,
-      { name: string; total: number; budget: number }
+      { name: string; total: number; budget: number; isFixed: boolean }
     > = {};
     let totalSpend = 0;
     for (const tx of transactions) {
@@ -54,6 +60,7 @@ export class AnalyticsService {
           name,
           total: 0,
           budget: budgetByCategory[key] ?? 0,
+          isFixed: tx.category?.isFixed ?? isFixedByCategory[key] ?? false,
         };
       }
       byCategory[key].total += Math.abs(amt);
@@ -65,6 +72,7 @@ export class AnalyticsService {
           name: cat?.name ?? 'Unknown',
           total: 0,
           budget,
+          isFixed: isFixedByCategory[catId] ?? false,
         };
       }
     }
@@ -83,11 +91,12 @@ export class AnalyticsService {
       totalRevenue: Math.round(totalRevenue * 100) / 100,
       savings: Math.round(savings * 100) / 100,
       byCategory: Object.entries(byCategory).map(
-        ([id, { name, total, budget }]) => ({
+        ([id, { name, total, budget, isFixed }]) => ({
           id,
           name,
           total: Math.round(total * 100) / 100,
           budget: Math.round(budget * 100) / 100,
+          isFixed,
         }),
       ),
     };

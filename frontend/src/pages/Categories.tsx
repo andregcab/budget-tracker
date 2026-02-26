@@ -29,6 +29,8 @@ type Category = {
   name: string;
   isDefault: boolean;
   isActive: boolean;
+  isFixed: boolean;
+  keywords: string[];
   userId: string | null;
 };
 
@@ -42,13 +44,22 @@ async function getBudgets(): Promise<CategoryBudget[]> {
   return api("/category-budgets");
 }
 
-async function createCategory(body: { name: string }) {
+async function createCategory(body: {
+  name: string;
+  isFixed?: boolean;
+  keywords?: string[];
+}) {
   return api("/categories", { method: "POST", body: JSON.stringify(body) });
 }
 
 async function updateCategory(
   id: string,
-  body: { name?: string; isActive?: boolean }
+  body: {
+    name?: string;
+    isActive?: boolean;
+    isFixed?: boolean;
+    keywords?: string[];
+  }
 ) {
   return api(`/categories/${id}`, { method: "PATCH", body: JSON.stringify(body) });
 }
@@ -93,9 +104,14 @@ export function Categories() {
 
   const [createOpen, setCreateOpen] = useState(false);
   const [createName, setCreateName] = useState("");
+  const [createIsFixed, setCreateIsFixed] = useState(false);
+  const [createKeywords, setCreateKeywords] = useState("");
   const [editId, setEditId] = useState<string | null>(null);
   const [editName, setEditName] = useState("");
+  const [editIsFixed, setEditIsFixed] = useState(false);
   const [budgetEditId, setBudgetEditId] = useState<string | null>(null);
+  const [keywordsEditId, setKeywordsEditId] = useState<string | null>(null);
+  const [keywordsInput, setKeywordsInput] = useState("");
   const [budgetAmount, setBudgetAmount] = useState("");
   const [deleteTarget, setDeleteTarget] = useState<{
     id: string;
@@ -111,12 +127,24 @@ export function Categories() {
       queryClient.invalidateQueries({ queryKey: ["categories"] });
       setCreateOpen(false);
       setCreateName("");
+      setCreateIsFixed(false);
+      setCreateKeywords("");
     },
   });
 
   const updateMutation = useMutation({
-    mutationFn: ({ id, body }: { id: string; body: { name?: string; isActive?: boolean } }) =>
-      updateCategory(id, body),
+    mutationFn: ({
+      id,
+      body,
+    }: {
+      id: string;
+      body: {
+        name?: string;
+        isActive?: boolean;
+        isFixed?: boolean;
+        keywords?: string[];
+      };
+    }) => updateCategory(id, body),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["categories"] });
       queryClient.invalidateQueries({ queryKey: ["transactions"] });
@@ -166,15 +194,53 @@ export function Categories() {
     },
   });
 
+  function parseKeywords(s: string): string[] {
+    return s
+      .split(/[,;]/)
+      .map((k) => k.trim())
+      .filter(Boolean);
+  }
+
   function handleCreate(e: React.FormEvent) {
     e.preventDefault();
-    createMutation.mutate({ name: createName });
+    createMutation.mutate({
+      name: createName,
+      isFixed: createIsFixed,
+      keywords: parseKeywords(createKeywords),
+    });
   }
 
   function handleEditSave(e: React.FormEvent) {
     e.preventDefault();
     if (editId && editName.trim()) {
-      updateMutation.mutate({ id: editId, body: { name: editName.trim() } });
+      updateMutation.mutate({
+        id: editId,
+        body: { name: editName.trim(), isFixed: editIsFixed },
+      });
+    }
+  }
+
+  const keywordsMutation = useMutation({
+    mutationFn: ({
+      id,
+      keywords,
+    }: {
+      id: string;
+      keywords: string[];
+    }) => updateCategory(id, { keywords }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["categories"] });
+      setKeywordsEditId(null);
+    },
+  });
+
+  function handleKeywordsSave(e: React.FormEvent) {
+    e.preventDefault();
+    if (keywordsEditId) {
+      keywordsMutation.mutate({
+        id: keywordsEditId,
+        keywords: parseKeywords(keywordsInput),
+      });
     }
   }
 
@@ -212,6 +278,29 @@ export function Categories() {
                     onChange={(e) => setCreateName(e.target.value)}
                     required
                   />
+                </div>
+                <div className="flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    id="create-fixed"
+                    checked={createIsFixed}
+                    onChange={(e) => setCreateIsFixed(e.target.checked)}
+                  />
+                  <Label htmlFor="create-fixed">Fixed monthly cost</Label>
+                </div>
+                <div className="grid gap-2">
+                  <Label htmlFor="create-keywords">Keywords (optional)</Label>
+                  <Input
+                    id="create-keywords"
+                    value={createKeywords}
+                    onChange={(e) => setCreateKeywords(e.target.value)}
+                    placeholder="netflix, hulu, spotify"
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    Comma-separated. Import will auto-categorize when Chase
+                    category matches (e.g. &quot;Food &amp; Drink&quot;) or when
+                    transaction description contains a keyword (e.g. &quot;netflix&quot;).
+                  </p>
                 </div>
               </div>
               <DialogFooter>
@@ -328,8 +417,9 @@ export function Categories() {
         <CardHeader>
           <CardTitle>Categories</CardTitle>
           <p className="text-muted-foreground text-sm">
-            Edit names, set monthly budgets, or delete. Changes apply to all
-            transactions using that category.
+            Edit names, set monthly budgets, add keywords for import matching, or
+            delete. Keywords map Chase categories (e.g. &quot;Food &amp;
+            Drink&quot;) or match descriptions (e.g. &quot;netflix&quot;).
           </p>
         </CardHeader>
         <CardContent>
@@ -338,6 +428,8 @@ export function Categories() {
               <TableRow>
                 <TableHead>Name</TableHead>
                 <TableHead>Monthly budget</TableHead>
+                <TableHead className="w-[60px]">Fixed</TableHead>
+                <TableHead className="min-w-[120px]">Keywords</TableHead>
                 <TableHead>Active</TableHead>
                 <TableHead className="w-[140px]">Actions</TableHead>
               </TableRow>
@@ -345,26 +437,28 @@ export function Categories() {
             <TableBody>
               {categories.map((cat) => (
                 <TableRow key={cat.id}>
-                  <TableCell>
+                  <TableCell className="min-w-[180px]">
                     {editId === cat.id ? (
-                      <form onSubmit={handleEditSave} className="flex gap-2">
+                      <form
+                        id={`edit-form-${cat.id}`}
+                        onSubmit={handleEditSave}
+                        className="flex items-center gap-2"
+                        onClick={(e) => e.stopPropagation()}
+                      >
                         <Input
                           value={editName}
                           onChange={(e) => setEditName(e.target.value)}
-                          className="max-w-[200px]"
+                          className="w-full min-w-0"
                           autoFocus
                         />
-                        <Button type="submit" size="sm">
-                          Save
-                        </Button>
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => setEditId(null)}
-                        >
-                          Cancel
-                        </Button>
+                        <label className="flex items-center gap-1.5 text-sm shrink-0">
+                          <input
+                            type="checkbox"
+                            checked={editIsFixed}
+                            onChange={(e) => setEditIsFixed(e.target.checked)}
+                          />
+                          Fixed
+                        </label>
                       </form>
                     ) : (
                       <span>{cat.name}</span>
@@ -420,13 +514,74 @@ export function Categories() {
                       >
                         {budgetByCategory[cat.id] != null
                           ? `$${budgetByCategory[cat.id].toFixed(2)}`
-                          : "Set budget"}
+                          : cat.isFixed
+                            ? "Set amount"
+                            : "Set budget"}
+                      </button>
+                    )}
+                  </TableCell>
+                  <TableCell>{cat.isFixed ? "Yes" : "—"}</TableCell>
+                  <TableCell className="min-w-[120px]">
+                    {keywordsEditId === cat.id ? (
+                      <form
+                        onSubmit={handleKeywordsSave}
+                        className="flex gap-2 items-center"
+                      >
+                        <Input
+                          value={keywordsInput}
+                          onChange={(e) => setKeywordsInput(e.target.value)}
+                          placeholder="netflix, hulu"
+                          className="max-w-[160px]"
+                          autoFocus
+                        />
+                        <Button type="submit" size="sm">
+                          Save
+                        </Button>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => setKeywordsEditId(null)}
+                        >
+                          Cancel
+                        </Button>
+                      </form>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setKeywordsEditId(cat.id);
+                          setKeywordsInput((cat.keywords ?? []).join(", "));
+                        }}
+                        className="text-left hover:underline text-muted-foreground text-sm"
+                      >
+                        {(cat.keywords ?? []).length > 0
+                          ? (cat.keywords ?? []).join(", ")
+                          : "Add keywords"}
                       </button>
                     )}
                   </TableCell>
                   <TableCell>{cat.isActive ? "Yes" : "No"}</TableCell>
-                  <TableCell>
-                    {editId !== cat.id && budgetEditId !== cat.id && (
+                  <TableCell className="w-[140px]">
+                    {editId === cat.id ? (
+                      <div className="flex gap-1">
+                        <Button
+                          type="submit"
+                          form={`edit-form-${cat.id}`}
+                          size="sm"
+                        >
+                          Save
+                        </Button>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => setEditId(null)}
+                        >
+                          Cancel
+                        </Button>
+                      </div>
+                    ) : budgetEditId !== cat.id ? (
                       <div className="flex gap-1">
                         <Button
                           variant="ghost"
@@ -435,6 +590,7 @@ export function Categories() {
                           onClick={() => {
                             setEditId(cat.id);
                             setEditName(cat.name);
+                            setEditIsFixed(cat.isFixed);
                           }}
                           title="Edit name"
                         >
@@ -467,7 +623,7 @@ export function Categories() {
                           {cat.isActive ? "Deactivate" : "Activate"}
                         </Button>
                       </div>
-                    )}
+                    ) : null}
                   </TableCell>
                 </TableRow>
               ))}

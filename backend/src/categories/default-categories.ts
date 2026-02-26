@@ -1,3 +1,5 @@
+const FIXED_DEFAULT_CATEGORIES = ['Rent', 'Subscriptions', 'Insurance'];
+
 export const DEFAULT_CATEGORIES = [
   'Groceries',
   'Restaurants',
@@ -16,3 +18,7 @@ export const DEFAULT_CATEGORIES = [
   'Transfer',
   'Uncategorized',
 ];
+
+export function isDefaultCategoryFixed(name: string): boolean {
+  return FIXED_DEFAULT_CATEGORIES.includes(name);
+}

@@ -25,7 +25,13 @@ type MonthlySummary = {
   totalSpend: number;
   totalRevenue: number;
   savings: number;
-  byCategory: { id: string; name: string; total: number; budget: number }[];
+  byCategory: {
+    id: string;
+    name: string;
+    total: number;
+    budget: number;
+    isFixed: boolean;
+  }[];
 };
 
 async function getMonthlySummary(
@@ -142,8 +148,18 @@ export function Dashboard() {
       name: c.name,
       total: c.total,
       budget: c.budget,
+      isFixed: c.isFixed,
       over: c.budget > 0 && c.total > c.budget,
     })) ?? [];
+
+  const fixedTotal =
+    chartData
+      .filter((c) => c.isFixed)
+      .reduce((sum, c) => sum + c.total, 0) ?? 0;
+  const variableTotal =
+    chartData
+      .filter((c) => !c.isFixed)
+      .reduce((sum, c) => sum + c.total, 0) ?? 0;
 
   return (
     <div>
@@ -183,7 +199,7 @@ export function Dashboard() {
         </select>
       </div>
 
-      <div className="mt-4 grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+      <div className="mt-4 grid gap-4 md:grid-cols-2 lg:grid-cols-5">
         <Card>
           <CardHeader>
             <CardTitle>Total spend</CardTitle>
@@ -191,6 +207,32 @@ export function Dashboard() {
           <CardContent>
             <p className="text-3xl font-bold">
               ${data?.totalSpend?.toFixed(2) ?? "0.00"}
+            </p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader>
+            <CardTitle>Fixed costs</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-3xl font-bold">
+              ${fixedTotal.toFixed(2)}
+            </p>
+            <p className="text-muted-foreground text-xs mt-1">
+              Rent, subscriptions, insurance, etc.
+            </p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader>
+            <CardTitle>Variable spending</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-3xl font-bold">
+              ${variableTotal.toFixed(2)}
+            </p>
+            <p className="text-muted-foreground text-xs mt-1">
+              Groceries, restaurants, shopping, etc.
             </p>
           </CardContent>
         </Card>
@@ -328,7 +370,8 @@ export function Dashboard() {
                     ${c.total.toFixed(2)}
                     {c.budget > 0 && (
                       <span className="ml-1">
-                        / ${c.budget.toFixed(2)} budget
+                        / ${c.budget.toFixed(2)}{" "}
+                        {c.isFixed ? "expected" : "budget"}
                       </span>
                     )}
                   </span>

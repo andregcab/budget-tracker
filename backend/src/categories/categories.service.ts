@@ -1,8 +1,12 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
+import { Prisma } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateCategoryDto } from './dto/create-category.dto';
 import { UpdateCategoryDto } from './dto/update-category.dto';
-import { DEFAULT_CATEGORIES } from './default-categories';
+import {
+  DEFAULT_CATEGORIES,
+  isDefaultCategoryFixed,
+} from './default-categories';
 
 @Injectable()
 export class CategoriesService {
@@ -25,17 +29,21 @@ export class CategoriesService {
   private async createDefaultCategoriesForUser(userId: string) {
     const globals = await this.prisma.category.findMany({
       where: { userId: null },
-      select: { id: true, name: true },
+      select: { id: true, name: true, isFixed: true },
     });
     const names =
       globals.length > 0 ? globals.map((g) => g.name) : DEFAULT_CATEGORIES;
     await this.prisma.category.createMany({
-      data: names.map((name) => ({
-        userId,
-        name,
-        isDefault: true,
-        isActive: true,
-      })),
+      data: names.map((name) => {
+        const fromGlobal = globals.find((g) => g.name === name);
+        return {
+          userId,
+          name,
+          isDefault: true,
+          isActive: true,
+          isFixed: fromGlobal?.isFixed ?? isDefaultCategoryFixed(name),
+        };
+      }),
     });
     if (globals.length > 0) {
       const userCats = await this.prisma.category.findMany({
@@ -64,6 +72,8 @@ export class CategoriesService {
         name: dto.name,
         isDefault: false,
         isActive: true,
+        isFixed: dto.isFixed ?? false,
+        keywords: dto.keywords ?? [],
       },
     });
   }
@@ -75,13 +85,14 @@ export class CategoriesService {
     if (!category) {
       throw new NotFoundException('Category not found');
     }
-    return this.prisma.category.update({
-      where: { id },
-      data: {
-        ...(dto.name !== undefined && { name: dto.name }),
-        ...(dto.isActive !== undefined && { isActive: dto.isActive }),
-      },
-    });
+    const data: Prisma.CategoryUpdateInput = {};
+    if (dto.name !== undefined) data.name = dto.name;
+    if (dto.isActive !== undefined) data.isActive = dto.isActive;
+    if (dto.isFixed !== undefined) data.isFixed = dto.isFixed;
+    if (dto.keywords !== undefined) {
+      data.keywords = Array.isArray(dto.keywords) ? [...dto.keywords] : [];
+    }
+    return this.prisma.category.update({ where: { id }, data });
   }
 
   async findOneWithCount(userId: string, id: string) {

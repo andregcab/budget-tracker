@@ -215,24 +215,25 @@ export function Accounts() {
                     <TableCell>{acc.institution ?? "—"}</TableCell>
                     <TableCell>{acc.isDefault ? "Yes" : "—"}</TableCell>
                     <TableCell>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="mr-2"
-                        onClick={() => { openEdit(acc); setOpen(true); }}
-                      >
-                        Edit
-                      </Button>
-                      <Button
-                        variant="destructive"
-                        size="sm"
-                        onClick={() => {
-                          if (confirm("Delete this account?")) deleteMutation.mutate(acc.id);
-                        }}
-                        disabled={deleteMutation.isPending}
-                      >
-                        Delete
-                      </Button>
+                      <div className="flex items-center gap-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => { openEdit(acc); setOpen(true); }}
+                        >
+                          Edit
+                        </Button>
+                        <Button
+                          variant="destructive"
+                          size="sm"
+                          onClick={() => {
+                            if (confirm("Delete this account?")) deleteMutation.mutate(acc.id);
+                          }}
+                          disabled={deleteMutation.isPending}
+                        >
+                          Delete
+                        </Button>
+                      </div>
                     </TableCell>
                   </TableRow>
                 ))}
