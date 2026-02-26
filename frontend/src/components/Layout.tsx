@@ -1,5 +1,6 @@
+import { useState } from "react";
 import { Link, Outlet, useLocation } from "react-router-dom";
-import { Moon, Sun } from "lucide-react";
+import { Moon, Sun, Menu, X } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useTheme } from "@/hooks/useTheme";
 import { Button } from "@/components/ui/button";
@@ -12,7 +13,7 @@ function ThemeToggle() {
       variant="ghost"
       size="icon"
       onClick={toggleTheme}
-      className="h-9 w-9"
+      className="h-9 w-9 shrink-0"
       aria-label={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
     >
       {theme === "dark" ? (
@@ -36,15 +37,29 @@ const nav = [
 export function Layout() {
   const { user, logout } = useAuth();
   const location = useLocation();
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   return (
-    <div className="flex min-h-screen flex-col">
+    <div className="flex min-h-screen flex-col overflow-x-hidden">
       <header className="border-b border-border bg-card text-card-foreground">
-        <div className="flex h-14 items-center gap-4 px-4">
-          <Link to="/" className="font-semibold text-inherit hover:text-inherit">
+        <div className="flex h-14 items-center gap-2 px-4 sm:gap-4">
+          <Button
+            variant="ghost"
+            size="icon"
+            className="md:hidden h-9 w-9 shrink-0"
+            onClick={() => setMobileMenuOpen((o) => !o)}
+            aria-label={mobileMenuOpen ? "Close menu" : "Open menu"}
+          >
+            {mobileMenuOpen ? <X className="h-4 w-4" /> : <Menu className="h-4 w-4" />}
+          </Button>
+          <Link
+            to="/"
+            className="font-semibold text-inherit hover:text-inherit shrink-0"
+            onClick={() => setMobileMenuOpen(false)}
+          >
             Budget Tracker
           </Link>
-          <nav className="flex flex-1 gap-2">
+          <nav className="hidden flex-1 gap-2 md:flex">
             {nav.map(({ to, label }) => (
               <Link
                 key={to}
@@ -60,19 +75,40 @@ export function Layout() {
               </Link>
             ))}
           </nav>
-          <span className="text-muted-foreground text-sm">{user?.email}</span>
+          <span className="hidden text-muted-foreground text-sm sm:inline truncate max-w-[120px] md:max-w-[180px]">
+            {user?.email}
+          </span>
           <ThemeToggle />
           <Button
             variant="outline"
             size="sm"
             onClick={logout}
-            className="border-border bg-transparent text-card-foreground hover:bg-accent hover:text-accent-foreground"
+            className="border-border bg-transparent text-card-foreground hover:bg-accent hover:text-accent-foreground shrink-0"
           >
             Logout
           </Button>
         </div>
+        {mobileMenuOpen && (
+          <nav className="flex flex-col border-t border-border px-4 py-3 md:hidden">
+            {nav.map(({ to, label }) => (
+              <Link
+                key={to}
+                to={to}
+                onClick={() => setMobileMenuOpen(false)}
+                className={cn(
+                  "rounded-md px-3 py-2 text-sm font-medium transition-colors",
+                  location.pathname === to
+                    ? "bg-primary text-primary-foreground"
+                    : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
+                )}
+              >
+                {label}
+              </Link>
+            ))}
+          </nav>
+        )}
       </header>
-      <main className="flex-1 p-4 text-foreground">
+      <main className="flex-1 p-3 sm:p-4 text-foreground min-w-0">
         <Outlet />
       </main>
     </div>

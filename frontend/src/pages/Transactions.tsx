@@ -237,8 +237,8 @@ export function Transactions() {
         <CardHeader>
           <CardTitle>Filters</CardTitle>
         </CardHeader>
-        <CardContent className="flex flex-wrap gap-4">
-          <div className="grid gap-2">
+        <CardContent className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="grid gap-2 min-w-0">
             <Label>Account</Label>
             <Combobox
               options={accounts.map((a) => ({ value: a.id, label: a.name }))}
@@ -248,10 +248,10 @@ export function Transactions() {
               searchPlaceholder="Type to search..."
               allowEmpty
               emptyOption={{ value: null, label: "All accounts" }}
-              triggerClassName="w-[180px]"
+              triggerClassName="w-full sm:w-[180px]"
             />
           </div>
-          <div className="grid gap-2">
+          <div className="grid gap-2 min-w-0">
             <Label>Category</Label>
             <Combobox
               options={categories.map((c) => ({ value: c.id, label: c.name }))}
@@ -261,25 +261,25 @@ export function Transactions() {
               searchPlaceholder="Type to search..."
               allowEmpty
               emptyOption={{ value: null, label: "All" }}
-              triggerClassName="w-[180px]"
+              triggerClassName="w-full sm:w-[180px]"
             />
           </div>
-          <div className="grid gap-2">
+          <div className="grid gap-2 min-w-0">
             <Label>From date</Label>
             <Input
               type="date"
               value={fromDate}
               onChange={(e) => setFromDate(e.target.value)}
-              className="w-[160px]"
+              className="w-full min-w-0 sm:w-[160px]"
             />
           </div>
-          <div className="grid gap-2">
+          <div className="grid gap-2 min-w-0">
             <Label>To date</Label>
             <Input
               type="date"
               value={toDate}
               onChange={(e) => setToDate(e.target.value)}
-              className="w-[160px]"
+              className="w-full min-w-0 sm:w-[160px]"
             />
           </div>
         </CardContent>
@@ -288,6 +288,14 @@ export function Transactions() {
         <CardHeader className="flex flex-row items-center justify-between gap-4 flex-wrap">
           <CardTitle>Transactions ({total})</CardTitle>
           <div className="flex items-center gap-2 flex-wrap">
+            <Button
+              variant="ghost"
+              size="sm"
+              className="md:hidden text-muted-foreground"
+              onClick={toggleSelectAll}
+            >
+              {isAllSelected ? "Clear all" : "Select all"}
+            </Button>
             {isSomeSelected && (
               <Button
                 variant="outline"
@@ -336,6 +344,93 @@ export function Transactions() {
             <p className="text-muted-foreground">No transactions match your filters.</p>
           ) : (
             <>
+              {/* Mobile: card layout */}
+              <div className="space-y-3 md:hidden">
+                {items.map((tx) => (
+                  <Card key={tx.id} className={tx.isExcluded ? "opacity-50 bg-muted/30" : ""}>
+                    <CardContent className="p-3 space-y-3">
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="min-w-0 flex-1">
+                          <p className="font-medium truncate" title={tx.description}>
+                            {tx.description}
+                          </p>
+                          <p className="text-sm text-muted-foreground">
+                            {new Date(tx.date).toLocaleDateString()} · {parseFloat(tx.amount) >= 0 ? tx.amount : `(${tx.amount})`}
+                          </p>
+                        </div>
+                        <div className="flex items-center gap-1 shrink-0">
+                          <input
+                            type="checkbox"
+                            checked={selectedIds.has(tx.id)}
+                            onChange={() => toggleSelect(tx.id)}
+                            title="Select"
+                            className="h-4 w-4 rounded border-input"
+                          />
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 text-muted-foreground hover:text-destructive"
+                            onClick={() => setDeleteTarget(tx)}
+                            aria-label="Delete"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </div>
+                      <div className="space-y-2">
+                        <div className="flex items-center gap-2">
+                          <input
+                            type="checkbox"
+                            checked={tx.isExcluded}
+                            onChange={() =>
+                              updateMutation.mutate({
+                                id: tx.id,
+                                body: { isExcluded: !tx.isExcluded },
+                              })
+                            }
+                            title="Exclude from budget"
+                            className="h-4 w-4 rounded border-input shrink-0"
+                          />
+                          <span className="text-xs text-muted-foreground">Exclude from budget</span>
+                        </div>
+                        <div className="grid gap-2 sm:grid-cols-2">
+                          <Combobox
+                            options={categories.map((c) => ({ value: c.id, label: c.name }))}
+                            value={tx.category?.id ?? null}
+                            onValueChange={(v) =>
+                              updateMutation.mutate({
+                                id: tx.id,
+                                body: { categoryId: v },
+                              })
+                            }
+                            placeholder="Category"
+                            searchPlaceholder="Type to search..."
+                            allowEmpty
+                            emptyOption={{ value: null, label: "—" }}
+                            triggerClassName="w-full"
+                          />
+                          <Input
+                            className="w-full"
+                            placeholder="Notes"
+                            defaultValue={tx.notes ?? ""}
+                            onBlur={(e) => {
+                              const v = e.target.value.trim();
+                              if (v !== (tx.notes ?? "")) {
+                                updateMutation.mutate({
+                                  id: tx.id,
+                                  body: { notes: v || null },
+                                });
+                              }
+                            }}
+                          />
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+              {/* Desktop: table */}
+              <div className="hidden md:block">
               <Table>
                 <TableHeader>
                   <TableRow>
@@ -457,8 +552,9 @@ export function Transactions() {
                   ))}
                 </TableBody>
               </Table>
+              </div>
               {totalPages > 1 && (
-                <div className="mt-4 flex items-center gap-2">
+                <div className="mt-4 flex flex-wrap items-center gap-2">
                   <Button
                     variant="outline"
                     size="sm"

@@ -128,7 +128,7 @@ export function Accounts() {
 
   return (
     <div>
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <h1 className="text-2xl font-semibold">Accounts</h1>
         <Dialog open={open} onOpenChange={(o) => { setOpen(o); if (!o) setEditing(null); resetForm(); }}>
           <DialogTrigger asChild>
@@ -197,7 +197,7 @@ export function Accounts() {
           {accounts.length === 0 ? (
             <p className="text-muted-foreground">No accounts yet. Add one to get started.</p>
           ) : (
-            <Table>
+            <Table className="min-w-[480px]">
               <TableHeader>
                 <TableRow>
                   <TableHead>Name</TableHead>

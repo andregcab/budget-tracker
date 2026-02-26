@@ -573,7 +573,7 @@ export function Categories() {
           </p>
         </CardHeader>
         <CardContent>
-          <Table>
+          <Table className="min-w-[520px]">
             <TableHeader>
               <TableRow>
                 <TableHead>Name</TableHead>

@@ -416,7 +416,7 @@ export function Dashboard() {
           value={String(effectiveMonth)}
           onValueChange={(v) => setMonth(parseInt(v, 10))}
         >
-          <SelectTrigger className="h-9 w-[140px] bg-background text-foreground">
+          <SelectTrigger className="h-9 w-full sm:w-[140px] bg-background text-foreground">
             <SelectValue placeholder="Month" />
           </SelectTrigger>
           <SelectContent>
@@ -430,7 +430,7 @@ export function Dashboard() {
           </SelectContent>
         </Select>
         <Select value={String(year)} onValueChange={handleYearChange}>
-          <SelectTrigger className="h-9 w-[100px] bg-background text-foreground">
+          <SelectTrigger className="h-9 w-full sm:w-[100px] bg-background text-foreground">
             <SelectValue placeholder="Year" />
           </SelectTrigger>
           <SelectContent>

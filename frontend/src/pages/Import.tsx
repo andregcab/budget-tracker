@@ -97,7 +97,7 @@ export function Import() {
               onValueChange={(v) => setAccountId(v ?? "")}
               placeholder="Select account"
               searchPlaceholder="Type to search..."
-              triggerClassName="w-[280px]"
+              triggerClassName="w-full sm:w-[280px]"
             />
           </div>
           <div className="grid gap-2">
