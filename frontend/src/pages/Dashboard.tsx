@@ -1101,7 +1101,7 @@ export function Dashboard() {
             </div>
 
             {variableCategories.length > 0 && (
-              <div className="space-y-3 min-w-0 overflow-visible">
+              <div className="mt-16 space-y-3 min-w-0 overflow-visible">
                 <div className="flex gap-1">
                   {(['bar', 'pie'] as const).map((type) => (
                     <Button
