@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Combobox } from "@/components/ui/combobox";
 import { cn } from "@/lib/utils";
 
-type Account = { id: string; name: string };
+type Account = { id: string; name: string; isDefault?: boolean };
 
 async function getAccounts(): Promise<Account[]> {
   return api("/accounts");
@@ -27,12 +27,15 @@ export function Import() {
     queryFn: getAccounts,
   });
 
+  const defaultAccount = accounts.find((a) => a.isDefault);
+  const effectiveAccountId = accountId || defaultAccount?.id || "";
+
   const uploadMutation = useMutation({
     mutationFn: async () => {
-      if (!file || !accountId) throw new Error("Select an account and a file.");
+      if (!file || !effectiveAccountId) throw new Error("Select an account and a file.");
       const formData = new FormData();
       formData.append("file", file);
-      formData.append("accountId", accountId);
+      formData.append("accountId", effectiveAccountId);
       return apiUpload<ImportResult>("/imports", formData);
     },
     onSuccess: (data) => {
@@ -82,7 +85,7 @@ export function Import() {
             <Label>Account</Label>
             <Combobox
               options={accounts.map((a) => ({ value: a.id, label: a.name }))}
-              value={accountId || null}
+              value={effectiveAccountId || null}
               onValueChange={(v) => setAccountId(v ?? "")}
               placeholder="Select account"
               searchPlaceholder="Type to search..."
@@ -128,12 +131,23 @@ export function Import() {
               </label>
             </div>
           </div>
-          <Button
-            disabled={!accountId || !file || uploadMutation.isPending}
-            onClick={() => uploadMutation.mutate()}
-          >
-            {uploadMutation.isPending ? "Importing..." : "Import"}
-          </Button>
+          <div className="space-y-2">
+            <Button
+              disabled={!effectiveAccountId || !file || uploadMutation.isPending}
+              onClick={() => uploadMutation.mutate()}
+            >
+              {uploadMutation.isPending ? "Importing..." : "Import"}
+            </Button>
+            {!uploadMutation.isPending && (!effectiveAccountId || !file) && (
+              <p className="text-sm text-muted-foreground">
+                {!effectiveAccountId && !file
+                  ? "Select an account and choose a CSV file to import."
+                  : !effectiveAccountId
+                    ? "Select an account to import into."
+                    : "Choose a CSV file to import."}
+              </p>
+            )}
+          </div>
           {uploadMutation.error && (
             <p className="text-destructive text-sm">
               {uploadMutation.error instanceof Error
