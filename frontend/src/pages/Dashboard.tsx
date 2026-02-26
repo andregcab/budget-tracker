@@ -16,8 +16,6 @@ import {
 } from '@/components/ui/card';
 import {
   ChartContainer,
-  ChartLegend,
-  ChartLegendContent,
   ChartTooltip,
   ChartTooltipContent,
   type ChartConfig,
@@ -190,6 +188,103 @@ const PIE_COLORS = [
   'oklch(0.6 0.14 195)',
 ];
 
+const RADIAN = Math.PI / 180;
+const LABEL_OFFSET = 44;
+const LINE_BUFFER = 8;
+const LINE_GAP_FROM_LABEL = 14;
+
+function polarToCartesian(
+  cx: number,
+  cy: number,
+  radius: number,
+  angle: number,
+) {
+  return {
+    x: cx + radius * Math.cos(-angle * RADIAN),
+    y: cy + radius * Math.sin(-angle * RADIAN),
+  };
+}
+
+function renderPieLabel(props: {
+  cx: number;
+  cy: number;
+  x?: number;
+  y?: number;
+  midAngle: number;
+  innerRadius: number;
+  outerRadius: number;
+  percent: number;
+  name?: string;
+  payload?: { name?: string };
+}) {
+  const { cx, cy, midAngle, outerRadius, percent } = props;
+  const name = props.name ?? props.payload?.name ?? '';
+  const labelX = props.x ?? cx + (outerRadius + LABEL_OFFSET) * Math.cos(-midAngle * RADIAN);
+  const labelY = props.y ?? cy + (outerRadius + LABEL_OFFSET) * Math.sin(-midAngle * RADIAN);
+  const isRight = labelX > cx;
+  const pct = (percent * 100).toFixed(1);
+  const shortName = name.length > 20 ? `${name.slice(0, 18)}…` : name;
+
+  return (
+    <g>
+      <text
+        x={labelX}
+        y={labelY}
+        fill="currentColor"
+        textAnchor={isRight ? 'start' : 'end'}
+        dominantBaseline="central"
+        className="text-sm fill-foreground"
+      >
+        <tspan x={labelX} dy="-0.4em" className="font-medium">
+          {shortName}
+        </tspan>
+        <tspan x={labelX} dy="1.2em" className="fill-muted-foreground">
+          {pct}%
+        </tspan>
+      </text>
+    </g>
+  );
+}
+(renderPieLabel as { offsetRadius?: number }).offsetRadius = LABEL_OFFSET;
+
+function renderPieLabelLine(props: {
+  points?: [{ x: number; y: number }, { x: number; y: number }];
+  cx?: number;
+  cy?: number;
+  midAngle?: number;
+  outerRadius?: number;
+}) {
+  const { points = [], cx = 0, cy = 0, midAngle = 0, outerRadius = 0 } = props;
+  const [, end] = points;
+  const bufferedStart = polarToCartesian(
+    cx,
+    cy,
+    outerRadius + LINE_BUFFER,
+    midAngle,
+  );
+  let lineEndX = end?.x ?? bufferedStart.x;
+  let lineEndY = end?.y ?? bufferedStart.y;
+  if (end) {
+    const dx = end.x - cx;
+    const dy = end.y - cy;
+    const dist = Math.sqrt(dx * dx + dy * dy) || 1;
+    const newDist = Math.max(0, dist - LINE_GAP_FROM_LABEL);
+    lineEndX = cx + (dx / dist) * newDist;
+    lineEndY = cy + (dy / dist) * newDist;
+  }
+  return (
+    <line
+      x1={bufferedStart.x}
+      y1={bufferedStart.y}
+      x2={lineEndX}
+      y2={lineEndY}
+      stroke="#475569"
+      strokeWidth={1}
+      strokeLinecap="round"
+    />
+  );
+}
+
 export function Dashboard() {
   const { user } = useAuth();
   const queryClient = useQueryClient();
@@ -215,9 +310,6 @@ export function Dashboard() {
   const [pieActiveIndex, setPieActiveIndex] = useState<number | undefined>(
     undefined,
   );
-  const [legendHoverIndex, setLegendHoverIndex] = useState<
-    number | undefined
-  >(undefined);
 
   const currentYear = now.getFullYear();
   const currentMonth = now.getMonth() + 1;
@@ -329,7 +421,6 @@ export function Dashboard() {
     setChartType(type);
     if (user?.id) setSpendingChartType(user.id, type);
     setPieActiveIndex(undefined);
-    setLegendHoverIndex(undefined);
   };
 
   const handleEditOpen = (open: boolean) => {
@@ -511,6 +602,77 @@ export function Dashboard() {
           </SelectContent>
         </Select>
       </div>
+
+      {/* Summary: Income vs Expenses */}
+      {data && (() => {
+        const income = data.totalRevenue ?? 0;
+        const expenses = data.totalSpend ?? 0;
+        const maxVal = Math.max(income, expenses, 1);
+        const incomePct = (income / maxVal) * 100;
+        const expensesPct = (expenses / maxVal) * 100;
+        return (
+        <Card className="mt-6">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-base">Summary</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="space-y-3">
+              <div className="flex items-center gap-3">
+                <span className="text-sm font-medium w-20 shrink-0">
+                  Income
+                </span>
+                <div className="flex-1 min-w-0 h-6 rounded-md overflow-hidden bg-muted/50">
+                  <div
+                    className="h-full rounded-md bg-emerald-500/80 dark:bg-emerald-600/80 transition-all"
+                    style={{ width: `${incomePct}%` }}
+                  />
+                </div>
+                <span className="text-sm font-mono tabular-nums w-20 text-right shrink-0">
+                  ${income.toFixed(2)}
+                </span>
+              </div>
+              <div className="flex items-center gap-3">
+                <span className="text-sm font-medium w-20 shrink-0">
+                  Expenses
+                </span>
+                <div className="flex-1 min-w-0 h-6 rounded-md overflow-hidden bg-muted/50">
+                  <div
+                    className="h-full rounded-md bg-amber-600/70 dark:bg-amber-700/70 transition-all"
+                    style={{ width: `${expensesPct}%` }}
+                  />
+                </div>
+                <span className="text-sm font-mono tabular-nums w-20 text-right shrink-0">
+                  ${expenses.toFixed(2)}
+                </span>
+              </div>
+            </div>
+            {(data.savings ?? 0) !== 0 && (
+              <div className="rounded-lg border border-dashed border-border pt-3 pb-3 px-4 flex items-center gap-4">
+                <div>
+                  <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+                    {data.savings >= 0 ? 'Savings' : 'Overspent'}
+                  </p>
+                  <p
+                    className={`text-2xl font-bold ${
+                      data.savings >= 0
+                        ? 'text-[var(--positive)]'
+                        : 'text-destructive'
+                    }`}
+                  >
+                    ${Math.abs(data.savings).toFixed(2)}
+                  </p>
+                </div>
+                <p className="text-sm text-muted-foreground flex-1">
+                  {data.savings >= 0
+                    ? 'Your income was greater than your expenses this month.'
+                    : 'Expenses exceeded income this month.'}
+                </p>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+        );
+      })()}
 
       {/* Hero: Savings + compact Income */}
       <div className="mt-6 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
@@ -966,7 +1128,7 @@ export function Dashboard() {
             </div>
 
             {variableCategories.length > 0 && (
-              <div className="space-y-3 min-w-0 overflow-x-hidden">
+              <div className="space-y-3 min-w-0 overflow-visible">
                 <div className="flex gap-1">
                   {(['bar', 'pie'] as const).map((type) => (
                     <Button
@@ -1009,7 +1171,7 @@ export function Dashboard() {
                       />
                     </BarChart>
                   ) : (
-                    <PieChart>
+                    <PieChart margin={{ top: 40, right: 80, bottom: 40, left: 80 }}>
                       <ChartTooltip
                         content={
                           <ChartTooltipContent
@@ -1029,9 +1191,9 @@ export function Dashboard() {
                         strokeWidth={0}
                         animationDuration={300}
                         animationEasing="ease-in-out"
-                        activeIndex={
-                          legendHoverIndex ?? pieActiveIndex
-                        }
+                        activeIndex={pieActiveIndex}
+                        label={renderPieLabel}
+                        labelLine={renderPieLabelLine}
                         activeShape={(props: unknown) => {
                           const p = props as {
                             outerRadius?: number;
@@ -1087,20 +1249,6 @@ export function Dashboard() {
                           />
                         ))}
                       </Pie>
-                      <ChartLegend
-                        content={
-                          <ChartLegendContent
-                            nameKey="name"
-                            onItemHover={setLegendHoverIndex}
-                            onItemClick={(index) =>
-                              setLegendHoverIndex((prev) =>
-                                prev === index ? undefined : index,
-                              )
-                            }
-                          />
-                        }
-                        verticalAlign="bottom"
-                      />
                     </PieChart>
                   )}
                 </ChartContainer>
