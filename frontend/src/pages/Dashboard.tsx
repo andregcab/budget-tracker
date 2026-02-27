@@ -41,6 +41,7 @@ import {
   YAxis,
 } from 'recharts';
 import { Info, Pencil, Plus, Trash2 } from 'lucide-react';
+import { toast } from 'sonner';
 import {
   Popover,
   PopoverContent,
@@ -355,6 +356,9 @@ export function Dashboard() {
       queryClient.invalidateQueries({ queryKey: ['revenue'] });
       setEditOpen(false);
     },
+    onError: (err) => {
+      toast.error(err instanceof Error ? err.message : 'Failed to save income');
+    },
   });
 
   const deleteMutation = useMutation({
@@ -365,6 +369,9 @@ export function Dashboard() {
       });
       queryClient.invalidateQueries({ queryKey: ['revenue'] });
       setEditOpen(false);
+    },
+    onError: (err) => {
+      toast.error(err instanceof Error ? err.message : 'Failed to reset income');
     },
   });
 
@@ -378,6 +385,9 @@ export function Dashboard() {
       setAddAmount('');
       setAddDescription('');
     },
+    onError: (err) => {
+      toast.error(err instanceof Error ? err.message : 'Failed to add income');
+    },
   });
 
   const removeAdditionalMutation = useMutation({
@@ -387,6 +397,9 @@ export function Dashboard() {
         queryKey: ['analytics', 'monthly'],
       });
       queryClient.invalidateQueries({ queryKey: ['revenue'] });
+    },
+    onError: (err) => {
+      toast.error(err instanceof Error ? err.message : 'Failed to remove income');
     },
   });
 
@@ -403,6 +416,9 @@ export function Dashboard() {
       setExpectedCategoryId('');
       setExpectedAmount('');
     },
+    onError: (err) => {
+      toast.error(err instanceof Error ? err.message : 'Failed to add expected expense');
+    },
   });
 
   const removeExpectedFixedMutation = useMutation({
@@ -414,6 +430,9 @@ export function Dashboard() {
       queryClient.invalidateQueries({
         queryKey: ['expected-fixed-expenses'],
       });
+    },
+    onError: (err) => {
+      toast.error(err instanceof Error ? err.message : 'Failed to remove expected expense');
     },
   });
 

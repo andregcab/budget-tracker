@@ -30,6 +30,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Plus, Trash2 } from "lucide-react";
+import { toast } from "sonner";
 import { getTransactionsPerPage, setTransactionsPerPage } from "@/lib/user-preferences";
 
 type Category = { id: string; name: string };
@@ -192,6 +193,9 @@ export function Transactions() {
       queryClient.invalidateQueries({ queryKey: ["transactions"] });
       queryClient.invalidateQueries({ queryKey: ["analytics", "monthly"] });
     },
+    onError: (err) => {
+      toast.error(err instanceof Error ? err.message : "Failed to update transaction");
+    },
   });
 
   const deleteMutation = useMutation({
@@ -199,6 +203,10 @@ export function Transactions() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["transactions"] });
       queryClient.invalidateQueries({ queryKey: ["analytics", "monthly"] });
+      setDeleteTarget(null);
+    },
+    onError: (err) => {
+      toast.error(err instanceof Error ? err.message : "Failed to delete transaction");
       setDeleteTarget(null);
     },
   });
@@ -211,6 +219,10 @@ export function Transactions() {
       queryClient.invalidateQueries({ queryKey: ["analytics", "monthly"] });
       setDeleteMonthOpen(false);
     },
+    onError: (err) => {
+      toast.error(err instanceof Error ? err.message : "Failed to delete transactions");
+      setDeleteMonthOpen(false);
+    },
   });
 
   const createMutation = useMutation({
@@ -219,6 +231,9 @@ export function Transactions() {
       queryClient.invalidateQueries({ queryKey: ["transactions"] });
       queryClient.invalidateQueries({ queryKey: ["analytics", "monthly"] });
       handleAddOpen(false);
+    },
+    onError: (err) => {
+      toast.error(err instanceof Error ? err.message : "Failed to add transaction");
     },
   });
 

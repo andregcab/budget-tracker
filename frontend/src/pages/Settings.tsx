@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { toast } from "sonner";
 
 const PASSWORD_REGEX = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)[A-Za-z\d@$!%*?&]{8,}$/;
 
@@ -124,7 +125,11 @@ export function Settings() {
         setNewPassword("");
         setNewPasswordConfirm("");
       })
-      .catch((err) => setPasswordError(err?.message ?? "Failed to change password"))
+      .catch((err) => {
+        const msg = err?.message ?? "Failed to change password";
+        setPasswordError(msg);
+        toast.error(msg);
+      })
       .finally(() => setChangingPassword(false));
   }
 

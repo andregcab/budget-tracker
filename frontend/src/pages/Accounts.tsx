@@ -28,6 +28,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { toast } from "sonner";
 
 type Account = {
   id: string;
@@ -92,6 +93,9 @@ export function Accounts() {
       setOpen(false);
       resetForm();
     },
+    onError: (err) => {
+      toast.error(err instanceof Error ? err.message : "Failed to create account");
+    },
   });
 
   const updateMutation = useMutation({
@@ -102,11 +106,17 @@ export function Accounts() {
       setEditing(null);
       resetForm();
     },
+    onError: (err) => {
+      toast.error(err instanceof Error ? err.message : "Failed to update account");
+    },
   });
 
   const deleteMutation = useMutation({
     mutationFn: deleteAccount,
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["accounts"] }),
+    onError: (err) => {
+      toast.error(err instanceof Error ? err.message : "Failed to delete account");
+    },
   });
 
   function resetForm() {
