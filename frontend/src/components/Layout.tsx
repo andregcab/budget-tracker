@@ -63,7 +63,7 @@ export function Layout() {
           </Button>
           <Link
             to="/"
-            className="inline-flex items-baseline shrink-0 -translate-y-1 text-[var(--brand-piggy)] hover:text-[var(--brand-piggy)]"
+            className="inline-flex items-baseline shrink-0 -translate-y-2 text-[var(--brand-piggy)] hover:text-[var(--brand-piggy)]"
             onClick={() => setMobileMenuOpen(false)}
           >
             <span className="text-3xl font-semibold">Pigg</span>

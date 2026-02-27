@@ -627,7 +627,7 @@ export function Dashboard() {
                     style={{ width: `${incomePct}%` }}
                   />
                 </div>
-                <div className="flex items-center gap-1.5 shrink-0 justify-end">
+                <div className="flex items-center justify-start gap-1.5 shrink-0 w-[8rem] pl-8">
                   <Dialog open={editOpen} onOpenChange={handleEditOpen}>
                     <DialogTrigger asChild>
                       <Button
@@ -791,7 +791,7 @@ export function Dashboard() {
                     style={{ width: `${expensesPct}%` }}
                   />
                 </div>
-                <span className="text-sm font-mono tabular-nums w-20 text-right shrink-0">
+                <span className="text-sm font-mono tabular-nums shrink-0 w-[8rem] pl-8">
                   ${expenses.toFixed(2)}
                 </span>
               </div>

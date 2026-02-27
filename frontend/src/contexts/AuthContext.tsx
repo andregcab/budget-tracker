@@ -42,10 +42,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setAuth(res.user, res.token);
   }, [setAuth]);
 
-  const register = useCallback(async (email: string, password: string) => {
+  const register = useCallback(async (email: string, password: string, passwordConfirm: string) => {
     const res = await api<{ user: User; token: string }>("/auth/register", {
       method: "POST",
-      body: JSON.stringify({ email, password }),
+      body: JSON.stringify({ email, password, passwordConfirm }),
     });
     setAuth(res.user, res.token);
   }, [setAuth]);
