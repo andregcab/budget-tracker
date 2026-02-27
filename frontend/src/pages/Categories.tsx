@@ -13,12 +13,18 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '@/components/ui/popover';
+import {
   Table,
   TableBody,
   TableHead,
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
+import { Info } from 'lucide-react';
 import { LoadingSpinner } from '@/components/LoadingSpinner';
 import { CategoryCreateDialog } from '@/components/categories/CategoryCreateDialog';
 import { CategoryDeleteDialog } from '@/components/categories/CategoryDeleteDialog';
@@ -40,15 +46,13 @@ export function Categories() {
     deleteMutation,
     budgetMutation,
     removeBudgetMutation,
-    keywordsMutation,
   } = useCategoryMutations();
 
   const [editId, setEditId] = useState<string | null>(null);
   const [editName, setEditName] = useState('');
   const [editIsFixed, setEditIsFixed] = useState(false);
+  const [editKeywords, setEditKeywords] = useState('');
   const [budgetEditId, setBudgetEditId] = useState<string | null>(null);
-  const [keywordsEditId, setKeywordsEditId] = useState<string | null>(null);
-  const [keywordsInput, setKeywordsInput] = useState('');
   const [budgetAmount, setBudgetAmount] = useState('');
   const [deleteTarget, setDeleteTarget] = useState<{
     id: string;
@@ -73,7 +77,11 @@ export function Categories() {
       updateMutation.mutate(
         {
           id: editId,
-          body: { name: editName.trim(), isFixed: editIsFixed },
+          body: {
+            name: editName.trim(),
+            isFixed: editIsFixed,
+            keywords: parseKeywords(editKeywords),
+          },
         },
         { onSuccess: () => setEditId(null) },
       );
@@ -106,19 +114,6 @@ export function Categories() {
     }
   }
 
-  function handleKeywordsSave(e: React.FormEvent) {
-    e.preventDefault();
-    if (keywordsEditId) {
-      keywordsMutation.mutate(
-        {
-          id: keywordsEditId,
-          keywords: parseKeywords(keywordsInput),
-        },
-        { onSuccess: () => setKeywordsEditId(null) },
-      );
-    }
-  }
-
   if (isLoading) {
     return <LoadingSpinner message="Loading categories..." />;
   }
@@ -145,26 +140,39 @@ export function Categories() {
       />
       <Card className="mt-4">
         <CardHeader>
-          <CardTitle>Categories</CardTitle>
-          <p className="text-muted-foreground text-sm">
-            Edit names, set monthly budgets, or delete. Import keywords
-            auto-categorize transactions: the category name is always
-            used (e.g. &quot;Netflix&quot; matches &quot;netflix&quot;),
-            and you can add extras like &quot;dining&quot; or &quot;Food
-            &amp; Drink&quot; to map bank export types.
-          </p>
+          <div className="flex items-center gap-1.5">
+            <CardTitle>Categories</CardTitle>
+            <Popover>
+              <PopoverTrigger asChild>
+                <button
+                  type="button"
+                  className="inline-flex text-muted-foreground hover:text-foreground focus:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded"
+                  aria-label="More information"
+                >
+                  <Info className="h-4 w-4" />
+                </button>
+              </PopoverTrigger>
+              <PopoverContent className="w-72 text-sm" align="start">
+                Edit names, set budgets, or delete. Keywords auto-categorize
+                transactions: the category name always matches (e.g.
+                &quot;Netflix&quot; → &quot;netflix&quot;). Add extras like
+                &quot;dining&quot; or &quot;Food &amp; Drink&quot; to map bank
+                export types.
+              </PopoverContent>
+            </Popover>
+          </div>
         </CardHeader>
         <CardContent>
-          <Table className="min-w-[520px]">
+          <Table className="min-w-[520px] table-fixed">
             <TableHeader>
               <TableRow>
-                <TableHead>Name</TableHead>
+                <TableHead className="w-[180px]">Name</TableHead>
                 <TableHead>Monthly budget</TableHead>
                 <TableHead className="w-[60px] text-center">Fixed</TableHead>
-                <TableHead className="min-w-[120px]">
-                  Import keywords
+                <TableHead className="min-w-[200px]">
+                  Keywords <span className="font-normal text-muted-foreground">(comma-separated)</span>
                 </TableHead>
-                <TableHead className="w-[140px] pl-12">Actions</TableHead>
+                <TableHead className="w-[170px] pl-8">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -176,18 +184,19 @@ export function Categories() {
                   editId={editId}
                   editName={editName}
                   editIsFixed={editIsFixed}
+                  editKeywords={editKeywords}
                   budgetEditId={budgetEditId}
                   budgetAmount={budgetAmount}
-                  keywordsEditId={keywordsEditId}
-                  keywordsInput={keywordsInput}
                   onEditNameChange={setEditName}
                   onEditIsFixedChange={setEditIsFixed}
+                  onEditKeywordsChange={setEditKeywords}
                   onEditSave={handleEditSave}
                   onEditCancel={() => setEditId(null)}
                   onEditStart={(c) => {
                     setEditId(c.id);
                     setEditName(c.name);
                     setEditIsFixed(c.isFixed ?? false);
+                    setEditKeywords((c.keywords ?? []).join(', '));
                   }}
                   onBudgetEditStart={(id, amt) => {
                     setBudgetEditId(id);
@@ -200,13 +209,6 @@ export function Categories() {
                     setBudgetAmount('');
                   }}
                   onBudgetRemove={(id) => removeBudgetMutation.mutate(id)}
-                  onKeywordsEditStart={(id, kw) => {
-                    setKeywordsEditId(id);
-                    setKeywordsInput(kw.join(', '));
-                  }}
-                  onKeywordsInputChange={setKeywordsInput}
-                  onKeywordsSave={handleKeywordsSave}
-                  onKeywordsCancel={() => setKeywordsEditId(null)}
                   onDeleteClick={handleDeleteClick}
                   removeBudgetMutation={removeBudgetMutation}
                   deleteMutation={deleteMutation}

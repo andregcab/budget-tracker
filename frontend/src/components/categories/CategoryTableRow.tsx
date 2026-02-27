@@ -28,12 +28,12 @@ type CategoryTableRowProps = {
   editId: string | null;
   editName: string;
   editIsFixed: boolean;
+  editKeywords: string;
   budgetEditId: string | null;
   budgetAmount: string;
-  keywordsEditId: string | null;
-  keywordsInput: string;
   onEditNameChange: (v: string) => void;
   onEditIsFixedChange: (v: boolean) => void;
+  onEditKeywordsChange: (v: string) => void;
   onEditSave: (e: React.FormEvent) => void;
   onEditCancel: () => void;
   onEditStart: (cat: Category) => void;
@@ -42,10 +42,6 @@ type CategoryTableRowProps = {
   onBudgetSave: (e: React.FormEvent) => void;
   onBudgetCancel: () => void;
   onBudgetRemove: (catId: string) => void;
-  onKeywordsEditStart: (catId: string, keywords: string[]) => void;
-  onKeywordsInputChange: (v: string) => void;
-  onKeywordsSave: (e: React.FormEvent) => void;
-  onKeywordsCancel: () => void;
   onDeleteClick: (cat: Category) => void;
   removeBudgetMutation: RemoveBudgetMutation;
   deleteMutation: DeleteMutation;
@@ -57,12 +53,12 @@ export function CategoryTableRow({
   editId,
   editName,
   editIsFixed,
+  editKeywords,
   budgetEditId,
   budgetAmount,
-  keywordsEditId,
-  keywordsInput,
   onEditNameChange,
   onEditIsFixedChange,
+  onEditKeywordsChange,
   onEditSave,
   onEditCancel,
   onEditStart,
@@ -71,17 +67,12 @@ export function CategoryTableRow({
   onBudgetSave,
   onBudgetCancel,
   onBudgetRemove,
-  onKeywordsEditStart,
-  onKeywordsInputChange,
-  onKeywordsSave,
-  onKeywordsCancel,
   onDeleteClick,
   removeBudgetMutation,
   deleteMutation,
 }: CategoryTableRowProps) {
   const isEditing = editId === category.id;
   const isBudgetEditing = budgetEditId === category.id;
-  const isKeywordsEditing = keywordsEditId === category.id;
   const budget = budgetByCategory[category.id];
 
   return (
@@ -191,51 +182,30 @@ export function CategoryTableRow({
           '—'
         )}
       </TableCell>
-      <TableCell className="min-w-[120px]">
-        {isKeywordsEditing ? (
-          <form
-            onSubmit={onKeywordsSave}
-            className="flex gap-2 items-center"
+      <TableCell className="min-w-[200px]">
+        {isEditing ? (
+          <div
             onClick={(e) => e.stopPropagation()}
             onPointerDown={(e) => e.stopPropagation()}
           >
             <Input
-              value={keywordsInput}
-              onChange={(e) => onKeywordsInputChange(e.target.value)}
+              value={editKeywords}
+              onChange={(e) => onEditKeywordsChange(e.target.value)}
               placeholder="dining, Food & Drink"
-              className="max-w-[160px]"
-              autoFocus
+              className="h-8 w-full min-w-[180px] text-sm"
             />
-            <Button type="submit" size="sm">
-              Save
-            </Button>
-            <Button
-              type="button"
-              variant="ghost"
-              size="sm"
-              onClick={onKeywordsCancel}
-            >
-              Cancel
-            </Button>
-          </form>
+          </div>
         ) : (
-          <button
-            type="button"
-            onClick={(e) => {
-              e.stopPropagation();
-              onKeywordsEditStart(category.id, category.keywords ?? []);
-            }}
-            className="text-left hover:underline text-muted-foreground text-sm"
-          >
+          <span className="text-muted-foreground text-sm">
             {(category.keywords ?? []).length > 0
               ? (category.keywords ?? []).join(', ')
-              : 'Add (name used by default)'}
-          </button>
+              : 'Name used by default'}
+          </span>
         )}
       </TableCell>
-      <TableCell className="w-[140px] pl-12">
+      <TableCell className="w-[170px] pl-8">
         {isEditing ? (
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 shrink-0">
             <Button type="submit" form={`edit-form-${category.id}`} size="sm">
               Save
             </Button>
@@ -265,7 +235,7 @@ export function CategoryTableRow({
                 e.stopPropagation();
                 onEditStart(category);
               }}
-              title="Edit name"
+              title="Edit name, fixed, keywords"
             >
               <Pencil className="h-4 w-4" />
             </Button>
