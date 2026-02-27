@@ -29,6 +29,7 @@ import { LoadingSpinner } from '@/components/LoadingSpinner';
 import { CategoryCreateDialog } from '@/components/categories/CategoryCreateDialog';
 import { CategoryDeleteDialog } from '@/components/categories/CategoryDeleteDialog';
 import { CategoryTableRow } from '@/components/categories/CategoryTableRow';
+import { CategoryCard } from '@/components/categories/CategoryCard';
 
 export function Categories() {
   const { data: categories = [], isLoading } = useCategories();
@@ -52,8 +53,7 @@ export function Categories() {
   const [editName, setEditName] = useState('');
   const [editIsFixed, setEditIsFixed] = useState(false);
   const [editKeywords, setEditKeywords] = useState('');
-  const [budgetEditId, setBudgetEditId] = useState<string | null>(null);
-  const [budgetAmount, setBudgetAmount] = useState('');
+  const [editBudgetAmount, setEditBudgetAmount] = useState('');
   const [deleteTarget, setDeleteTarget] = useState<{
     id: string;
     name: string;
@@ -73,45 +73,50 @@ export function Categories() {
 
   function handleEditSave(e: React.FormEvent) {
     e.preventDefault();
-    if (editId && editName.trim()) {
-      updateMutation.mutate(
-        {
-          id: editId,
-          body: {
-            name: editName.trim(),
-            isFixed: editIsFixed,
-            keywords: parseKeywords(editKeywords),
-          },
-        },
-        { onSuccess: () => setEditId(null) },
-      );
-    }
-  }
+    if (!editId || !editName.trim()) return;
 
-  function handleBudgetSave(e: React.FormEvent) {
-    e.preventDefault();
-    if (budgetEditId) {
-      const trimmed = budgetAmount.trim();
-      const amt = parseFloat(trimmed);
-      const resetBudgetEdit = () => {
-        setBudgetEditId(null);
-        setBudgetAmount('');
-      };
-      if (trimmed === '' || isNaN(amt) || amt < 0) {
-        if (budgetByCategory[budgetEditId] != null) {
-          removeBudgetMutation.mutate(budgetEditId, {
-            onSuccess: resetBudgetEdit,
-          });
-        } else {
-          resetBudgetEdit();
-        }
-      } else {
-        budgetMutation.mutate(
-          { categoryId: budgetEditId, amount: amt },
-          { onSuccess: resetBudgetEdit },
-        );
-      }
-    }
+    const id = editId;
+    const trimmedBudget = editBudgetAmount.trim();
+    const parsedBudget =
+      trimmedBudget === '' ? NaN : parseFloat(trimmedBudget);
+    const hasExistingBudget = budgetByCategory[id] != null;
+
+    const resetEditState = () => {
+      setEditId(null);
+      setEditName('');
+      setEditIsFixed(false);
+      setEditKeywords('');
+      setEditBudgetAmount('');
+    };
+
+    updateMutation.mutate(
+      {
+        id,
+        body: {
+          name: editName.trim(),
+          isFixed: editIsFixed,
+          keywords: parseKeywords(editKeywords),
+        },
+      },
+      {
+        onSuccess: () => {
+          if (trimmedBudget === '' || isNaN(parsedBudget) || parsedBudget < 0) {
+            if (hasExistingBudget) {
+              removeBudgetMutation.mutate(id, {
+                onSuccess: resetEditState,
+              });
+            } else {
+              resetEditState();
+            }
+          } else {
+            budgetMutation.mutate(
+              { categoryId: id, amount: parsedBudget },
+              { onSuccess: resetEditState },
+            );
+          }
+        },
+      },
+    );
   }
 
   if (isLoading) {
@@ -163,59 +168,99 @@ export function Categories() {
           </div>
         </CardHeader>
         <CardContent>
-          <Table className="min-w-[520px] table-fixed">
-            <TableHeader>
-              <TableRow>
-                <TableHead className="w-[180px]">Name</TableHead>
-                <TableHead>Monthly budget</TableHead>
-                <TableHead className="w-[60px] text-center">Fixed</TableHead>
-                <TableHead className="min-w-[200px]">
-                  Keywords <span className="font-normal text-muted-foreground">(comma-separated)</span>
-                </TableHead>
-                <TableHead className="w-[170px] pl-8">Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {categories.map((cat) => (
-                <CategoryTableRow
-                  key={cat.id}
-                  category={cat}
-                  budgetByCategory={budgetByCategory}
-                  editId={editId}
-                  editName={editName}
-                  editIsFixed={editIsFixed}
-                  editKeywords={editKeywords}
-                  budgetEditId={budgetEditId}
-                  budgetAmount={budgetAmount}
-                  onEditNameChange={setEditName}
-                  onEditIsFixedChange={setEditIsFixed}
-                  onEditKeywordsChange={setEditKeywords}
-                  onEditSave={handleEditSave}
-                  onEditCancel={() => setEditId(null)}
-                  onEditStart={(c) => {
-                    setEditId(c.id);
-                    setEditName(c.name);
-                    setEditIsFixed(c.isFixed ?? false);
-                    setEditKeywords((c.keywords ?? []).join(', '));
-                  }}
-                  onBudgetEditStart={(id, amt) => {
-                    setBudgetEditId(id);
-                    setBudgetAmount(amt != null ? String(amt) : '');
-                  }}
-                  onBudgetAmountChange={setBudgetAmount}
-                  onBudgetSave={handleBudgetSave}
-                  onBudgetCancel={() => {
-                    setBudgetEditId(null);
-                    setBudgetAmount('');
-                  }}
-                  onBudgetRemove={(id) => removeBudgetMutation.mutate(id)}
-                  onDeleteClick={handleDeleteClick}
-                  removeBudgetMutation={removeBudgetMutation}
-                  deleteMutation={deleteMutation}
-                />
-              ))}
-            </TableBody>
-          </Table>
+          {/* Mobile: card list (no table headers); Tailwind mobile-first, then md: table */}
+          <div className="md:hidden space-y-2">
+            {categories.map((cat) => (
+              <CategoryCard
+                key={cat.id}
+                category={cat}
+                budgetByCategory={budgetByCategory}
+                editId={editId}
+                editName={editName}
+                editIsFixed={editIsFixed}
+                editKeywords={editKeywords}
+                editBudgetAmount={editBudgetAmount}
+                onEditNameChange={setEditName}
+                onEditIsFixedChange={setEditIsFixed}
+                onEditKeywordsChange={setEditKeywords}
+                onEditBudgetAmountChange={setEditBudgetAmount}
+                onEditSave={handleEditSave}
+                onEditCancel={() => {
+                  setEditId(null);
+                  setEditName('');
+                  setEditIsFixed(false);
+                  setEditKeywords('');
+                  setEditBudgetAmount('');
+                }}
+                onEditStart={(c) => {
+                  setEditId(c.id);
+                  setEditName(c.name);
+                  setEditIsFixed(c.isFixed ?? false);
+                  setEditKeywords((c.keywords ?? []).join(', '));
+                  const currentBudget = budgetByCategory[c.id];
+                  setEditBudgetAmount(
+                    currentBudget != null ? String(currentBudget) : '',
+                  );
+                }}
+                onDeleteClick={handleDeleteClick}
+                deleteMutation={deleteMutation}
+              />
+            ))}
+          </div>
+          {/* Desktop: full-width table */}
+          <div className="hidden md:block overflow-x-auto">
+            <Table className="w-full table-auto">
+              <TableHeader>
+                <TableRow>
+                  <TableHead className="w-[180px]">Name</TableHead>
+                  <TableHead>Monthly budget</TableHead>
+                  <TableHead className="w-[60px] text-center">Fixed</TableHead>
+                  <TableHead className="min-w-[200px]">
+                    Keywords <span className="font-normal text-muted-foreground">(comma-separated)</span>
+                  </TableHead>
+                  <TableHead className="w-[170px] pl-8">Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {categories.map((cat) => (
+                  <CategoryTableRow
+                    key={cat.id}
+                    category={cat}
+                    budgetByCategory={budgetByCategory}
+                    editId={editId}
+                    editName={editName}
+                    editIsFixed={editIsFixed}
+                    editKeywords={editKeywords}
+                    editBudgetAmount={editBudgetAmount}
+                    onEditNameChange={setEditName}
+                    onEditIsFixedChange={setEditIsFixed}
+                    onEditKeywordsChange={setEditKeywords}
+                    onEditBudgetAmountChange={setEditBudgetAmount}
+                    onEditSave={handleEditSave}
+                    onEditCancel={() => {
+                      setEditId(null);
+                      setEditName('');
+                      setEditIsFixed(false);
+                      setEditKeywords('');
+                      setEditBudgetAmount('');
+                    }}
+                    onEditStart={(c) => {
+                      setEditId(c.id);
+                      setEditName(c.name);
+                      setEditIsFixed(c.isFixed ?? false);
+                      setEditKeywords((c.keywords ?? []).join(', '));
+                      const currentBudget = budgetByCategory[c.id];
+                      setEditBudgetAmount(
+                        currentBudget != null ? String(currentBudget) : '',
+                      );
+                    }}
+                    onDeleteClick={handleDeleteClick}
+                    deleteMutation={deleteMutation}
+                  />
+                ))}
+              </TableBody>
+            </Table>
+          </div>
         </CardContent>
       </Card>
     </div>

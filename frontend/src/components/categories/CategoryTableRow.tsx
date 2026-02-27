@@ -1,19 +1,9 @@
 import type { Category } from '@/types';
 import { Button } from '@/components/ui/button';
-import {
-  TableCell,
-  TableRow,
-} from '@/components/ui/table';
+import { TableCell, TableRow } from '@/components/ui/table';
 import { Input } from '@/components/ui/input';
 import { Pencil, Trash2 } from 'lucide-react';
 import type { UseMutationResult } from '@tanstack/react-query';
-
-type RemoveBudgetMutation = UseMutationResult<
-  unknown,
-  Error,
-  string,
-  unknown
->;
 
 type DeleteMutation = UseMutationResult<
   unknown,
@@ -29,21 +19,15 @@ type CategoryTableRowProps = {
   editName: string;
   editIsFixed: boolean;
   editKeywords: string;
-  budgetEditId: string | null;
-  budgetAmount: string;
+  editBudgetAmount: string;
   onEditNameChange: (v: string) => void;
   onEditIsFixedChange: (v: boolean) => void;
   onEditKeywordsChange: (v: string) => void;
+  onEditBudgetAmountChange: (v: string) => void;
   onEditSave: (e: React.FormEvent) => void;
   onEditCancel: () => void;
   onEditStart: (cat: Category) => void;
-  onBudgetEditStart: (catId: string, currentAmount: number | undefined) => void;
-  onBudgetAmountChange: (v: string) => void;
-  onBudgetSave: (e: React.FormEvent) => void;
-  onBudgetCancel: () => void;
-  onBudgetRemove: (catId: string) => void;
   onDeleteClick: (cat: Category) => void;
-  removeBudgetMutation: RemoveBudgetMutation;
   deleteMutation: DeleteMutation;
 };
 
@@ -54,30 +38,23 @@ export function CategoryTableRow({
   editName,
   editIsFixed,
   editKeywords,
-  budgetEditId,
-  budgetAmount,
+  editBudgetAmount,
   onEditNameChange,
   onEditIsFixedChange,
   onEditKeywordsChange,
+  onEditBudgetAmountChange,
   onEditSave,
   onEditCancel,
   onEditStart,
-  onBudgetEditStart,
-  onBudgetAmountChange,
-  onBudgetSave,
-  onBudgetCancel,
-  onBudgetRemove,
   onDeleteClick,
-  removeBudgetMutation,
   deleteMutation,
 }: CategoryTableRowProps) {
   const isEditing = editId === category.id;
-  const isBudgetEditing = budgetEditId === category.id;
   const budget = budgetByCategory[category.id];
 
   return (
     <TableRow key={category.id}>
-      <TableCell className="min-w-[180px]">
+      <TableCell className="min-w-[180px] align-top">
         {isEditing ? (
           <form
             id={`edit-form-${category.id}`}
@@ -97,58 +74,31 @@ export function CategoryTableRow({
           <span>{category.name}</span>
         )}
       </TableCell>
-      <TableCell>
-        {isBudgetEditing ? (
-          <form
-            onSubmit={onBudgetSave}
-            className="flex gap-2 items-center"
+      <TableCell className="align-top">
+        {isEditing ? (
+          <div
             onClick={(e) => e.stopPropagation()}
             onPointerDown={(e) => e.stopPropagation()}
+            className="flex items-center gap-2"
           >
             <Input
               type="number"
               step="0.01"
               min="0"
-              value={budgetAmount}
-              onChange={(e) => onBudgetAmountChange(e.target.value)}
+              value={editBudgetAmount}
+              onChange={(e) => onEditBudgetAmountChange(e.target.value)}
               className="max-w-[120px]"
               autoFocus
+              form={`edit-form-${category.id}`}
+              name="budget"
             />
-            <Button type="submit" size="sm">
-              Save
-            </Button>
-            {budget != null && (
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                className="border-border"
-                onClick={(e) => {
-                  e.preventDefault();
-                  e.stopPropagation();
-                  onBudgetRemove(category.id);
-                }}
-                disabled={removeBudgetMutation.isPending}
-              >
-                Clear
-              </Button>
-            )}
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              className="border-border"
-              onClick={onBudgetCancel}
-            >
-              Cancel
-            </Button>
-          </form>
+          </div>
         ) : (
           <button
             type="button"
             onClick={(e) => {
               e.stopPropagation();
-              onBudgetEditStart(category.id, budget);
+              onEditStart(category);
             }}
             className="text-left hover:underline text-muted-foreground"
           >
@@ -203,7 +153,7 @@ export function CategoryTableRow({
           </span>
         )}
       </TableCell>
-      <TableCell className="w-[170px] pl-8">
+      <TableCell className="w-[170px] pl-8 align-top">
         {isEditing ? (
           <div className="flex items-center gap-2 shrink-0">
             <Button type="submit" form={`edit-form-${category.id}`} size="sm">
@@ -219,7 +169,7 @@ export function CategoryTableRow({
               Cancel
             </Button>
           </div>
-        ) : !isBudgetEditing ? (
+        ) : (
           <div
             className="flex gap-1"
             onClick={(e) => e.stopPropagation()}
@@ -255,7 +205,7 @@ export function CategoryTableRow({
               <Trash2 className="h-4 w-4" />
             </Button>
           </div>
-        ) : null}
+        )}
       </TableCell>
     </TableRow>
   );
