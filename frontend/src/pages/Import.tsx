@@ -21,7 +21,6 @@ export function Import() {
   const [accountId, setAccountId] = useState("");
   const [file, setFile] = useState<File | null>(null);
   const [dragOver, setDragOver] = useState(false);
-  const [result, setResult] = useState<ImportResult | null>(null);
 
   const { data: accounts = [] } = useQuery({
     queryKey: ["accounts"],
@@ -40,7 +39,6 @@ export function Import() {
       return apiUpload<ImportResult>("/imports", formData);
     },
     onSuccess: (data) => {
-      setResult(data);
       setFile(null);
       queryClient.invalidateQueries({ queryKey: ["transactions"] });
       queryClient.invalidateQueries({ queryKey: ["imports"] });
@@ -162,14 +160,6 @@ export function Import() {
                 ? uploadMutation.error.message
                 : "Import failed"}
             </p>
-          )}
-          {result && (
-            <div className="rounded-md border bg-muted/30 p-4 text-sm">
-              <p className="font-medium">Import complete</p>
-              <p>Imported: {result.imported}</p>
-              <p>Skipped (duplicates): {result.skipped}</p>
-              {result.errors > 0 && <p>Errors: {result.errors}</p>}
-            </div>
           )}
         </CardContent>
       </Card>
