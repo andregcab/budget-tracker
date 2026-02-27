@@ -20,8 +20,9 @@ import {
 import { Button } from '@/components/ui/button';
 import { Bar, BarChart, Cell, Pie, PieChart, Sector, XAxis, YAxis } from 'recharts';
 import { Info } from 'lucide-react';
-import { chartConfig, PIE_COLORS } from '@/lib/chart-config';
+import { barColorByRatio, chartConfig, PIE_COLORS } from '@/lib/chart-config';
 import {
+  collapseForPie,
   renderPieLabel,
   renderPieLabelLine,
 } from '@/lib/chart-utils';
@@ -60,9 +61,10 @@ export function SpendingChartCard({
     setPieActiveIndex(undefined);
   };
 
+  const pieData = collapseForPie(variableCategories);
   const pieChartConfig: ChartConfig = (() => {
     const config: ChartConfig = { ...chartConfig };
-    variableCategories.forEach((c, i) => {
+    pieData.forEach((c, i) => {
       config[c.name] = {
         label: c.name,
         color: PIE_COLORS[i % PIE_COLORS.length],
@@ -179,7 +181,7 @@ export function SpendingChartCard({
           >
             {chartType === 'bar' ? (
               <BarChart
-                data={variableCategories}
+                data={variableCategories as { name: string; total: number }[]}
                 margin={{ left: 12, right: 12 }}
               >
                 <XAxis
@@ -193,11 +195,21 @@ export function SpendingChartCard({
                   axisLine={false}
                   tickMargin={8}
                 />
-                <Bar
-                  dataKey="total"
-                  fill="var(--color-total)"
-                  radius={[4, 4, 0, 0]}
-                />
+                <Bar dataKey="total" radius={[4, 4, 0, 0]}>
+                  {variableCategories.map((entry, index) => {
+                    const maxTotal = Math.max(
+                      ...variableCategories.map((c) => c.total),
+                      1,
+                    );
+                    const ratio = entry.total / maxTotal;
+                    return (
+                      <Cell
+                        key={index}
+                        fill={barColorByRatio(ratio)}
+                      />
+                    );
+                  })}
+                </Bar>
               </BarChart>
             ) : (
               <PieChart
@@ -218,7 +230,7 @@ export function SpendingChartCard({
                   }
                 />
                 <Pie
-                  data={variableCategories}
+                  data={pieData}
                   dataKey="total"
                   nameKey="name"
                   innerRadius={0}
@@ -274,7 +286,7 @@ export function SpendingChartCard({
                     )
                   }
                 >
-                  {variableCategories.map((_, index) => (
+                  {pieData.map((_, index) => (
                     <Cell
                       key={index}
                       fill={PIE_COLORS[index % PIE_COLORS.length]}
@@ -286,19 +298,31 @@ export function SpendingChartCard({
           </ChartContainer>
           {chartType === 'pie' &&
             pieActiveIndex !== undefined &&
-            variableCategories[pieActiveIndex] && (
+            pieData[pieActiveIndex] && (
               <div
                 className="rounded-md border border-border/50 bg-background px-3 py-2 text-sm shadow-sm"
                 role="status"
                 aria-live="polite"
               >
                 <span className="font-medium">
-                  {variableCategories[pieActiveIndex].name}
+                  {pieData[pieActiveIndex].name}
                 </span>
                 <span className="ml-2 text-muted-foreground">
                   $
-                  {variableCategories[pieActiveIndex].total.toFixed(2)}
+                  {pieData[pieActiveIndex].total.toFixed(2)}
                 </span>
+                {'_otherCategories' in pieData[pieActiveIndex] &&
+                  (pieData[pieActiveIndex] as { _otherCategories?: { name: string }[] })
+                    ._otherCategories && (
+                    <div className="mt-1 text-xs text-muted-foreground">
+                      {(
+                        (pieData[pieActiveIndex] as { _otherCategories: { name: string }[] })
+                          ._otherCategories
+                      )
+                        .map((c) => c.name)
+                        .join(', ')}
+                    </div>
+                  )}
                 <span className="ml-1 text-xs text-muted-foreground">
                   (tap again to dismiss)
                 </span>

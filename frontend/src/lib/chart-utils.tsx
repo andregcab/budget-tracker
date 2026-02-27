@@ -1,4 +1,29 @@
 const RADIAN = Math.PI / 180;
+
+/** Max segments to show in pie before collapsing rest into "Other" */
+export const PIE_MAX_VISIBLE = 6;
+
+export type ChartCategoryForPie = { name: string; total: number; [key: string]: unknown };
+
+/** Collapse small categories into "Other" when there are too many for readable labels */
+export function collapseForPie<T extends ChartCategoryForPie>(
+  categories: T[],
+  maxVisible = PIE_MAX_VISIBLE,
+): (T & { _otherCategories?: T[] })[] {
+  if (categories.length <= maxVisible) return [...categories];
+  const sorted = [...categories].sort((a, b) => b.total - a.total);
+  const top = sorted.slice(0, maxVisible);
+  const rest = sorted.slice(maxVisible);
+  const otherTotal = rest.reduce((sum, c) => sum + c.total, 0);
+  if (otherTotal <= 0) return top as (T & { _otherCategories?: T[] })[];
+  const other = {
+    ...rest[0],
+    name: 'Other',
+    total: otherTotal,
+    _otherCategories: rest,
+  } as T & { _otherCategories?: T[] };
+  return [...top, other];
+}
 export const LABEL_OFFSET = 44;
 const LINE_BUFFER = 8;
 const LINE_GAP_FROM_LABEL = 14;
