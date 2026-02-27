@@ -1,5 +1,10 @@
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { Prisma } from '@prisma/client';
+import { decimalToString } from '../prisma/decimal-utils';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateTransactionDto } from './dto/create-transaction.dto';
 import { UpdateTransactionDto } from './dto/update-transaction.dto';
@@ -52,12 +57,13 @@ export class TransactionsService {
     ]);
 
     return {
-      items: items.map((t) => ({
-        ...t,
-        amount: t.amount.toString(),
-        myShare: t.myShare?.toString() ?? null,
-        balanceAfter: t.balanceAfter?.toString() ?? null,
-      })),
+      items: items.map((t) => {
+        const amount: string = decimalToString(t.amount) ?? '';
+        const myShare: string | null = decimalToString(t.myShare);
+        const balanceAfter: string | null = decimalToString(t.balanceAfter);
+
+        return { ...t, amount, myShare, balanceAfter };
+      }),
       total,
       page,
       limit,
@@ -73,14 +79,14 @@ export class TransactionsService {
     }
 
     const amount =
-      dto.type === 'debit'
-        ? -Math.abs(dto.amount)
-        : Math.abs(dto.amount);
+      dto.type === 'debit' ? -Math.abs(dto.amount) : Math.abs(dto.amount);
 
     const myShare =
       dto.myShare != null
         ? new Prisma.Decimal(
-            dto.type === 'debit' ? -Math.abs(dto.myShare) : Math.abs(dto.myShare),
+            dto.type === 'debit'
+              ? -Math.abs(dto.myShare)
+              : Math.abs(dto.myShare),
           )
         : undefined;
 
@@ -101,9 +107,10 @@ export class TransactionsService {
 
     return {
       ...tx,
-      amount: tx.amount.toString(),
-      myShare: tx.myShare?.toString() ?? null,
-      balanceAfter: tx.balanceAfter?.toString() ?? null,
+
+      amount: decimalToString(tx.amount) ?? '',
+      myShare: decimalToString(tx.myShare),
+      balanceAfter: decimalToString(tx.balanceAfter),
     };
   }
 
@@ -148,20 +155,17 @@ export class TransactionsService {
     const categoriesWithKeywords: { id: string; keywords: string[] }[] = [];
     const list = await this.prisma.category.findMany({
       where: {
+        userId,
         isActive: true,
-        OR: [{ userId: null }, { userId }],
       },
       select: { id: true, name: true, keywords: true },
-      orderBy: { userId: 'desc' },
+      orderBy: { name: 'asc' },
     });
     list.forEach((c) => {
       const explicit = c.keywords?.filter((k) => k?.trim()) ?? [];
       const nameLower = c.name.toLowerCase().trim();
       const effective = [
-        ...new Set([
-          nameLower,
-          ...explicit.map((k) => k.toLowerCase().trim()),
-        ]),
+        ...new Set([nameLower, ...explicit.map((k) => k.toLowerCase().trim())]),
       ].filter(Boolean);
       categoriesWithKeywords.push({ id: c.id, keywords: effective });
     });
@@ -245,9 +249,10 @@ export class TransactionsService {
     });
     return {
       ...updated,
-      amount: updated.amount.toString(),
-      myShare: updated.myShare?.toString() ?? null,
-      balanceAfter: updated.balanceAfter?.toString() ?? null,
+
+      amount: decimalToString(updated.amount) ?? '',
+      myShare: decimalToString(updated.myShare),
+      balanceAfter: decimalToString(updated.balanceAfter),
     };
   }
 }

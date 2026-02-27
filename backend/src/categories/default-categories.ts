@@ -113,7 +113,12 @@ export const DEFAULT_CATEGORIES: DefaultCategory[] = [
   {
     name: 'Uncategorized',
     isFixed: false,
-    keywords: ['uncategorized', 'other', 'miscellaneous', 'professional services'],
+    keywords: [
+      'uncategorized',
+      'other',
+      'miscellaneous',
+      'professional services',
+    ],
   },
 ];
 

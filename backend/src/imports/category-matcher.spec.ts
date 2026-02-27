@@ -56,7 +56,10 @@ describe('matchCategory', () => {
     const input2 = {
       categoryByName,
       categoriesWithKeywords: [
-        { id: 'cat-restaurants', keywords: ['starbucks', 'coffee', 'food and drink'] },
+        {
+          id: 'cat-restaurants',
+          keywords: ['starbucks', 'coffee', 'food and drink'],
+        },
         { id: 'cat-groceries', keywords: ['grocery', 'whole foods'] },
       ],
     };

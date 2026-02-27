@@ -25,7 +25,6 @@ export class TransactionsController {
 
   @Post()
   create(@CurrentUser() user: UserPayload, @Body() dto: CreateTransactionDto) {
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-return -- NestJS DI; service type resolves at runtime
     return this.transactionsService.create(user.id, dto);
   }
 
@@ -88,7 +87,7 @@ export class TransactionsController {
     if (Number.isNaN(y) || Number.isNaN(m) || m < 1 || m > 12) {
       throw new BadRequestException('Valid year and month are required');
     }
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-return -- NestJS DI; service type resolves at runtime
+
     return this.transactionsService.reApplyCategories(user.id, y, m);
   }
 

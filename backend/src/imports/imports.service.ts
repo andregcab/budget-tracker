@@ -50,7 +50,6 @@ export class ImportsService {
       },
     });
 
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-call -- NestJS DI; CategoriesService type resolves at runtime
     await this.categoriesService.ensureUserCategories(userId);
 
     let imported = 0;
