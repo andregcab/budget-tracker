@@ -19,6 +19,8 @@ type UserPrefs = {
   dashboardMonth?: number;
   /** When the dashboard month was last selected (ms). Used to detect "entered new month". */
   dashboardLastSelectedAt?: number;
+  transactionsFromDate?: string;
+  transactionsToDate?: string;
 };
 
 function getAllPreferences(): Record<string, UserPrefs> {
@@ -143,6 +145,27 @@ export function setDashboardMonth(
     p.dashboardYear = year;
     p.dashboardMonth = month;
     p.dashboardLastSelectedAt = Date.now();
+  });
+}
+
+export function getTransactionsDateRange(
+  userId: string | null | undefined,
+): { from: string; to: string } {
+  const p = getUserPrefs(userId);
+  const from = typeof p.transactionsFromDate === 'string' ? p.transactionsFromDate : '';
+  const to = typeof p.transactionsToDate === 'string' ? p.transactionsToDate : '';
+  return { from, to };
+}
+
+export function setTransactionsDateRange(
+  userId: string | null | undefined,
+  from: string,
+  to: string,
+) {
+  if (!userId) return;
+  setUserPrefs(userId, (p) => {
+    p.transactionsFromDate = from;
+    p.transactionsToDate = to;
   });
 }
 

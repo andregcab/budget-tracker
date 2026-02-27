@@ -1,5 +1,4 @@
 import { useState } from 'react';
-import { useAuth } from '@/hooks/useAuth';
 import { useAccounts } from '@/hooks/useAccounts';
 import { useCategories } from '@/hooks/useCategories';
 import { useTransactions } from '@/hooks/useTransactions';
@@ -37,7 +36,6 @@ import { DeleteTransactionDialog } from '@/components/transactions/DeleteTransac
 import { DeleteMonthDialog } from '@/components/transactions/DeleteMonthDialog';
 
 export function Transactions() {
-  const { user } = useAuth();
   const { data: accounts = [] } = useAccounts();
   const { data: categories = [] } = useCategories();
   const {
@@ -57,7 +55,7 @@ export function Transactions() {
     items,
     total,
     totalPages,
-  } = useTransactions(user?.id);
+  } = useTransactions();
 
   const {
     updateMutation,

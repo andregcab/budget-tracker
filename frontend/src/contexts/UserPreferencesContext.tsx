@@ -12,11 +12,13 @@ import {
   getGettingStartedDismissed,
   getSpendingChartType,
   getTransactionsPerPage,
+  getTransactionsDateRange,
   setDashboardMonth,
   setGettingStartedConfettiShown,
   setGettingStartedDismissed,
   setSpendingChartType,
   setTransactionsPerPage,
+  setTransactionsDateRange as setTransactionsDateRangeStorage,
 } from '@/lib/user-preferences';
 import type {
   SpendingChartType,
@@ -29,9 +31,12 @@ import {
 } from '@/contexts/user-preferences-context';
 
 function readPrefs(userId: string): UserPreferencesState {
+  const { from, to } = getTransactionsDateRange(userId);
   return {
     transactionsPerPage: getTransactionsPerPage(userId),
     dashboardMonth: getDashboardMonth(userId),
+    transactionsFromDate: from,
+    transactionsToDate: to,
     spendingChartType: getSpendingChartType(userId),
     gettingStartedDismissed: getGettingStartedDismissed(userId),
     gettingStartedConfettiShown: getGettingStartedConfettiShown(userId),
@@ -42,6 +47,8 @@ function getDefaultPrefs(): UserPreferencesState {
   return {
     transactionsPerPage: 25,
     dashboardMonth: null,
+    transactionsFromDate: '',
+    transactionsToDate: '',
     spendingChartType: 'bar',
     gettingStartedDismissed: false,
     gettingStartedConfettiShown: false,
@@ -116,10 +123,24 @@ export function UserPreferencesProvider({ children }: { children: ReactNode }) {
     [userId],
   );
 
+  const setTransactionsDateRangePref = useCallback(
+    (from: string, to: string) => {
+      if (!userId) return;
+      setTransactionsDateRangeStorage(userId, from, to);
+      setPrefs((p) => ({
+        ...p,
+        transactionsFromDate: from,
+        transactionsToDate: to,
+      }));
+    },
+    [userId],
+  );
+
   const value: UserPreferencesContextValue = {
     ...prefs,
     setTransactionsPerPage: setTransactionsPerPagePref,
     setDashboardMonth: setDashboardMonthPref,
+    setTransactionsDateRange: setTransactionsDateRangePref,
     dashboardSelectionIsFromPreviousMonth: dashboardSelectionIsFromPreviousMonthFn,
     setSpendingChartType: setSpendingChartTypePref,
     setGettingStartedDismissed: setGettingStartedDismissedPref,
