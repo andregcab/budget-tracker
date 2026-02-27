@@ -69,35 +69,37 @@ export function Layout() {
             <span className="text-3xl font-semibold">Pigg</span>
             <span className="font-piggy-tail text-5xl font-bold leading-none" style={{ marginBottom: '-0.2em' }}>y</span>
           </Link>
-          <nav className="hidden flex-1 gap-2 md:flex">
-            {nav.map(({ to, label }) => (
-              <Link
-                key={to}
-                to={to}
-                className={cn(
-                  'rounded-md px-3 py-2 text-sm font-medium transition-colors',
-                  location.pathname === to
-                    ? 'bg-primary text-primary-foreground'
-                    : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground',
-                )}
-              >
-                {label}
-              </Link>
-            ))}
-          </nav>
-          <span className="hidden text-muted-foreground text-sm sm:inline truncate max-w-[120px] md:max-w-[180px]">
-            {user?.email}
-          </span>
-          <ThemeToggle />
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={logout}
-            className="border-border bg-transparent text-card-foreground hover:bg-accent hover:text-accent-foreground shrink-0"
-          >
-            Logout
-          </Button>
+          <div className="ml-auto flex shrink-0 items-center gap-2">
+            <span className="text-muted-foreground text-sm truncate max-w-[120px] sm:max-w-[180px]">
+              {user?.email}
+            </span>
+            <ThemeToggle />
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={logout}
+              className="border-border bg-transparent text-card-foreground hover:bg-accent hover:text-accent-foreground"
+            >
+              Logout
+            </Button>
+          </div>
         </div>
+        <nav className="hidden gap-2 border-t border-border px-4 py-2 md:flex flex-wrap">
+          {nav.map(({ to, label }) => (
+            <Link
+              key={to}
+              to={to}
+              className={cn(
+                'rounded-md px-3 py-2 text-sm font-medium transition-colors',
+                location.pathname === to
+                  ? 'bg-primary text-primary-foreground'
+                  : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground',
+              )}
+            >
+              {label}
+            </Link>
+          ))}
+        </nav>
         {mobileMenuOpen && (
           <nav className="flex flex-col border-t border-border px-4 py-3 md:hidden">
             {nav.map(({ to, label }) => (
@@ -118,7 +120,7 @@ export function Layout() {
           </nav>
         )}
       </header>
-      <main className="flex-1 p-3 sm:p-4 text-foreground min-w-0">
+      <main className="flex-1 pt-4 px-3 pb-3 sm:pt-5 sm:px-4 sm:pb-4 text-foreground min-w-0">
         <GettingStartedCard />
         <Outlet />
       </main>
