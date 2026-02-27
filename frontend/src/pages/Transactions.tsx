@@ -150,12 +150,12 @@ export function Transactions() {
                 ))}
               </div>
               <div className="hidden md:block">
-                <Table>
+                <Table className="table-fixed">
                   <TableHeader>
                     <TableRow>
                       <TableHead className="w-20">Exclude</TableHead>
-                      <TableHead>Date</TableHead>
-                      <TableHead className="w-[220px]">Description</TableHead>
+                      <TableHead className="w-24">Date</TableHead>
+                      <TableHead className="w-[275px]">Description</TableHead>
                       <TableHead className="text-right">Amount</TableHead>
                       <TableHead className="w-[160px]">Category</TableHead>
                       <TableHead className="w-[240px]">Notes</TableHead>

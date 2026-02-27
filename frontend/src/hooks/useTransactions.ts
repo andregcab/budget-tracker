@@ -1,37 +1,29 @@
 import { useEffect, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import {
-  getTransactions,
-  getMonthRangeFor,
-} from '@/api/transactions';
-import {
-  getDashboardMonth,
-  getTransactionsPerPage,
-  setTransactionsPerPage,
-} from '@/lib/user-preferences';
+import { getTransactions, getMonthRangeFor } from '@/api/transactions';
+import { useUserPreferences } from '@/hooks/useUserPreferences';
 
 export function useTransactions(userId: string | undefined) {
+  const {
+    transactionsPerPage: limit,
+    setTransactionsPerPage,
+    dashboardMonth,
+  } = useUserPreferences();
+
   const [accountId, setAccountId] = useState<string>('');
   const [categoryId, setCategoryId] = useState<string>('');
   const [fromDate, setFromDate] = useState('');
   const [toDate, setToDate] = useState('');
   const [page, setPage] = useState(1);
-  const [limit, setLimit] = useState(25);
 
   useEffect(() => {
-    if (!userId) return;
-    const stored = getTransactionsPerPage(userId);
-    queueMicrotask(() => setLimit(stored));
-  }, [userId]);
-
-  useEffect(() => {
-    if (!userId || fromDate || toDate) return;
-    const stored = getDashboardMonth(userId);
-    if (!stored) return;
-    const { from, to } = getMonthRangeFor(stored.year, stored.month);
-    setFromDate(from);
-    setToDate(to);
-  }, [userId, fromDate, toDate]);
+    if (!userId || fromDate || toDate || !dashboardMonth) return;
+    const { from, to } = getMonthRangeFor(dashboardMonth.year, dashboardMonth.month);
+    queueMicrotask(() => {
+      setFromDate(from);
+      setToDate(to);
+    });
+  }, [userId, fromDate, toDate, dashboardMonth]);
 
   const { data, isLoading } = useQuery({
     queryKey: [
@@ -55,8 +47,7 @@ export function useTransactions(userId: string | undefined) {
   });
 
   const handleLimitChange = (next: 25 | 50 | 100) => {
-    setLimit(next);
-    if (userId) setTransactionsPerPage(userId, next);
+    setTransactionsPerPage(next);
     setPage(1);
   };
 

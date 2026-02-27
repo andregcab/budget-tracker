@@ -3,6 +3,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "sonner";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { ThemeProvider } from "@/contexts/ThemeContext";
+import { UserPreferencesProvider } from "@/contexts/UserPreferencesContext";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { Layout } from "@/components/Layout";
 import { Login } from "@/pages/Login";
@@ -23,6 +24,7 @@ function App() {
       <ThemeProvider>
         <BrowserRouter>
           <AuthProvider>
+            <UserPreferencesProvider>
             <Routes>
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
@@ -43,6 +45,7 @@ function App() {
             </Route>
             <Route path="*" element={<Navigate to="/" replace />} />
             </Routes>
+            </UserPreferencesProvider>
           </AuthProvider>
         </BrowserRouter>
       </ThemeProvider>

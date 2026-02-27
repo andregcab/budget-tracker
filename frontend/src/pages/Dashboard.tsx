@@ -1,11 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
-import {
-  dashboardSelectionIsFromPreviousMonth,
-  getDashboardMonth,
-  setDashboardMonth,
-} from '@/lib/user-preferences';
+import { useUserPreferences } from '@/hooks/useUserPreferences';
 import { useDashboardData } from '@/hooks/useDashboardData';
 import { Card, CardContent } from '@/components/ui/card';
 import { LoadingSpinner } from '@/components/LoadingSpinner';
@@ -22,14 +18,16 @@ const INVALIDATE_KEYS = [
 ];
 
 function getInitialMonth(
-  userId: string | undefined,
+  prefs: {
+    dashboardMonth: { year: number; month: number } | null;
+    dashboardSelectionIsFromPreviousMonth: () => boolean;
+  },
   currentYear: number,
   currentMonth: number,
 ): { year: number; month: number } {
-  if (!userId) return { year: currentYear, month: currentMonth };
-  const stored = getDashboardMonth(userId);
+  const stored = prefs.dashboardMonth;
   if (!stored) return { year: currentYear, month: currentMonth };
-  if (dashboardSelectionIsFromPreviousMonth(userId)) {
+  if (prefs.dashboardSelectionIsFromPreviousMonth()) {
     return { year: currentYear, month: currentMonth };
   }
   return { year: stored.year, month: stored.month };
@@ -37,30 +35,45 @@ function getInitialMonth(
 
 export function Dashboard() {
   const { user } = useAuth();
+  const {
+    dashboardMonth,
+    setDashboardMonth,
+    dashboardSelectionIsFromPreviousMonth,
+  } = useUserPreferences();
   const now = new Date();
   const currentYear = now.getFullYear();
   const currentMonth = now.getMonth() + 1;
 
-  const initial = getInitialMonth(user?.id, currentYear, currentMonth);
+  const initial = getInitialMonth(
+    { dashboardMonth, dashboardSelectionIsFromPreviousMonth },
+    currentYear,
+    currentMonth,
+  );
   const [year, setYear] = useState(initial.year);
   const [month, setMonth] = useState(initial.month);
 
   useEffect(() => {
-    if (!user?.id) return;
-    const stored = getDashboardMonth(user.id);
-    if (!stored) return;
-    const enteredNewMonth = dashboardSelectionIsFromPreviousMonth(user.id);
+    if (!dashboardMonth) return;
+    const enteredNewMonth = dashboardSelectionIsFromPreviousMonth();
     const target = enteredNewMonth
       ? { year: currentYear, month: currentMonth }
-      : { year: stored.year, month: stored.month };
-    if (enteredNewMonth) setDashboardMonth(user.id, currentYear, currentMonth);
+      : { year: dashboardMonth.year, month: dashboardMonth.month };
+    if (enteredNewMonth) setDashboardMonth(currentYear, currentMonth);
     if (year !== target.year || month !== target.month) {
       queueMicrotask(() => {
         setYear(target.year);
         setMonth(target.month);
       });
     }
-  }, [user?.id, currentYear, currentMonth, year, month]);
+  }, [
+    dashboardMonth,
+    dashboardSelectionIsFromPreviousMonth,
+    currentYear,
+    currentMonth,
+    year,
+    month,
+    setDashboardMonth,
+  ]);
   const maxMonthForYear = year === currentYear ? currentMonth : 12;
   const effectiveMonth = Math.min(month, maxMonthForYear);
 
@@ -113,17 +126,16 @@ export function Dashboard() {
           month={effectiveMonth}
           onYearChange={(y) => {
             setYear(y);
-            if (user?.id) setDashboardMonth(user.id, y, month);
+            setDashboardMonth(y, month);
           }}
           onMonthChange={(m) => {
             setMonth(m);
-            if (user?.id) setDashboardMonth(user.id, year, m);
+            setDashboardMonth(year, m);
           }}
           onJumpToCurrent={() => {
             setYear(currentYear);
             setMonth(currentMonth);
-            if (user?.id)
-              setDashboardMonth(user.id, currentYear, currentMonth);
+            setDashboardMonth(currentYear, currentMonth);
           }}
           currentYear={currentYear}
           currentMonth={currentMonth}
@@ -166,7 +178,6 @@ export function Dashboard() {
       <SpendingChartCard
         variableCategories={variableCategories}
         variableTotal={variableTotal}
-        userId={user?.id}
       />
 
       {data && chartData.length === 0 && (

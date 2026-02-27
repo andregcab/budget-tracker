@@ -101,7 +101,7 @@ export function TransactionTableRow({
         {new Date(transaction.date).toLocaleDateString()}
       </TableCell>
       <TableCell
-        className="max-w-[220px] truncate"
+        className="max-w-[275px] truncate"
         title={transaction.description}
       >
         {transaction.description}

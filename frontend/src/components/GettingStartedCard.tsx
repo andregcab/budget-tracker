@@ -1,18 +1,13 @@
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import confetti from "canvas-confetti";
 import { Check, Lightbulb, X } from "lucide-react";
 import { api } from "@/api/client";
 import { useAuth } from "@/hooks/useAuth";
+import { useUserPreferences } from "@/hooks/useUserPreferences";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import {
-  getGettingStartedDismissed,
-  getGettingStartedConfettiShown,
-  setGettingStartedDismissed,
-  setGettingStartedConfettiShown,
-} from "@/lib/user-preferences";
 
 async function getAccounts(): Promise<{ id: string }[]> {
   return api("/accounts");
@@ -27,16 +22,12 @@ async function getMonthlySummary(): Promise<{ totalSpend: number }> {
 
 export function GettingStartedCard() {
   const { user } = useAuth();
-  const userId = user?.id ?? null;
-  const [dismissed, setDismissed] = useState(false);
-
-  useEffect(() => {
-    if (userId) {
-      queueMicrotask(() =>
-        setDismissed(getGettingStartedDismissed(userId)),
-      );
-    }
-  }, [userId]);
+  const {
+    gettingStartedDismissed: dismissed,
+    setGettingStartedDismissed,
+    gettingStartedConfettiShown,
+    setGettingStartedConfettiShown,
+  } = useUserPreferences();
 
   const { data: accounts = [] } = useQuery({
     queryKey: ["accounts"],
@@ -55,8 +46,8 @@ export function GettingStartedCard() {
   const allDone = hasAccounts && hasTransactions && hasIncome;
 
   useEffect(() => {
-    if (allDone && userId && !getGettingStartedConfettiShown(userId)) {
-      setGettingStartedConfettiShown(userId, true);
+    if (allDone && !gettingStartedConfettiShown) {
+      setGettingStartedConfettiShown(true);
       confetti({
         particleCount: 80,
         spread: 60,
@@ -64,11 +55,10 @@ export function GettingStartedCard() {
         disableForReducedMotion: true,
       });
     }
-  }, [allDone, userId]);
+  }, [allDone, gettingStartedConfettiShown, setGettingStartedConfettiShown]);
 
   function handleDismiss() {
-    if (userId) setGettingStartedDismissed(userId, true);
-    setDismissed(true);
+    setGettingStartedDismissed(true);
   }
 
   if (dismissed) {

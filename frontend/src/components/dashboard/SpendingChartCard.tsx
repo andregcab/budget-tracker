@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import {
   ChartContainer,
@@ -26,38 +26,26 @@ import {
   renderPieLabel,
   renderPieLabelLine,
 } from '@/lib/chart-utils';
-import {
-  getSpendingChartType,
-  setSpendingChartType,
-} from '@/lib/user-preferences';
+import { useUserPreferences } from '@/hooks/useUserPreferences';
 import type { ChartCategory } from '@/hooks/useDashboardData';
 
 type SpendingChartCardProps = {
   variableCategories: ChartCategory[];
   variableTotal: number;
-  userId: string | undefined;
 };
 
 export function SpendingChartCard({
   variableCategories,
   variableTotal,
-  userId,
 }: SpendingChartCardProps) {
-  const [chartType, setChartType] = useState<'bar' | 'pie'>('bar');
+  const { spendingChartType: chartType, setSpendingChartType } =
+    useUserPreferences();
   const [pieActiveIndex, setPieActiveIndex] = useState<
     number | undefined
   >(undefined);
 
-  useEffect(() => {
-    if (userId) {
-      const stored = getSpendingChartType(userId);
-      queueMicrotask(() => setChartType(stored));
-    }
-  }, [userId]);
-
   const handleChartTypeChange = (type: 'bar' | 'pie') => {
-    setChartType(type);
-    if (userId) setSpendingChartType(userId, type);
+    setSpendingChartType(type);
     setPieActiveIndex(undefined);
   };
 
