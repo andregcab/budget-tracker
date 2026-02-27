@@ -4,10 +4,12 @@ import {
   useState,
   type ReactNode,
 } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { api } from "@/api/client";
 import { AuthContext, type User } from "./auth-context";
 
 export function AuthProvider({ children }: { children: ReactNode }) {
+  const queryClient = useQueryClient();
   const [token, setToken] = useState<string | null>(() =>
     localStorage.getItem("token")
   );
@@ -32,7 +34,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setToken(null);
     setFetchedUser(null);
     localStorage.removeItem("token");
-  }, []);
+    queryClient.clear();
+  }, [queryClient]);
 
   const login = useCallback(async (email: string, password: string) => {
     const res = await api<{ user: User; token: string }>("/auth/login", {
