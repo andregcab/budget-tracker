@@ -25,6 +25,8 @@ export async function updateTransaction(
     categoryId?: string | null;
     notes?: string | null;
     isExcluded?: boolean;
+    amount?: number;
+    myShare?: number | null;
   },
 ) {
   return api<TransactionRow>(`/transactions/${id}`, {
@@ -42,6 +44,7 @@ export async function createTransaction(body: {
   date: string;
   description: string;
   amount: number;
+  myShare?: number;
   type: 'debit' | 'credit';
   categoryId?: string | null;
   notes?: string | null;

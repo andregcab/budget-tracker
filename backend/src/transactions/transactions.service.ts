@@ -55,6 +55,7 @@ export class TransactionsService {
       items: items.map((t) => ({
         ...t,
         amount: t.amount.toString(),
+        myShare: t.myShare?.toString() ?? null,
         balanceAfter: t.balanceAfter?.toString() ?? null,
       })),
       total,
@@ -76,6 +77,13 @@ export class TransactionsService {
         ? -Math.abs(dto.amount)
         : Math.abs(dto.amount);
 
+    const myShare =
+      dto.myShare != null
+        ? new Prisma.Decimal(
+            dto.type === 'debit' ? -Math.abs(dto.myShare) : Math.abs(dto.myShare),
+          )
+        : undefined;
+
     const tx = await this.prisma.transaction.create({
       data: {
         userId,
@@ -83,6 +91,7 @@ export class TransactionsService {
         date: new Date(dto.date),
         description: dto.description.trim(),
         amount: new Prisma.Decimal(amount),
+        ...(myShare !== undefined && { myShare }),
         type: dto.type,
         categoryId: dto.categoryId || null,
         notes: dto.notes?.trim() || null,
@@ -93,6 +102,7 @@ export class TransactionsService {
     return {
       ...tx,
       amount: tx.amount.toString(),
+      myShare: tx.myShare?.toString() ?? null,
       balanceAfter: tx.balanceAfter?.toString() ?? null,
     };
   }
@@ -204,18 +214,39 @@ export class TransactionsService {
     if (!tx) {
       throw new NotFoundException('Transaction not found');
     }
+
+    const data: Prisma.TransactionUpdateInput = {};
+    if (dto.categoryId !== undefined) {
+      data.category =
+        dto.categoryId === null
+          ? { disconnect: true }
+          : { connect: { id: dto.categoryId } };
+    }
+    if (dto.notes !== undefined) data.notes = dto.notes;
+    if (dto.isExcluded !== undefined) data.isExcluded = dto.isExcluded;
+
+    if (dto.amount !== undefined) {
+      const sign = tx.type === 'debit' ? -1 : 1;
+      data.amount = new Prisma.Decimal(sign * Math.abs(dto.amount));
+    }
+
+    if (dto.myShare !== undefined) {
+      const sign = Number(tx.amount) < 0 ? -1 : 1;
+      data.myShare =
+        dto.myShare === null
+          ? null
+          : new Prisma.Decimal(sign * Math.abs(dto.myShare));
+    }
+
     const updated = await this.prisma.transaction.update({
       where: { id },
-      data: {
-        ...(dto.categoryId !== undefined && { categoryId: dto.categoryId }),
-        ...(dto.notes !== undefined && { notes: dto.notes }),
-        ...(dto.isExcluded !== undefined && { isExcluded: dto.isExcluded }),
-      },
+      data,
       include: { category: { select: { id: true, name: true } } },
     });
     return {
       ...updated,
       amount: updated.amount.toString(),
+      myShare: updated.myShare?.toString() ?? null,
       balanceAfter: updated.balanceAfter?.toString() ?? null,
     };
   }

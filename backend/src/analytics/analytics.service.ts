@@ -58,7 +58,7 @@ export class AnalyticsService {
     > = {};
     let totalSpend = 0;
     for (const tx of transactions) {
-      const amt = Number(tx.amount);
+      const amt = Number(tx.myShare ?? tx.amount);
       totalSpend += Math.abs(amt);
       const key = tx.category?.id ?? 'uncategorized';
       const name = tx.category?.name ?? 'Uncategorized';

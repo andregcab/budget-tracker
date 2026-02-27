@@ -61,6 +61,7 @@ export function AddTransactionDialog({
     date: new Date().toISOString().slice(0, 10),
     description: '',
     amount: '',
+    myShare: '' as string,
     type: 'debit' as 'debit' | 'credit',
     categoryId: '' as string | null,
     notes: '',
@@ -73,12 +74,31 @@ export function AddTransactionDialog({
         date: new Date().toISOString().slice(0, 10),
         description: '',
         amount: '',
+        myShare: '',
         type: 'debit',
         categoryId: defaultCategoryId,
         notes: '',
       });
     }
   }, [open, defaultAccountId, defaultCategoryId, accounts]);
+
+  const amt = parseFloat(form.amount);
+  const absAmt = Math.abs(amt);
+  const myShareNum = form.myShare ? parseFloat(form.myShare) : null;
+  const isHalfSplit =
+    amt > 0 && myShareNum != null && Math.abs(myShareNum - absAmt / 2) < 0.01;
+
+  const handleHalfClick = () => {
+    if (!form.amount || amt <= 0) return;
+    if (isHalfSplit) {
+      setForm((f) => ({ ...f, myShare: '' }));
+    } else {
+      setForm((f) => ({
+        ...f,
+        myShare: (Math.abs(amt) / 2).toFixed(2),
+      }));
+    }
+  };
 
   const handleOpenChange = (nextOpen: boolean) => {
     onOpenChange(nextOpen);
@@ -101,6 +121,9 @@ export function AddTransactionDialog({
         date: form.date,
         description: form.description.trim(),
         amount: amt,
+        ...(form.myShare && parseFloat(form.myShare) > 0 && {
+          myShare: parseFloat(form.myShare),
+        }),
         type: form.type,
         categoryId: form.categoryId || null,
         notes: form.notes.trim() || null,
@@ -158,17 +181,38 @@ export function AddTransactionDialog({
             <div className="grid grid-cols-2 gap-4">
               <div className="grid gap-2">
                 <Label htmlFor="add-amount">Amount</Label>
-                <Input
-                  id="add-amount"
-                  type="number"
-                  step="0.01"
-                  min="0.01"
-                  placeholder="0.00"
-                  value={form.amount}
-                  onChange={(e) =>
-                    setForm((f) => ({ ...f, amount: e.target.value }))
-                  }
-                />
+                <div className="flex gap-2">
+                  <Input
+                    id="add-amount"
+                    type="number"
+                    step="0.01"
+                    min="0.01"
+                    placeholder="0.00"
+                    value={form.amount}
+                    onChange={(e) =>
+                      setForm((f) => ({
+                        ...f,
+                        amount: e.target.value,
+                        myShare: '',
+                      }))
+                    }
+                  />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={handleHalfClick}
+                    disabled={!form.amount || amt <= 0}
+                    title={isHalfSplit ? 'Clear split' : 'Split 50/50'}
+                  >
+                    ½
+                  </Button>
+                </div>
+                {form.myShare && (
+                  <p className="text-xs text-muted-foreground">
+                    My share: ${parseFloat(form.myShare).toFixed(2)}
+                  </p>
+                )}
               </div>
               <div className="grid gap-2">
                 <Label htmlFor="add-type">Type</Label>

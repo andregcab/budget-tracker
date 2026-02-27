@@ -1,4 +1,12 @@
-import { IsBoolean, IsOptional, IsString } from 'class-validator';
+import {
+  IsBoolean,
+  IsNumber,
+  IsOptional,
+  IsString,
+  Min,
+  ValidateIf,
+} from 'class-validator';
+import { Type } from 'class-transformer';
 
 export class UpdateTransactionDto {
   @IsString()
@@ -12,4 +20,16 @@ export class UpdateTransactionDto {
   @IsBoolean()
   @IsOptional()
   isExcluded?: boolean;
+
+  @IsNumber()
+  @IsOptional()
+  @Type(() => Number)
+  amount?: number;
+
+  @ValidateIf((o) => o.myShare != null)
+  @IsNumber()
+  @Min(0.01, { message: 'My share must be greater than 0' })
+  @IsOptional()
+  @Type(() => Number)
+  myShare?: number | null;
 }

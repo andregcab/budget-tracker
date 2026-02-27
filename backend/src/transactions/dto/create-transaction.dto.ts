@@ -23,6 +23,12 @@ export class CreateTransactionDto {
   @Type(() => Number)
   amount: number;
 
+  @IsNumber()
+  @Min(0.01, { message: 'My share must be greater than 0' })
+  @IsOptional()
+  @Type(() => Number)
+  myShare?: number;
+
   @IsString()
   @IsIn(['debit', 'credit'])
   type: 'debit' | 'credit';

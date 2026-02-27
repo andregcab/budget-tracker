@@ -99,6 +99,7 @@ model Transaction {
   date        DateTime
   description String
   amount      Decimal   @db.Decimal(12, 2)
+  myShare     Decimal?  @db.Decimal(12, 2)
   type        String
   balanceAfter Decimal? @db.Decimal(12, 2)
   categoryId   String?

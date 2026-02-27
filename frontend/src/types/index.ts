@@ -43,6 +43,7 @@ export type TransactionRow = {
   date: string;
   description: string;
   amount: string;
+  myShare: string | null;
   type: string;
   category: CategoryMinimal | null;
   notes: string | null;
