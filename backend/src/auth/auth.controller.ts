@@ -1,5 +1,6 @@
 import { Body, Controller, Get, Patch, Post, UseGuards } from '@nestjs/common';
 import { AuthService } from './auth.service';
+import { ChangePasswordDto } from './dto/change-password.dto';
 import { LoginDto } from './dto/login.dto';
 import { RegisterDto } from './dto/register.dto';
 import { UpdateMeDto } from './dto/update-me.dto';
@@ -32,5 +33,18 @@ export class AuthController {
   @UseGuards(JwtAuthGuard)
   async updateMe(@CurrentUser() user: UserPayload, @Body() dto: UpdateMeDto) {
     return this.authService.updateMe(user.id, dto);
+  }
+
+  @Patch('me/password')
+  @UseGuards(JwtAuthGuard)
+  async changePassword(
+    @CurrentUser() user: UserPayload,
+    @Body() dto: ChangePasswordDto,
+  ) {
+    await this.authService.changePassword(
+      user.id,
+      dto.currentPassword,
+      dto.newPassword,
+    );
   }
 }

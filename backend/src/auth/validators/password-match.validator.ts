@@ -7,8 +7,9 @@ import {
 @ValidatorConstraint({ name: 'IsPasswordMatching', async: false })
 export class IsPasswordMatching implements ValidatorConstraintInterface {
   validate(value: string, args: ValidationArguments): boolean {
-    const obj = args.object as { password?: string };
-    return value === obj.password;
+    const prop = (args.constraints?.[0] as string) || 'password';
+    const obj = args.object as Record<string, unknown>;
+    return value === obj[prop];
   }
 
   defaultMessage(): string {
