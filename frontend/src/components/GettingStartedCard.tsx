@@ -31,7 +31,11 @@ export function GettingStartedCard() {
   const [dismissed, setDismissed] = useState(false);
 
   useEffect(() => {
-    if (userId) setDismissed(getGettingStartedDismissed(userId));
+    if (userId) {
+      queueMicrotask(() =>
+        setDismissed(getGettingStartedDismissed(userId)),
+      );
+    }
   }, [userId]);
 
   const { data: accounts = [] } = useQuery({
@@ -92,7 +96,7 @@ export function GettingStartedCard() {
   }
 
   return (
-    <Card className="mb-4 border-amber-500/50 bg-amber-500/5">
+    <Card className="mb-4 border-amber-500/50 bg-amber-500/5 nudge-attention">
       <CardContent className="flex gap-3 pt-4 pb-4 pr-4">
         <Lightbulb className="h-5 w-5 shrink-0 text-amber-600 dark:text-amber-500 mt-0.5" />
         <div className="flex-1 min-w-0 space-y-2 text-sm">

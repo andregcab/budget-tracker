@@ -28,16 +28,19 @@ export function useDashboardData(year: number, effectiveMonth: number) {
   const { data, isLoading } = useQuery({
     queryKey: ['analytics', 'monthly', year, effectiveMonth],
     queryFn: () => getMonthlySummary(year, effectiveMonth),
+    placeholderData: (prev) => prev,
   });
 
   const { data: override } = useQuery({
     queryKey: ['revenue', year, effectiveMonth],
     queryFn: () => getRevenueOverride(year, effectiveMonth),
+    placeholderData: (prev) => prev,
   });
 
   const { data: expectedFixed = [] } = useQuery({
     queryKey: ['expected-fixed-expenses', year, effectiveMonth],
     queryFn: () => getExpectedFixedExpenses(year, effectiveMonth),
+    placeholderData: (prev) => prev,
   });
 
   const { data: categories = [] } = useQuery({

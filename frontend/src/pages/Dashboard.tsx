@@ -1,11 +1,13 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
-import { useDashboardData } from '@/hooks/useDashboardData';
 import {
-  Card,
-  CardContent,
-} from '@/components/ui/card';
+  dashboardSelectionIsFromPreviousMonth,
+  getDashboardMonth,
+  setDashboardMonth,
+} from '@/lib/user-preferences';
+import { useDashboardData } from '@/hooks/useDashboardData';
+import { Card, CardContent } from '@/components/ui/card';
 import { LoadingSpinner } from '@/components/LoadingSpinner';
 import { MonthYearPicker } from '@/components/MonthYearPicker';
 import { SummaryCard } from '@/components/dashboard/SummaryCard';
@@ -19,14 +21,46 @@ const INVALIDATE_KEYS = [
   'expected-fixed-expenses',
 ];
 
+function getInitialMonth(
+  userId: string | undefined,
+  currentYear: number,
+  currentMonth: number,
+): { year: number; month: number } {
+  if (!userId) return { year: currentYear, month: currentMonth };
+  const stored = getDashboardMonth(userId);
+  if (!stored) return { year: currentYear, month: currentMonth };
+  if (dashboardSelectionIsFromPreviousMonth(userId)) {
+    return { year: currentYear, month: currentMonth };
+  }
+  return { year: stored.year, month: stored.month };
+}
+
 export function Dashboard() {
   const { user } = useAuth();
   const now = new Date();
-  const [year, setYear] = useState(now.getFullYear());
-  const [month, setMonth] = useState(now.getMonth() + 1);
-
   const currentYear = now.getFullYear();
   const currentMonth = now.getMonth() + 1;
+
+  const initial = getInitialMonth(user?.id, currentYear, currentMonth);
+  const [year, setYear] = useState(initial.year);
+  const [month, setMonth] = useState(initial.month);
+
+  useEffect(() => {
+    if (!user?.id) return;
+    const stored = getDashboardMonth(user.id);
+    if (!stored) return;
+    const enteredNewMonth = dashboardSelectionIsFromPreviousMonth(user.id);
+    const target = enteredNewMonth
+      ? { year: currentYear, month: currentMonth }
+      : { year: stored.year, month: stored.month };
+    if (enteredNewMonth) setDashboardMonth(user.id, currentYear, currentMonth);
+    if (year !== target.year || month !== target.month) {
+      queueMicrotask(() => {
+        setYear(target.year);
+        setMonth(target.month);
+      });
+    }
+  }, [user?.id, currentYear, currentMonth, year, month]);
   const maxMonthForYear = year === currentYear ? currentMonth : 12;
   const effectiveMonth = Math.min(month, maxMonthForYear);
 
@@ -46,6 +80,12 @@ export function Dashboard() {
 
   const hasOverride = override != null;
   const defaultIncome = user?.monthlyIncome ?? 0;
+  const isViewingCurrentMonth =
+    year === currentYear && effectiveMonth === currentMonth;
+  const hasNoTransactions = (data?.totalSpend ?? 0) === 0;
+  const needsTransactionNudge =
+    hasNoTransactions &&
+    (chartData.length > 0 || fixedCategories.length > 0);
   const monthName = new Date(year, effectiveMonth - 1).toLocaleString(
     'default',
     { month: 'long' },
@@ -71,8 +111,20 @@ export function Dashboard() {
         <MonthYearPicker
           year={year}
           month={effectiveMonth}
-          onYearChange={setYear}
-          onMonthChange={setMonth}
+          onYearChange={(y) => {
+            setYear(y);
+            if (user?.id) setDashboardMonth(user.id, y, month);
+          }}
+          onMonthChange={(m) => {
+            setMonth(m);
+            if (user?.id) setDashboardMonth(user.id, year, m);
+          }}
+          onJumpToCurrent={() => {
+            setYear(currentYear);
+            setMonth(currentMonth);
+            if (user?.id)
+              setDashboardMonth(user.id, currentYear, currentMonth);
+          }}
           currentYear={currentYear}
           currentMonth={currentMonth}
         />
@@ -80,9 +132,12 @@ export function Dashboard() {
 
       {data && (
         <SummaryCard
+          key={`${year}-${effectiveMonth}`}
           income={data.totalRevenue ?? 0}
           expenses={fixedTotal + variableTotal}
-          savings={(data.totalRevenue ?? 0) - (fixedTotal + variableTotal)}
+          savings={
+            (data.totalRevenue ?? 0) - (fixedTotal + variableTotal)
+          }
           incomeAmountSlot={
             <IncomeEditDialog
               year={year}
@@ -115,7 +170,7 @@ export function Dashboard() {
       />
 
       {data && chartData.length === 0 && (
-        <Card className="mt-6">
+        <Card className="mt-6 nudge-attention">
           <CardContent className="py-8">
             <p className="text-muted-foreground text-center">
               No spending data yet. Import a CSV from the{' '}
@@ -127,6 +182,26 @@ export function Dashboard() {
           </CardContent>
         </Card>
       )}
+      {data &&
+        isViewingCurrentMonth &&
+        needsTransactionNudge &&
+        chartData.length > 0 && (
+          <Card className="mt-6 nudge-attention">
+            <CardContent className="py-4">
+              <p className="text-muted-foreground text-center text-sm">
+                Add transactions for {monthName} to see your spending.{' '}
+                <Link to="/import" className="underline">
+                  Import
+                </Link>{' '}
+                from CSV or add manually in{' '}
+                <Link to="/transactions" className="underline">
+                  Transactions
+                </Link>
+                .
+              </p>
+            </CardContent>
+          </Card>
+        )}
     </div>
   );
 }

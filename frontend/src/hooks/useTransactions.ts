@@ -1,7 +1,11 @@
 import { useEffect, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { getTransactions } from '@/api/transactions';
 import {
+  getTransactions,
+  getMonthRangeFor,
+} from '@/api/transactions';
+import {
+  getDashboardMonth,
   getTransactionsPerPage,
   setTransactionsPerPage,
 } from '@/lib/user-preferences';
@@ -15,11 +19,19 @@ export function useTransactions(userId: string | undefined) {
   const [limit, setLimit] = useState(25);
 
   useEffect(() => {
-    if (userId) {
-      const stored = getTransactionsPerPage(userId);
-      queueMicrotask(() => setLimit(stored));
-    }
+    if (!userId) return;
+    const stored = getTransactionsPerPage(userId);
+    queueMicrotask(() => setLimit(stored));
   }, [userId]);
+
+  useEffect(() => {
+    if (!userId || fromDate || toDate) return;
+    const stored = getDashboardMonth(userId);
+    if (!stored) return;
+    const { from, to } = getMonthRangeFor(stored.year, stored.month);
+    setFromDate(from);
+    setToDate(to);
+  }, [userId, fromDate, toDate]);
 
   const { data, isLoading } = useQuery({
     queryKey: [

@@ -15,6 +15,10 @@ type UserPrefs = {
   spendingChartType?: string;
   gettingStartedDismissed?: boolean;
   gettingStartedConfettiShown?: boolean;
+  dashboardYear?: number;
+  dashboardMonth?: number;
+  /** When the dashboard month was last selected (ms). Used to detect "entered new month". */
+  dashboardLastSelectedAt?: number;
 };
 
 function getAllPreferences(): Record<string, UserPrefs> {
@@ -111,4 +115,49 @@ export function setGettingStartedConfettiShown(
   setUserPrefs(userId, (p) => {
     p.gettingStartedConfettiShown = shown;
   });
+}
+
+export function getDashboardMonth(
+  userId: string | null | undefined,
+): { year: number; month: number; lastSelectedAt?: number } | null {
+  const p = getUserPrefs(userId);
+  const y = p.dashboardYear;
+  const m = p.dashboardMonth;
+  if (typeof y === 'number' && typeof m === 'number' && m >= 1 && m <= 12) {
+    return {
+      year: y,
+      month: m,
+      lastSelectedAt: p.dashboardLastSelectedAt,
+    };
+  }
+  return null;
+}
+
+export function setDashboardMonth(
+  userId: string | null | undefined,
+  year: number,
+  month: number,
+) {
+  if (!userId) return;
+  setUserPrefs(userId, (p) => {
+    p.dashboardYear = year;
+    p.dashboardMonth = month;
+    p.dashboardLastSelectedAt = Date.now();
+  });
+}
+
+/** True if last selection was in a previous calendar month (user has "entered" a new month) */
+export function dashboardSelectionIsFromPreviousMonth(
+  userId: string | null | undefined,
+): boolean {
+  const p = getUserPrefs(userId);
+  const at = p.dashboardLastSelectedAt;
+  if (typeof at !== 'number') return true;
+  const then = new Date(at);
+  const now = new Date();
+  return (
+    then.getFullYear() < now.getFullYear() ||
+    (then.getFullYear() === now.getFullYear() &&
+      then.getMonth() < now.getMonth())
+  );
 }

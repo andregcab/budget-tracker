@@ -68,10 +68,18 @@ export async function deleteTransactionsByDateRange(
 /** Returns the current month's date range in YYYY-MM-DD format */
 export function getMonthRange(): { from: string; to: string } {
   const now = new Date();
-  const y = now.getFullYear();
-  const m = String(now.getMonth() + 1).padStart(2, '0');
+  return getMonthRangeFor(now.getFullYear(), now.getMonth() + 1);
+}
+
+/** Returns a given month's date range in YYYY-MM-DD format */
+export function getMonthRangeFor(year: number, month: number): {
+  from: string;
+  to: string;
+} {
+  const m = String(month).padStart(2, '0');
+  const lastDay = new Date(year, month, 0).getDate();
   return {
-    from: `${y}-${m}-01`,
-    to: `${y}-${m}-${new Date(y, now.getMonth() + 1, 0).getDate().toString().padStart(2, '0')}`,
+    from: `${year}-${m}-01`,
+    to: `${year}-${m}-${String(lastDay).padStart(2, '0')}`,
   };
 }

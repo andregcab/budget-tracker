@@ -5,6 +5,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { Button } from '@/components/ui/button';
 
 interface MonthYearPickerProps {
   year: number;
@@ -13,6 +14,7 @@ interface MonthYearPickerProps {
   onMonthChange: (month: number) => void;
   currentYear: number;
   currentMonth: number;
+  onJumpToCurrent?: () => void;
 }
 
 export function MonthYearPicker({
@@ -22,7 +24,10 @@ export function MonthYearPicker({
   onMonthChange,
   currentYear,
   currentMonth,
+  onJumpToCurrent,
 }: MonthYearPickerProps) {
+  const isViewingCurrent =
+    year === currentYear && month === currentMonth;
   const availableYears = [
     currentYear,
     currentYear - 1,
@@ -41,7 +46,7 @@ export function MonthYearPicker({
   };
 
   return (
-    <div className="flex flex-wrap gap-2">
+    <div className="flex flex-wrap items-center gap-2">
       <Select
         value={String(month)}
         onValueChange={(v) => onMonthChange(parseInt(v, 10))}
@@ -71,6 +76,16 @@ export function MonthYearPicker({
           ))}
         </SelectContent>
       </Select>
+      {onJumpToCurrent && !isViewingCurrent && (
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={onJumpToCurrent}
+          className="border border-border text-card-foreground hover:text-accent-foreground"
+        >
+          This month
+        </Button>
+      )}
     </div>
   );
 }

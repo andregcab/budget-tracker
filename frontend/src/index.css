@@ -130,6 +130,30 @@ body[data-scroll-locked] {
   animation: pie-slice-raise 0.25s linear forwards;
 }
 
+/* Subtle nudge glow — like video game hints: soft, attention-drawing without being loud */
+@keyframes nudge-glow {
+  0%, 100% {
+    box-shadow: 0 0 0 1px oklch(0.7 0.12 85 / 0.25),
+      0 0 0 1px oklch(0.7 0.12 85 / 0.08) inset;
+  }
+  50% {
+    box-shadow: 0 0 0 1px oklch(0.7 0.12 85 / 0.4),
+      0 0 12px oklch(0.7 0.12 85 / 0.12),
+      0 0 0 1px oklch(0.7 0.12 85 / 0.08) inset;
+  }
+}
+
+.nudge-attention {
+  animation: nudge-glow 4s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .nudge-attention {
+    animation: none;
+    box-shadow: 0 0 0 1px oklch(0.7 0.12 85 / 0.3);
+  }
+}
+
 .font-piggy-tail {
   font-family: 'Dancing Script', cursive;
 }
