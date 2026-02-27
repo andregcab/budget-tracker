@@ -164,7 +164,7 @@ export function Categories() {
                 <TableHead className="min-w-[120px]">
                   Import keywords
                 </TableHead>
-                <TableHead className="w-[140px]">Actions</TableHead>
+                <TableHead className="w-[140px] pl-12">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>

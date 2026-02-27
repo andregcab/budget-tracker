@@ -233,7 +233,7 @@ export function CategoryTableRow({
           </button>
         )}
       </TableCell>
-      <TableCell className="w-[140px]">
+      <TableCell className="w-[140px] pl-12">
         {isEditing ? (
           <div className="flex items-center gap-3">
             <Button type="submit" form={`edit-form-${category.id}`} size="sm">
