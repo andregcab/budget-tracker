@@ -22,7 +22,6 @@ import {
 import { LoadingSpinner } from '@/components/LoadingSpinner';
 import { CategoryCreateDialog } from '@/components/categories/CategoryCreateDialog';
 import { CategoryDeleteDialog } from '@/components/categories/CategoryDeleteDialog';
-import { CategoryDeactivateDialog } from '@/components/categories/CategoryDeactivateDialog';
 import { CategoryTableRow } from '@/components/categories/CategoryTableRow';
 
 export function Categories() {
@@ -57,9 +56,6 @@ export function Categories() {
     transactionCount: number;
   } | null>(null);
   const [migrateToId, setMigrateToId] = useState('');
-  const [deactivateTarget, setDeactivateTarget] = useState<Category | null>(
-    null,
-  );
 
   async function handleDeleteClick(cat: Category) {
     const data = await getCategoryWithCount(cat.id);
@@ -147,11 +143,6 @@ export function Categories() {
         }}
         deleteMutation={deleteMutation}
       />
-      <CategoryDeactivateDialog
-        target={deactivateTarget}
-        onClose={() => setDeactivateTarget(null)}
-        updateMutation={updateMutation}
-      />
       <Card className="mt-4">
         <CardHeader>
           <CardTitle>Categories</CardTitle>
@@ -173,7 +164,6 @@ export function Categories() {
                 <TableHead className="min-w-[120px]">
                   Import keywords
                 </TableHead>
-                <TableHead>Active</TableHead>
                 <TableHead className="w-[140px]">Actions</TableHead>
               </TableRow>
             </TableHeader>
@@ -218,15 +208,7 @@ export function Categories() {
                   onKeywordsSave={handleKeywordsSave}
                   onKeywordsCancel={() => setKeywordsEditId(null)}
                   onDeleteClick={handleDeleteClick}
-                  onDeactivateClick={setDeactivateTarget}
-                  onActivateClick={(id) =>
-                    updateMutation.mutate({
-                      id,
-                      body: { isActive: true },
-                    })
-                  }
                   removeBudgetMutation={removeBudgetMutation}
-                  updateMutation={updateMutation}
                   deleteMutation={deleteMutation}
                 />
               ))}

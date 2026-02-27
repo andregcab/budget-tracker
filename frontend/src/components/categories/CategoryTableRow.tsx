@@ -15,21 +15,6 @@ type RemoveBudgetMutation = UseMutationResult<
   unknown
 >;
 
-type UpdateMutation = UseMutationResult<
-  unknown,
-  Error,
-  {
-    id: string;
-    body: {
-      name?: string;
-      isActive?: boolean;
-      isFixed?: boolean;
-      keywords?: string[];
-    };
-  },
-  unknown
->;
-
 type DeleteMutation = UseMutationResult<
   unknown,
   Error,
@@ -62,10 +47,7 @@ type CategoryTableRowProps = {
   onKeywordsSave: (e: React.FormEvent) => void;
   onKeywordsCancel: () => void;
   onDeleteClick: (cat: Category) => void;
-  onDeactivateClick: (cat: Category) => void;
-  onActivateClick: (catId: string) => void;
   removeBudgetMutation: RemoveBudgetMutation;
-  updateMutation: UpdateMutation;
   deleteMutation: DeleteMutation;
 };
 
@@ -94,10 +76,7 @@ export function CategoryTableRow({
   onKeywordsSave,
   onKeywordsCancel,
   onDeleteClick,
-  onDeactivateClick,
-  onActivateClick,
   removeBudgetMutation,
-  updateMutation,
   deleteMutation,
 }: CategoryTableRowProps) {
   const isEditing = editId === category.id;
@@ -254,7 +233,6 @@ export function CategoryTableRow({
           </button>
         )}
       </TableCell>
-      <TableCell>{category.isActive ? 'Yes' : 'No'}</TableCell>
       <TableCell className="w-[140px]">
         {isEditing ? (
           <div className="flex items-center gap-3">
@@ -305,28 +283,6 @@ export function CategoryTableRow({
               title="Delete"
             >
               <Trash2 className="h-4 w-4" />
-            </Button>
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              className={
-                category.isActive
-                  ? 'border-destructive/50 text-destructive hover:bg-destructive/10 hover:border-destructive hover:text-destructive'
-                  : ''
-              }
-              onClick={(e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                if (category.isActive) {
-                  onDeactivateClick(category);
-                } else {
-                  onActivateClick(category.id);
-                }
-              }}
-              disabled={updateMutation.isPending}
-            >
-              {category.isActive ? 'Deactivate' : 'Activate'}
             </Button>
           </div>
         ) : null}
