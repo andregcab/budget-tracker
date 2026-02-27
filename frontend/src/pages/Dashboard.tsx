@@ -6,7 +6,19 @@ import {
   useQueryClient,
 } from '@tanstack/react-query';
 import { useAuth } from '@/hooks/useAuth';
-import { api } from '@/api/client';
+import { getMonthlySummary } from '@/api/analytics';
+import {
+  getRevenueOverride,
+  upsertRevenueOverride,
+  removeRevenueOverride,
+  getAdditionalIncome,
+  createAdditionalIncome,
+  deleteAdditionalIncome,
+  getExpectedFixedExpenses,
+  createExpectedFixedExpense,
+  deleteExpectedFixedExpense,
+} from '@/api/revenue';
+import { getCategories } from '@/api/categories';
 import { Button } from '@/components/ui/button';
 import {
   Card,
@@ -59,233 +71,12 @@ import {
   getSpendingChartType,
   setSpendingChartType,
 } from '@/lib/user-preferences';
-
-type MonthlySummary = {
-  year: number;
-  month: number;
-  totalSpend: number;
-  totalRevenue: number;
-  savings: number;
-  byCategory: {
-    id: string;
-    name: string;
-    total: number;
-    budget: number;
-    isFixed: boolean;
-  }[];
-};
-
-async function getMonthlySummary(
-  year?: number,
-  month?: number,
-): Promise<MonthlySummary> {
-  const now = new Date();
-  const y = year ?? now.getFullYear();
-  const m = month ?? now.getMonth() + 1;
-  return api(`/analytics/monthly?year=${y}&month=${m}`);
-}
-
-async function getRevenueOverride(
-  year: number,
-  month: number,
-): Promise<{ amount: number } | null> {
-  return api(`/revenue?year=${year}&month=${month}`);
-}
-
-async function upsertRevenueOverride(body: {
-  year: number;
-  month: number;
-  amount: number;
-}) {
-  return api<{ amount: number }>('/revenue', {
-    method: 'PUT',
-    body: JSON.stringify(body),
-  });
-}
-
-async function removeRevenueOverride(year: number, month: number) {
-  return api(`/revenue?year=${year}&month=${month}`, {
-    method: 'DELETE',
-  });
-}
-
-type AdditionalIncomeItem = {
-  id: string;
-  amount: number;
-  description: string | null;
-};
-
-async function getAdditionalIncome(
-  year: number,
-  month: number,
-): Promise<AdditionalIncomeItem[]> {
-  return api(`/revenue/additional?year=${year}&month=${month}`);
-}
-
-async function createAdditionalIncome(body: {
-  year: number;
-  month: number;
-  amount: number;
-  description?: string;
-}) {
-  return api<AdditionalIncomeItem>('/revenue/additional', {
-    method: 'POST',
-    body: JSON.stringify(body),
-  });
-}
-
-async function deleteAdditionalIncome(id: string) {
-  return api(`/revenue/additional/${id}`, { method: 'DELETE' });
-}
-
-type ExpectedFixedItem = {
-  id: string;
-  categoryId: string;
-  categoryName: string;
-  amount: number;
-};
-
-async function getExpectedFixedExpenses(
-  year: number,
-  month: number,
-): Promise<ExpectedFixedItem[]> {
-  return api(`/expected-fixed-expenses?year=${year}&month=${month}`);
-}
-
-async function createExpectedFixedExpense(body: {
-  year: number;
-  month: number;
-  categoryId: string;
-  amount: number;
-}) {
-  return api<ExpectedFixedItem>('/expected-fixed-expenses', {
-    method: 'POST',
-    body: JSON.stringify(body),
-  });
-}
-
-async function deleteExpectedFixedExpense(id: string) {
-  return api(`/expected-fixed-expenses/${id}`, { method: 'DELETE' });
-}
-
-async function getCategories(): Promise<
-  { id: string; name: string; isFixed: boolean }[]
-> {
-  return api('/categories');
-}
-
-const chartConfig = {
-  total: { label: 'Spend', color: 'var(--chart-1)' },
-} satisfies ChartConfig;
-
-// Fixed palette - same in light/dark, lighter for visibility on light backgrounds
-const PIE_COLORS = [
-  'oklch(0.68 0.16 165)',
-  'oklch(0.65 0.15 185)',
-  'oklch(0.62 0.14 205)',
-  'oklch(0.6 0.13 225)',
-  'oklch(0.62 0.12 250)',
-  'oklch(0.65 0.11 275)',
-  'oklch(0.7 0.14 170)',
-  'oklch(0.6 0.14 195)',
-];
-
-const RADIAN = Math.PI / 180;
-const LABEL_OFFSET = 44;
-const LINE_BUFFER = 8;
-const LINE_GAP_FROM_LABEL = 14;
-
-function polarToCartesian(
-  cx: number,
-  cy: number,
-  radius: number,
-  angle: number,
-) {
-  return {
-    x: cx + radius * Math.cos(-angle * RADIAN),
-    y: cy + radius * Math.sin(-angle * RADIAN),
-  };
-}
-
-function renderPieLabel(props: {
-  cx: number;
-  cy: number;
-  x?: number;
-  y?: number;
-  midAngle: number;
-  innerRadius: number;
-  outerRadius: number;
-  percent: number;
-  name?: string;
-  payload?: { name?: string };
-}) {
-  const { cx, cy, midAngle, outerRadius, percent } = props;
-  const name = props.name ?? props.payload?.name ?? '';
-  const labelX = props.x ?? cx + (outerRadius + LABEL_OFFSET) * Math.cos(-midAngle * RADIAN);
-  const labelY = props.y ?? cy + (outerRadius + LABEL_OFFSET) * Math.sin(-midAngle * RADIAN);
-  const isRight = labelX > cx;
-  const pct = (percent * 100).toFixed(1);
-  const shortName = name.length > 20 ? `${name.slice(0, 18)}…` : name;
-
-  return (
-    <g>
-      <text
-        x={labelX}
-        y={labelY}
-        fill="currentColor"
-        textAnchor={isRight ? 'start' : 'end'}
-        dominantBaseline="central"
-        className="text-sm fill-foreground"
-      >
-        <tspan x={labelX} dy="-0.4em" className="font-medium">
-          {shortName}
-        </tspan>
-        <tspan x={labelX} dy="1.2em" className="fill-muted-foreground">
-          {pct}%
-        </tspan>
-      </text>
-    </g>
-  );
-}
-(renderPieLabel as { offsetRadius?: number }).offsetRadius = LABEL_OFFSET;
-
-function renderPieLabelLine(props: {
-  points?: [{ x: number; y: number }, { x: number; y: number }];
-  cx?: number;
-  cy?: number;
-  midAngle?: number;
-  outerRadius?: number;
-}) {
-  const { points = [], cx = 0, cy = 0, midAngle = 0, outerRadius = 0 } = props;
-  const [, end] = points;
-  const bufferedStart = polarToCartesian(
-    cx,
-    cy,
-    outerRadius + LINE_BUFFER,
-    midAngle,
-  );
-  let lineEndX = end?.x ?? bufferedStart.x;
-  let lineEndY = end?.y ?? bufferedStart.y;
-  if (end) {
-    const dx = end.x - cx;
-    const dy = end.y - cy;
-    const dist = Math.sqrt(dx * dx + dy * dy) || 1;
-    const newDist = Math.max(0, dist - LINE_GAP_FROM_LABEL);
-    lineEndX = cx + (dx / dist) * newDist;
-    lineEndY = cy + (dy / dist) * newDist;
-  }
-  return (
-    <line
-      x1={bufferedStart.x}
-      y1={bufferedStart.y}
-      x2={lineEndX}
-      y2={lineEndY}
-      stroke="#475569"
-      strokeWidth={1}
-      strokeLinecap="round"
-    />
-  );
-}
+import { chartConfig, PIE_COLORS } from '@/lib/chart-config';
+import {
+  renderPieLabel,
+  renderPieLabelLine,
+} from '@/lib/chart-utils';
+import { MonthYearPicker } from '@/components/MonthYearPicker';
 
 export function Dashboard() {
   const { user } = useAuth();
@@ -300,7 +91,7 @@ export function Dashboard() {
   const [expectedFixedOpen, setExpectedFixedOpen] = useState(false);
   const [expectedCategoryId, setExpectedCategoryId] = useState('');
   const [expectedAmount, setExpectedAmount] = useState('');
-  const [chartType, setChartType] = useState< 'bar' | 'pie'>('bar');
+  const [chartType, setChartType] = useState<'bar' | 'pie'>('bar');
 
   useEffect(() => {
     if (user?.id) {
@@ -309,9 +100,9 @@ export function Dashboard() {
     }
   }, [user?.id]);
 
-  const [pieActiveIndex, setPieActiveIndex] = useState<number | undefined>(
-    undefined,
-  );
+  const [pieActiveIndex, setPieActiveIndex] = useState<
+    number | undefined
+  >(undefined);
 
   const currentYear = now.getFullYear();
   const currentMonth = now.getMonth() + 1;
@@ -358,7 +149,9 @@ export function Dashboard() {
       setEditOpen(false);
     },
     onError: (err) => {
-      toast.error(err instanceof Error ? err.message : 'Failed to save income');
+      toast.error(
+        err instanceof Error ? err.message : 'Failed to save income',
+      );
     },
   });
 
@@ -372,7 +165,9 @@ export function Dashboard() {
       setEditOpen(false);
     },
     onError: (err) => {
-      toast.error(err instanceof Error ? err.message : 'Failed to reset income');
+      toast.error(
+        err instanceof Error ? err.message : 'Failed to reset income',
+      );
     },
   });
 
@@ -387,7 +182,9 @@ export function Dashboard() {
       setAddDescription('');
     },
     onError: (err) => {
-      toast.error(err instanceof Error ? err.message : 'Failed to add income');
+      toast.error(
+        err instanceof Error ? err.message : 'Failed to add income',
+      );
     },
   });
 
@@ -400,7 +197,11 @@ export function Dashboard() {
       queryClient.invalidateQueries({ queryKey: ['revenue'] });
     },
     onError: (err) => {
-      toast.error(err instanceof Error ? err.message : 'Failed to remove income');
+      toast.error(
+        err instanceof Error
+          ? err.message
+          : 'Failed to remove income',
+      );
     },
   });
 
@@ -418,7 +219,11 @@ export function Dashboard() {
       setExpectedAmount('');
     },
     onError: (err) => {
-      toast.error(err instanceof Error ? err.message : 'Failed to add expected expense');
+      toast.error(
+        err instanceof Error
+          ? err.message
+          : 'Failed to add expected expense',
+      );
     },
   });
 
@@ -433,7 +238,11 @@ export function Dashboard() {
       });
     },
     onError: (err) => {
-      toast.error(err instanceof Error ? err.message : 'Failed to remove expected expense');
+      toast.error(
+        err instanceof Error
+          ? err.message
+          : 'Failed to remove expected expense',
+      );
     },
   });
 
@@ -501,23 +310,6 @@ export function Dashboard() {
       month: 'long',
     },
   );
-
-  const availableYears = [
-    currentYear,
-    currentYear - 1,
-    currentYear - 2,
-  ];
-  const availableMonths =
-    year === currentYear
-      ? Array.from({ length: currentMonth }, (_, i) => i + 1)
-      : [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12];
-
-  const handleYearChange = (v: string) => {
-    const newYear = parseInt(v, 10);
-    setYear(newYear);
-    const maxMonth = newYear === currentYear ? currentMonth : 12;
-    if (month > maxMonth) setMonth(maxMonth);
-  };
 
   const chartData =
     data?.byCategory.map((c) => ({
@@ -591,258 +383,252 @@ export function Dashboard() {
         Spending and savings overview for {monthName} {year}.
       </p>
 
-      <div className="mt-4 flex flex-wrap gap-2">
-        <Select
-          value={String(effectiveMonth)}
-          onValueChange={(v) => setMonth(parseInt(v, 10))}
-        >
-          <SelectTrigger className="h-9 w-full sm:w-[140px] bg-background text-foreground">
-            <SelectValue placeholder="Month" />
-          </SelectTrigger>
-          <SelectContent>
-            {availableMonths.map((m) => (
-              <SelectItem key={m} value={String(m)}>
-                {new Date(2000, m - 1).toLocaleString('default', {
-                  month: 'long',
-                })}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-        <Select value={String(year)} onValueChange={handleYearChange}>
-          <SelectTrigger className="h-9 w-full sm:w-[100px] bg-background text-foreground">
-            <SelectValue placeholder="Year" />
-          </SelectTrigger>
-          <SelectContent>
-            {availableYears.map((y) => (
-              <SelectItem key={y} value={String(y)}>
-                {y}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+      <div className="mt-4">
+        <MonthYearPicker
+          year={year}
+          month={effectiveMonth}
+          onYearChange={setYear}
+          onMonthChange={setMonth}
+          currentYear={currentYear}
+          currentMonth={currentMonth}
+        />
       </div>
 
       {/* Summary: Income vs Expenses */}
-      {data && (() => {
-        const income = data.totalRevenue ?? 0;
-        const expenses = data.totalSpend ?? 0;
-        const maxVal = Math.max(income, expenses, 1);
-        const incomePct = (income / maxVal) * 100;
-        const expensesPct = (expenses / maxVal) * 100;
-        return (
-        <Card className="mt-6">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-base">Summary</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="space-y-3">
-              <div className="flex items-center gap-3">
-                <span className="text-sm font-medium w-20 shrink-0">
-                  Income
-                </span>
-                <div className="flex-1 min-w-0 h-6 rounded-md overflow-hidden bg-muted/50">
-                  <div
-                    className="h-full rounded-md bg-emerald-500/80 dark:bg-emerald-600/80 transition-all"
-                    style={{ width: `${incomePct}%` }}
-                  />
-                </div>
-                <div className="flex items-center justify-start gap-1.5 shrink-0 w-[8rem] pl-8">
-                  <Dialog open={editOpen} onOpenChange={handleEditOpen}>
-                    <DialogTrigger asChild>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className={`h-auto min-w-0 p-0 font-mono text-sm tabular-nums ${
-                          hasOverride
-                            ? 'text-primary'
-                            : 'text-muted-foreground hover:text-foreground'
-                        }`}
+      {data &&
+        (() => {
+          const income = data.totalRevenue ?? 0;
+          const expenses = data.totalSpend ?? 0;
+          const maxVal = Math.max(income, expenses, 1);
+          const incomePct = (income / maxVal) * 100;
+          const expensesPct = (expenses / maxVal) * 100;
+          return (
+            <Card className="mt-6">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-base">Summary</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="space-y-3">
+                  <div className="flex items-center gap-3">
+                    <span className="text-sm font-medium w-20 shrink-0">
+                      Income
+                    </span>
+                    <div className="flex-1 min-w-0 h-6 rounded-md overflow-hidden bg-muted/50">
+                      <div
+                        className="h-full rounded-md bg-emerald-500/80 dark:bg-emerald-600/80 transition-all"
+                        style={{ width: `${incomePct}%` }}
+                      />
+                    </div>
+                    <div className="flex items-center justify-start gap-1.5 shrink-0 w-[8rem] pl-8">
+                      <Dialog
+                        open={editOpen}
+                        onOpenChange={handleEditOpen}
                       >
-                        ${income.toFixed(2)}
-                        <Pencil className="ml-1 h-3.5 w-3.5 opacity-70" />
-                      </Button>
-                    </DialogTrigger>
-                    <DialogContent className="text-foreground">
-                      <form onSubmit={handleSaveOverride}>
-                        <DialogHeader>
-                          <DialogTitle>
-                            Income for {monthName} {year}
-                          </DialogTitle>
-                        </DialogHeader>
-                        <p className="text-muted-foreground text-sm mt-2">
-                          {defaultIncome > 0
-                            ? `Your default is $${defaultIncome.toFixed(2)}/month. Override below if different this month.`
-                            : 'Enter an amount for this month.'}
-                        </p>
-                        <div className="grid gap-4 py-4">
-                          <div className="grid gap-2">
-                            <Label htmlFor="amount">Base income</Label>
-                            <Input
-                              id="amount"
-                              type="number"
-                              step="0.01"
-                              min="0"
-                              placeholder="0.00"
-                              value={editAmount}
-                              onChange={(e) => setEditAmount(e.target.value)}
-                            />
-                          </div>
-                          {additionalIncome.length > 0 && (
-                            <div className="space-y-2">
-                              <Label>Additional income</Label>
-                              <ul className="space-y-1.5 text-sm">
-                                {additionalIncome.map((item) => (
-                                  <li
-                                    key={item.id}
-                                    className="flex items-center justify-between gap-2 rounded-md border border-border bg-muted/30 px-2 py-1.5"
+                        <DialogTrigger asChild>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className={`h-auto min-w-0 p-0 font-mono text-sm tabular-nums ${
+                              hasOverride
+                                ? 'text-primary'
+                                : 'text-muted-foreground hover:text-foreground'
+                            }`}
+                          >
+                            ${income.toFixed(2)}
+                            <Pencil className="ml-1 h-3.5 w-3.5 opacity-70" />
+                          </Button>
+                        </DialogTrigger>
+                        <DialogContent className="text-foreground">
+                          <form onSubmit={handleSaveOverride}>
+                            <DialogHeader>
+                              <DialogTitle>
+                                Income for {monthName} {year}
+                              </DialogTitle>
+                            </DialogHeader>
+                            <p className="text-muted-foreground text-sm mt-2">
+                              {defaultIncome > 0
+                                ? `Your default is $${defaultIncome.toFixed(2)}/month. Override below if different this month.`
+                                : 'Enter an amount for this month.'}
+                            </p>
+                            <div className="grid gap-4 py-4">
+                              <div className="grid gap-2">
+                                <Label htmlFor="amount">
+                                  Base income
+                                </Label>
+                                <Input
+                                  id="amount"
+                                  type="number"
+                                  step="0.01"
+                                  min="0"
+                                  placeholder="0.00"
+                                  value={editAmount}
+                                  onChange={(e) =>
+                                    setEditAmount(e.target.value)
+                                  }
+                                />
+                              </div>
+                              {additionalIncome.length > 0 && (
+                                <div className="space-y-2">
+                                  <Label>Additional income</Label>
+                                  <ul className="space-y-1.5 text-sm">
+                                    {additionalIncome.map((item) => (
+                                      <li
+                                        key={item.id}
+                                        className="flex items-center justify-between gap-2 rounded-md border border-border bg-muted/30 px-2 py-1.5"
+                                      >
+                                        <span>
+                                          {item.description ||
+                                            'Other'}
+                                          : ${item.amount.toFixed(2)}
+                                        </span>
+                                        <Button
+                                          type="button"
+                                          variant="ghost"
+                                          size="icon"
+                                          className="h-7 w-7 text-muted-foreground hover:text-destructive"
+                                          onClick={() =>
+                                            removeAdditionalMutation.mutate(
+                                              item.id,
+                                            )
+                                          }
+                                          disabled={
+                                            removeAdditionalMutation.isPending
+                                          }
+                                        >
+                                          <Trash2 className="h-3.5 w-3.5" />
+                                        </Button>
+                                      </li>
+                                    ))}
+                                  </ul>
+                                </div>
+                              )}
+                              <div className="space-y-2">
+                                <Label>Add extra income</Label>
+                                <form
+                                  onSubmit={handleAddAdditional}
+                                  className="flex flex-wrap gap-2 items-center"
+                                >
+                                  <Input
+                                    type="text"
+                                    placeholder="e.g. Sold item, Birthday Money"
+                                    value={addDescription}
+                                    onChange={(e) =>
+                                      setAddDescription(
+                                        e.target.value,
+                                      )
+                                    }
+                                    className="flex-1 min-w-[200px]"
+                                  />
+                                  <Input
+                                    type="number"
+                                    step="0.01"
+                                    min="0.01"
+                                    placeholder="Amount"
+                                    value={addAmount}
+                                    onChange={(e) =>
+                                      setAddAmount(e.target.value)
+                                    }
+                                    className="w-[100px]"
+                                  />
+                                  <Button
+                                    type="submit"
+                                    variant="outline"
+                                    disabled={
+                                      addIncomeMutation.isPending ||
+                                      !addAmount ||
+                                      parseFloat(addAmount) <= 0
+                                    }
                                   >
-                                    <span>
-                                      {item.description || 'Other'}: $
-                                      {item.amount.toFixed(2)}
-                                    </span>
-                                    <Button
-                                      type="button"
-                                      variant="ghost"
-                                      size="icon"
-                                      className="h-7 w-7 text-muted-foreground hover:text-destructive"
-                                      onClick={() =>
-                                        removeAdditionalMutation.mutate(
-                                          item.id,
-                                        )
-                                      }
-                                      disabled={
-                                        removeAdditionalMutation.isPending
-                                      }
-                                    >
-                                      <Trash2 className="h-3.5 w-3.5" />
-                                    </Button>
-                                  </li>
-                                ))}
-                              </ul>
+                                    <Plus className="mr-1 h-3.5 w-3.5" />
+                                    Add
+                                  </Button>
+                                </form>
+                              </div>
                             </div>
-                          )}
-                          <div className="space-y-2">
-                            <Label>Add extra income</Label>
-                            <form
-                              onSubmit={handleAddAdditional}
-                              className="flex flex-wrap gap-2 items-center"
-                            >
-                              <Input
-                                type="text"
-                                placeholder="e.g. Sold item, Birthday Money"
-                                value={addDescription}
-                                onChange={(e) =>
-                                  setAddDescription(e.target.value)
-                                }
-                                className="flex-1 min-w-[200px]"
-                              />
-                              <Input
-                                type="number"
-                                step="0.01"
-                                min="0.01"
-                                placeholder="Amount"
-                                value={addAmount}
-                                onChange={(e) => setAddAmount(e.target.value)}
-                                className="w-[100px]"
-                              />
+                            <DialogFooter className="gap-2 sm:gap-0">
+                              {hasOverride && (
+                                <Button
+                                  type="button"
+                                  variant="outline"
+                                  onClick={handleUseDefault}
+                                  disabled={deleteMutation.isPending}
+                                >
+                                  Use default
+                                </Button>
+                              )}
+                              <Button
+                                type="button"
+                                variant="outline"
+                                onClick={() => setEditOpen(false)}
+                              >
+                                Cancel
+                              </Button>
                               <Button
                                 type="submit"
-                                variant="outline"
                                 disabled={
-                                  addIncomeMutation.isPending ||
-                                  !addAmount ||
-                                  parseFloat(addAmount) <= 0
+                                  upsertMutation.isPending ||
+                                  editAmount === '' ||
+                                  isNaN(parseFloat(editAmount)) ||
+                                  parseFloat(editAmount) < 0
                                 }
                               >
-                                <Plus className="mr-1 h-3.5 w-3.5" />
-                                Add
+                                {upsertMutation.isPending
+                                  ? 'Saving...'
+                                  : 'Save'}
                               </Button>
-                            </form>
-                          </div>
-                        </div>
-                        <DialogFooter className="gap-2 sm:gap-0">
-                          {hasOverride && (
-                            <Button
-                              type="button"
-                              variant="outline"
-                              onClick={handleUseDefault}
-                              disabled={deleteMutation.isPending}
-                            >
-                              Use default
-                            </Button>
-                          )}
-                          <Button
-                            type="button"
-                            variant="outline"
-                            onClick={() => setEditOpen(false)}
-                          >
-                            Cancel
-                          </Button>
-                          <Button
-                            type="submit"
-                            disabled={
-                              upsertMutation.isPending ||
-                              editAmount === '' ||
-                              isNaN(parseFloat(editAmount)) ||
-                              parseFloat(editAmount) < 0
-                            }
-                          >
-                            {upsertMutation.isPending ? 'Saving...' : 'Save'}
-                          </Button>
-                        </DialogFooter>
-                      </form>
-                    </DialogContent>
-                  </Dialog>
-                  {hasOverride && (
-                    <span className="text-muted-foreground text-xs">
-                      (override)
+                            </DialogFooter>
+                          </form>
+                        </DialogContent>
+                      </Dialog>
+                      {hasOverride && (
+                        <span className="text-muted-foreground text-xs">
+                          (override)
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <span className="text-sm font-medium w-20 shrink-0">
+                      Expenses
                     </span>
-                  )}
+                    <div className="flex-1 min-w-0 h-6 rounded-md overflow-hidden bg-muted/50">
+                      <div
+                        className="h-full rounded-md bg-amber-600/70 dark:bg-amber-700/70 transition-all"
+                        style={{ width: `${expensesPct}%` }}
+                      />
+                    </div>
+                    <span className="text-sm font-mono tabular-nums shrink-0 w-[8rem] pl-8">
+                      ${expenses.toFixed(2)}
+                    </span>
+                  </div>
                 </div>
-              </div>
-              <div className="flex items-center gap-3">
-                <span className="text-sm font-medium w-20 shrink-0">
-                  Expenses
-                </span>
-                <div className="flex-1 min-w-0 h-6 rounded-md overflow-hidden bg-muted/50">
-                  <div
-                    className="h-full rounded-md bg-amber-600/70 dark:bg-amber-700/70 transition-all"
-                    style={{ width: `${expensesPct}%` }}
-                  />
-                </div>
-                <span className="text-sm font-mono tabular-nums shrink-0 w-[8rem] pl-8">
-                  ${expenses.toFixed(2)}
-                </span>
-              </div>
-            </div>
-            {(data.savings ?? 0) !== 0 && (
-              <div className="rounded-lg border border-dashed border-border pt-3 pb-3 px-4 flex items-center gap-4">
-                <div>
-                  <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
-                    {data.savings >= 0 ? 'Savings' : 'Overspent'}
-                  </p>
-                  <p
-                    className={`text-2xl font-bold ${
-                      data.savings >= 0
-                        ? 'text-[var(--positive)]'
-                        : 'text-destructive'
-                    }`}
-                  >
-                    ${Math.abs(data.savings).toFixed(2)}
-                  </p>
-                </div>
-                <p className="text-sm text-muted-foreground flex-1">
-                  {data.savings >= 0
-                    ? 'Your income was greater than your expenses this month.'
-                    : 'Expenses exceeded income this month.'}
-                </p>
-              </div>
-            )}
-          </CardContent>
-        </Card>
-        );
-      })()}
+                {(data.savings ?? 0) !== 0 && (
+                  <div className="rounded-lg border border-dashed border-border pt-3 pb-3 px-4 flex items-center gap-4">
+                    <div>
+                      <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+                        {data.savings >= 0 ? 'Savings' : 'Overspent'}
+                      </p>
+                      <p
+                        className={`text-2xl font-bold ${
+                          data.savings >= 0
+                            ? 'text-[var(--positive)]'
+                            : 'text-destructive'
+                        }`}
+                      >
+                        ${Math.abs(data.savings).toFixed(2)}
+                      </p>
+                    </div>
+                    <p className="text-sm text-muted-foreground flex-1">
+                      {data.savings >= 0
+                        ? 'Your income was greater than your expenses this month.'
+                        : 'Expenses exceeded income this month.'}
+                    </p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          );
+        })()}
 
       {/* Fixed bills section - compact */}
       {(fixedCategories.length > 0 || expectedFixed.length > 0) && (
@@ -1051,7 +837,10 @@ export function Dashboard() {
                     <Info className="h-4 w-4" />
                   </button>
                 </PopoverTrigger>
-                <PopoverContent className="w-72 text-sm" align="start">
+                <PopoverContent
+                  className="w-72 text-sm"
+                  align="start"
+                >
                   Groceries, dining, shopping — set budgets in{' '}
                   <Link to="/categories" className="underline">
                     Categories
@@ -1106,7 +895,9 @@ export function Dashboard() {
                             className={`h-full rounded-full transition-all ${
                               c.over ? 'bg-destructive' : 'bg-primary'
                             }`}
-                            style={{ width: `${Math.min(pct, 100)}%` }}
+                            style={{
+                              width: `${Math.min(pct, 100)}%`,
+                            }}
                           />
                         </div>
                       )}
@@ -1126,7 +917,9 @@ export function Dashboard() {
                   {(['bar', 'pie'] as const).map((type) => (
                     <Button
                       key={type}
-                      variant={chartType === type ? 'secondary' : 'ghost'}
+                      variant={
+                        chartType === type ? 'secondary' : 'ghost'
+                      }
                       size="sm"
                       className="capitalize"
                       onClick={() => handleChartTypeChange(type)}
@@ -1164,7 +957,14 @@ export function Dashboard() {
                       />
                     </BarChart>
                   ) : (
-                    <PieChart margin={{ top: 40, right: 80, bottom: 40, left: 80 }}>
+                    <PieChart
+                      margin={{
+                        top: 40,
+                        right: 80,
+                        bottom: 40,
+                        left: 80,
+                      }}
+                    >
                       <ChartTooltip
                         content={
                           <ChartTooltipContent
@@ -1198,7 +998,9 @@ export function Dashboard() {
                           };
                           const { cx = 0, cy = 0 } = p;
                           const midAngle =
-                            ((p.startAngle ?? 0) + (p.endAngle ?? 0)) / 2;
+                            ((p.startAngle ?? 0) +
+                              (p.endAngle ?? 0)) /
+                            2;
                           const rad = (midAngle * Math.PI) / 180;
                           const slideOutPx = 4;
                           const dx = Math.cos(rad) * slideOutPx;
@@ -1206,11 +1008,13 @@ export function Dashboard() {
                           return (
                             <g
                               className="pie-active-slice"
-                              style={{
-                                transformOrigin: `${cx}px ${cy}px`,
-                                '--slide-dx': `${dx}px`,
-                                '--slide-dy': `${dy}px`,
-                              } as React.CSSProperties}
+                              style={
+                                {
+                                  transformOrigin: `${cx}px ${cy}px`,
+                                  '--slide-dx': `${dx}px`,
+                                  '--slide-dy': `${dy}px`,
+                                } as React.CSSProperties
+                              }
                             >
                               <Sector
                                 {...p}
@@ -1227,7 +1031,9 @@ export function Dashboard() {
                         }}
                         onClick={(_, index) =>
                           setPieActiveIndex(
-                            pieActiveIndex === index ? undefined : index,
+                            pieActiveIndex === index
+                              ? undefined
+                              : index,
                           )
                         }
                       >
@@ -1235,9 +1041,7 @@ export function Dashboard() {
                           <Cell
                             key={index}
                             fill={
-                              PIE_COLORS[
-                                index % PIE_COLORS.length
-                              ]
+                              PIE_COLORS[index % PIE_COLORS.length]
                             }
                           />
                         ))}

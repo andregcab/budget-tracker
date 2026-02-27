@@ -2,8 +2,9 @@ import { Controller, Get, Query, UseGuards } from '@nestjs/common';
 import { CurrentUser } from '../auth/current-user.decorator';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { AnalyticsService } from './analytics.service';
+import { GetMonthlyQueryDto } from './dto/get-monthly-query.dto';
 
-type UserPayload = { id: string; email: string };
+import type { UserPayload } from '../auth/types/user-payload';
 
 @Controller('analytics')
 @UseGuards(JwtAuthGuard)
@@ -13,12 +14,11 @@ export class AnalyticsController {
   @Get('monthly')
   async monthly(
     @CurrentUser() user: UserPayload,
-    @Query('year') year?: string,
-    @Query('month') month?: string,
+    @Query() query: GetMonthlyQueryDto,
   ) {
     const now = new Date();
-    const y = year ? parseInt(year, 10) : now.getFullYear();
-    const m = month ? parseInt(month, 10) : now.getMonth() + 1;
+    const y = query.year ?? now.getFullYear();
+    const m = query.month ?? now.getMonth() + 1;
     return this.analyticsService.getMonthlySummary(user.id, y, m);
   }
 }

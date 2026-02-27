@@ -13,7 +13,7 @@ import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { ExpectedFixedExpensesService } from './expected-fixed-expenses.service';
 import { CreateExpectedFixedDto } from './dto/create-expected-fixed.dto';
 
-type UserPayload = { id: string; email: string };
+import type { UserPayload } from '../auth/types/user-payload';
 
 @Controller('expected-fixed-expenses')
 @UseGuards(JwtAuthGuard)

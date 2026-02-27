@@ -12,7 +12,7 @@ import { CurrentUser } from '../auth/current-user.decorator';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { ImportsService } from './imports.service';
 
-type UserPayload = { id: string; email: string };
+import type { UserPayload } from '../auth/types/user-payload';
 
 @Controller('imports')
 @UseGuards(JwtAuthGuard)

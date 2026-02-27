@@ -1,26 +1,45 @@
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { useEffect, useState } from "react";
-import { api } from "@/api/client";
-import { useAuth } from "@/hooks/useAuth";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Combobox } from "@/components/ui/combobox";
+import {
+  useQuery,
+  useMutation,
+  useQueryClient,
+} from '@tanstack/react-query';
+import { useEffect, useState } from 'react';
+import {
+  getTransactions,
+  updateTransaction,
+  deleteTransaction,
+  createTransaction,
+  deleteTransactionsByDateRange,
+  getMonthRange,
+} from '@/api/transactions';
+import { useAccounts } from '@/hooks/useAccounts';
+import { useCategories } from '@/hooks/useCategories';
+import { useAuth } from '@/hooks/useAuth';
+import type { TransactionRow } from '@/types';
+import { Button } from '@/components/ui/button';
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Combobox } from '@/components/ui/combobox';
 import {
   Dialog,
   DialogContent,
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from "@/components/ui/dialog";
+} from '@/components/ui/dialog';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select";
+} from '@/components/ui/select';
 import {
   Table,
   TableBody,
@@ -28,138 +47,52 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "@/components/ui/table";
-import { Plus, Trash2 } from "lucide-react";
-import { toast } from "sonner";
-import { LoadingSpinner } from "@/components/LoadingSpinner";
-import { getTransactionsPerPage, setTransactionsPerPage } from "@/lib/user-preferences";
-
-type Category = { id: string; name: string };
-type TransactionRow = {
-  id: string;
-  date: string;
-  description: string;
-  amount: string;
-  type: string;
-  category: Category | null;
-  notes: string | null;
-  isExcluded: boolean;
-};
-type Account = { id: string; name: string };
-
-async function getTransactions(params: {
-  accountId?: string;
-  categoryId?: string;
-  fromDate?: string;
-  toDate?: string;
-  page?: number;
-  limit?: number;
-}) {
-  const sp = new URLSearchParams();
-  if (params.accountId) sp.set("accountId", params.accountId);
-  if (params.categoryId) sp.set("categoryId", params.categoryId);
-  if (params.fromDate) sp.set("fromDate", params.fromDate);
-  if (params.toDate) sp.set("toDate", params.toDate);
-  if (params.page) sp.set("page", String(params.page));
-  if (params.limit) sp.set("limit", String(params.limit));
-  return api<{ items: TransactionRow[]; total: number; page: number; limit: number }>(
-    `/transactions?${sp}`
-  );
-}
-
-async function updateTransaction(
-  id: string,
-  body: {
-    categoryId?: string | null;
-    notes?: string | null;
-    isExcluded?: boolean;
-  }
-) {
-  return api<TransactionRow>(`/transactions/${id}`, {
-    method: "PATCH",
-    body: JSON.stringify(body),
-  });
-}
-
-async function deleteTransaction(id: string) {
-  return api(`/transactions/${id}`, { method: "DELETE" });
-}
-
-async function createTransaction(body: {
-  accountId: string;
-  date: string;
-  description: string;
-  amount: number;
-  type: "debit" | "credit";
-  categoryId?: string | null;
-  notes?: string | null;
-}) {
-  return api<TransactionRow>("/transactions", {
-    method: "POST",
-    body: JSON.stringify(body),
-  });
-}
-
-async function deleteTransactionsByDateRange(fromDate: string, toDate: string) {
-  return api<{ deleted: number }>(
-    `/transactions?fromDate=${encodeURIComponent(fromDate)}&toDate=${encodeURIComponent(toDate)}`,
-    { method: "DELETE" }
-  );
-}
-
-async function getAccounts(): Promise<Account[]> {
-  return api("/accounts");
-}
-
-function getMonthRange(): { from: string; to: string } {
-  const now = new Date();
-  const y = now.getFullYear();
-  const m = String(now.getMonth() + 1).padStart(2, "0");
-  return {
-    from: `${y}-${m}-01`,
-    to: `${y}-${m}-${new Date(y, now.getMonth() + 1, 0).getDate().toString().padStart(2, "0")}`,
-  };
-}
+} from '@/components/ui/table';
+import { Plus, Trash2 } from 'lucide-react';
+import { toast } from 'sonner';
+import { LoadingSpinner } from '@/components/LoadingSpinner';
+import {
+  getTransactionsPerPage,
+  setTransactionsPerPage,
+} from '@/lib/user-preferences';
 
 export function Transactions() {
   const { user } = useAuth();
   const queryClient = useQueryClient();
   const userId = user?.id ?? null;
-  const [accountId, setAccountId] = useState<string>("");
-  const [categoryId, setCategoryId] = useState<string>("");
-  const [fromDate, setFromDate] = useState("");
-  const [toDate, setToDate] = useState("");
+  const [accountId, setAccountId] = useState<string>('');
+  const [categoryId, setCategoryId] = useState<string>('');
+  const [fromDate, setFromDate] = useState('');
+  const [toDate, setToDate] = useState('');
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(25);
 
   useEffect(() => {
-    if (userId) setLimit(getTransactionsPerPage(userId));
+    if (userId) {
+      const stored = getTransactionsPerPage(userId);
+      queueMicrotask(() => setLimit(stored));
+    }
   }, [userId]);
-  const [deleteTarget, setDeleteTarget] = useState<TransactionRow | null>(null);
+  const [deleteTarget, setDeleteTarget] =
+    useState<TransactionRow | null>(null);
   const [deleteMonthOpen, setDeleteMonthOpen] = useState(false);
   const [addOpen, setAddOpen] = useState(false);
   const [addForm, setAddForm] = useState({
-    accountId: "",
+    accountId: '',
     date: new Date().toISOString().slice(0, 10),
-    description: "",
-    amount: "",
-    type: "debit" as "debit" | "credit",
-    categoryId: "" as string | null,
-    notes: "",
+    description: '',
+    amount: '',
+    type: 'debit' as 'debit' | 'credit',
+    categoryId: '' as string | null,
+    notes: '',
   });
 
-  const { data: accounts = [] } = useQuery({
-    queryKey: ["accounts"],
-    queryFn: getAccounts,
-  });
-  const { data: categories = [] } = useQuery({
-    queryKey: ["categories"],
-    queryFn: (): Promise<Category[]> => api("/categories"),
-  });
+  const { data: accounts = [] } = useAccounts();
+  const { data: categories = [] } = useCategories();
 
   const { data, isLoading } = useQuery({
     queryKey: [
-      "transactions",
+      'transactions',
       accountId,
       categoryId,
       fromDate,
@@ -191,23 +124,35 @@ export function Transactions() {
       };
     }) => updateTransaction(id, body),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["transactions"] });
-      queryClient.invalidateQueries({ queryKey: ["analytics", "monthly"] });
+      queryClient.invalidateQueries({ queryKey: ['transactions'] });
+      queryClient.invalidateQueries({
+        queryKey: ['analytics', 'monthly'],
+      });
     },
     onError: (err) => {
-      toast.error(err instanceof Error ? err.message : "Failed to update transaction");
+      toast.error(
+        err instanceof Error
+          ? err.message
+          : 'Failed to update transaction',
+      );
     },
   });
 
   const deleteMutation = useMutation({
     mutationFn: deleteTransaction,
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["transactions"] });
-      queryClient.invalidateQueries({ queryKey: ["analytics", "monthly"] });
+      queryClient.invalidateQueries({ queryKey: ['transactions'] });
+      queryClient.invalidateQueries({
+        queryKey: ['analytics', 'monthly'],
+      });
       setDeleteTarget(null);
     },
     onError: (err) => {
-      toast.error(err instanceof Error ? err.message : "Failed to delete transaction");
+      toast.error(
+        err instanceof Error
+          ? err.message
+          : 'Failed to delete transaction',
+      );
       setDeleteTarget(null);
     },
   });
@@ -216,12 +161,18 @@ export function Transactions() {
     mutationFn: ({ from, to }: { from: string; to: string }) =>
       deleteTransactionsByDateRange(from, to),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["transactions"] });
-      queryClient.invalidateQueries({ queryKey: ["analytics", "monthly"] });
+      queryClient.invalidateQueries({ queryKey: ['transactions'] });
+      queryClient.invalidateQueries({
+        queryKey: ['analytics', 'monthly'],
+      });
       setDeleteMonthOpen(false);
     },
     onError: (err) => {
-      toast.error(err instanceof Error ? err.message : "Failed to delete transactions");
+      toast.error(
+        err instanceof Error
+          ? err.message
+          : 'Failed to delete transactions',
+      );
       setDeleteMonthOpen(false);
     },
   });
@@ -229,12 +180,18 @@ export function Transactions() {
   const createMutation = useMutation({
     mutationFn: createTransaction,
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["transactions"] });
-      queryClient.invalidateQueries({ queryKey: ["analytics", "monthly"] });
+      queryClient.invalidateQueries({ queryKey: ['transactions'] });
+      queryClient.invalidateQueries({
+        queryKey: ['analytics', 'monthly'],
+      });
       handleAddOpen(false);
     },
     onError: (err) => {
-      toast.error(err instanceof Error ? err.message : "Failed to add transaction");
+      toast.error(
+        err instanceof Error
+          ? err.message
+          : 'Failed to add transaction',
+      );
     },
   });
 
@@ -254,20 +211,27 @@ export function Transactions() {
     setAddOpen(open);
     if (!open) return;
     setAddForm({
-      accountId: accountId || (accounts[0]?.id ?? ""),
+      accountId: accountId || (accounts[0]?.id ?? ''),
       date: new Date().toISOString().slice(0, 10),
-      description: "",
-      amount: "",
-      type: "debit",
+      description: '',
+      amount: '',
+      type: 'debit',
       categoryId: categoryId || null,
-      notes: "",
+      notes: '',
     });
   };
 
   const handleAddSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     const amt = parseFloat(addForm.amount);
-    if (!addForm.accountId || !addForm.description || !addForm.amount || isNaN(amt) || amt <= 0) return;
+    if (
+      !addForm.accountId ||
+      !addForm.description ||
+      !addForm.amount ||
+      isNaN(amt) ||
+      amt <= 0
+    )
+      return;
     createMutation.mutate({
       accountId: addForm.accountId,
       date: addForm.date,
@@ -290,26 +254,32 @@ export function Transactions() {
           <div className="grid gap-2 min-w-0">
             <Label>Account</Label>
             <Combobox
-              options={accounts.map((a) => ({ value: a.id, label: a.name }))}
+              options={accounts.map((a) => ({
+                value: a.id,
+                label: a.name,
+              }))}
               value={accountId || null}
-              onValueChange={(v) => setAccountId(v ?? "")}
+              onValueChange={(v) => setAccountId(v ?? '')}
               placeholder="All accounts"
               searchPlaceholder="Type to search..."
               allowEmpty
-              emptyOption={{ value: null, label: "All accounts" }}
+              emptyOption={{ value: null, label: 'All accounts' }}
               triggerClassName="w-full sm:w-[180px]"
             />
           </div>
           <div className="grid gap-2 min-w-0">
             <Label>Category</Label>
             <Combobox
-              options={categories.map((c) => ({ value: c.id, label: c.name }))}
+              options={categories.map((c) => ({
+                value: c.id,
+                label: c.name,
+              }))}
               value={categoryId || null}
-              onValueChange={(v) => setCategoryId(v ?? "")}
+              onValueChange={(v) => setCategoryId(v ?? '')}
               placeholder="All"
               searchPlaceholder="Type to search..."
               allowEmpty
-              emptyOption={{ value: null, label: "All" }}
+              emptyOption={{ value: null, label: 'All' }}
               triggerClassName="w-full sm:w-[180px]"
             />
           </div>
@@ -353,7 +323,10 @@ export function Transactions() {
             >
               Delete All
             </Button>
-            <Label htmlFor="limit" className="text-sm text-muted-foreground whitespace-nowrap">
+            <Label
+              htmlFor="limit"
+              className="text-sm text-muted-foreground whitespace-nowrap"
+            >
               Per page
             </Label>
             <Select
@@ -380,21 +353,34 @@ export function Transactions() {
           {isLoading ? (
             <LoadingSpinner message="Loading transactions..." />
           ) : items.length === 0 ? (
-            <p className="text-muted-foreground">No transactions match your filters.</p>
+            <p className="text-muted-foreground">
+              No transactions match your filters.
+            </p>
           ) : (
             <>
               {/* Mobile: card layout */}
               <div className="space-y-3 md:hidden">
                 {items.map((tx) => (
-                  <Card key={tx.id} className={tx.isExcluded ? "opacity-50 bg-muted/30" : ""}>
+                  <Card
+                    key={tx.id}
+                    className={
+                      tx.isExcluded ? 'opacity-50 bg-muted/30' : ''
+                    }
+                  >
                     <CardContent className="p-3 space-y-3">
                       <div className="flex items-start justify-between gap-2">
                         <div className="min-w-0 flex-1">
-                          <p className="font-medium truncate" title={tx.description}>
+                          <p
+                            className="font-medium truncate"
+                            title={tx.description}
+                          >
                             {tx.description}
                           </p>
                           <p className="text-sm text-muted-foreground">
-                            {new Date(tx.date).toLocaleDateString()} · {parseFloat(tx.amount) >= 0 ? tx.amount : `(${tx.amount})`}
+                            {new Date(tx.date).toLocaleDateString()} ·{' '}
+                            {parseFloat(tx.amount) >= 0
+                              ? tx.amount
+                              : `(${tx.amount})`}
                           </p>
                         </div>
                         <div className="flex items-center gap-1 shrink-0">
@@ -423,11 +409,16 @@ export function Transactions() {
                             title="Exclude from budget"
                             className="h-4 w-4 rounded border-input shrink-0"
                           />
-                          <span className="text-xs text-muted-foreground">Exclude from budget</span>
+                          <span className="text-xs text-muted-foreground">
+                            Exclude from budget
+                          </span>
                         </div>
                         <div className="grid gap-2 sm:grid-cols-2">
                           <Combobox
-                            options={categories.map((c) => ({ value: c.id, label: c.name }))}
+                            options={categories.map((c) => ({
+                              value: c.id,
+                              label: c.name,
+                            }))}
                             value={tx.category?.id ?? null}
                             onValueChange={(v) =>
                               updateMutation.mutate({
@@ -438,16 +429,16 @@ export function Transactions() {
                             placeholder="Category"
                             searchPlaceholder="Type to search..."
                             allowEmpty
-                            emptyOption={{ value: null, label: "—" }}
+                            emptyOption={{ value: null, label: '—' }}
                             triggerClassName="w-full"
                           />
                           <Input
                             className="w-full"
                             placeholder="Notes"
-                            defaultValue={tx.notes ?? ""}
+                            defaultValue={tx.notes ?? ''}
                             onBlur={(e) => {
                               const v = e.target.value.trim();
-                              if (v !== (tx.notes ?? "")) {
+                              if (v !== (tx.notes ?? '')) {
                                 updateMutation.mutate({
                                   id: tx.id,
                                   body: { notes: v || null },
@@ -463,101 +454,115 @@ export function Transactions() {
               </div>
               {/* Desktop: table */}
               <div className="hidden md:block">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead className="w-20">Exclude</TableHead>
-                    <TableHead>Date</TableHead>
-                    <TableHead className="w-[220px]">Description</TableHead>
-                    <TableHead className="text-right">Amount</TableHead>
-                    <TableHead className="w-[160px]">Category</TableHead>
-                    <TableHead className="w-[240px]">Notes</TableHead>
-                    <TableHead className="w-10"></TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {items.map((tx) => (
-                    <TableRow
-                      key={tx.id}
-                      className={tx.isExcluded ? "opacity-50 bg-muted/30" : ""}
-                    >
-                      <TableCell>
-                        <input
-                          type="checkbox"
-                          checked={tx.isExcluded}
-                          onChange={() =>
-                            updateMutation.mutate({
-                              id: tx.id,
-                              body: { isExcluded: !tx.isExcluded },
-                            })
-                          }
-                          title="Exclude from budget (spend/savings)"
-                          className="h-4 w-4 rounded border-input"
-                        />
-                      </TableCell>
-                      <TableCell>
-                        {new Date(tx.date).toLocaleDateString()}
-                      </TableCell>
-                      <TableCell
-                        className="max-w-[220px] truncate"
-                        title={tx.description}
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead className="w-20">Exclude</TableHead>
+                      <TableHead>Date</TableHead>
+                      <TableHead className="w-[220px]">
+                        Description
+                      </TableHead>
+                      <TableHead className="text-right">
+                        Amount
+                      </TableHead>
+                      <TableHead className="w-[160px]">
+                        Category
+                      </TableHead>
+                      <TableHead className="w-[240px]">
+                        Notes
+                      </TableHead>
+                      <TableHead className="w-10"></TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {items.map((tx) => (
+                      <TableRow
+                        key={tx.id}
+                        className={
+                          tx.isExcluded
+                            ? 'opacity-50 bg-muted/30'
+                            : ''
+                        }
                       >
-                        {tx.description}
-                      </TableCell>
-                      <TableCell className="text-right font-mono">
-                        {parseFloat(tx.amount) >= 0 ? tx.amount : `(${tx.amount})`}
-                      </TableCell>
-                      <TableCell className="w-[160px]">
-                        <Combobox
-                          options={categories.map((c) => ({
-                            value: c.id,
-                            label: c.name,
-                          }))}
-                          value={tx.category?.id ?? null}
-                          onValueChange={(v) =>
-                            updateMutation.mutate({
-                              id: tx.id,
-                              body: { categoryId: v },
-                            })
-                          }
-                          placeholder="—"
-                          searchPlaceholder="Type to search..."
-                          allowEmpty
-                          emptyOption={{ value: null, label: "—" }}
-                          triggerClassName="w-[160px]"
-                        />
-                      </TableCell>
-                      <TableCell className="w-[240px]">
-                        <Input
-                          className="w-full max-w-[240px]"
-                          placeholder="Notes"
-                          defaultValue={tx.notes ?? ""}
-                          onBlur={(e) => {
-                            const v = e.target.value.trim();
-                            if (v !== (tx.notes ?? "")) {
+                        <TableCell>
+                          <input
+                            type="checkbox"
+                            checked={tx.isExcluded}
+                            onChange={() =>
                               updateMutation.mutate({
                                 id: tx.id,
-                                body: { notes: v || null },
-                              });
+                                body: { isExcluded: !tx.isExcluded },
+                              })
                             }
-                          }}
-                        />
-                      </TableCell>
-                      <TableCell>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-8 w-8 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
-                          onClick={() => setDeleteTarget(tx)}
-                          title="Delete"
+                            title="Exclude from budget (spend/savings)"
+                            className="h-4 w-4 rounded border-input"
+                          />
+                        </TableCell>
+                        <TableCell>
+                          {new Date(tx.date).toLocaleDateString()}
+                        </TableCell>
+                        <TableCell
+                          className="max-w-[220px] truncate"
+                          title={tx.description}
                         >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
+                          {tx.description}
+                        </TableCell>
+                        <TableCell className="text-right font-mono">
+                          {parseFloat(tx.amount) >= 0
+                            ? tx.amount
+                            : `(${tx.amount})`}
+                        </TableCell>
+                        <TableCell className="w-[160px]">
+                          <Combobox
+                            options={categories.map((c) => ({
+                              value: c.id,
+                              label: c.name,
+                            }))}
+                            value={tx.category?.id ?? null}
+                            onValueChange={(v) =>
+                              updateMutation.mutate({
+                                id: tx.id,
+                                body: { categoryId: v },
+                              })
+                            }
+                            placeholder="—"
+                            searchPlaceholder="Type to search..."
+                            allowEmpty
+                            emptyOption={{ value: null, label: '—' }}
+                            triggerClassName="w-[160px]"
+                          />
+                        </TableCell>
+                        <TableCell className="w-[240px]">
+                          <Input
+                            className="w-full max-w-[240px]"
+                            placeholder="Notes"
+                            defaultValue={tx.notes ?? ''}
+                            onBlur={(e) => {
+                              const v = e.target.value.trim();
+                              if (v !== (tx.notes ?? '')) {
+                                updateMutation.mutate({
+                                  id: tx.id,
+                                  body: { notes: v || null },
+                                });
+                              }
+                            }}
+                          />
+                        </TableCell>
+                        <TableCell>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
+                            onClick={() => setDeleteTarget(tx)}
+                            title="Delete"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
               </div>
               {totalPages > 1 && (
                 <div className="mt-4 flex flex-wrap items-center gap-2">
@@ -587,16 +592,25 @@ export function Transactions() {
         </CardContent>
       </Card>
 
-      <Dialog open={!!deleteTarget} onOpenChange={(o) => !o && setDeleteTarget(null)}>
+      <Dialog
+        open={!!deleteTarget}
+        onOpenChange={(o) => !o && setDeleteTarget(null)}
+      >
         <DialogContent className="border-destructive/50 sm:max-w-md">
           <DialogHeader>
-            <DialogTitle className="text-destructive">Delete transaction</DialogTitle>
+            <DialogTitle className="text-destructive">
+              Delete transaction
+            </DialogTitle>
           </DialogHeader>
           <p className="text-sm text-muted-foreground">
-            Delete &quot;{deleteTarget?.description}&quot;? This cannot be undone.
+            Delete &quot;{deleteTarget?.description}&quot;? This
+            cannot be undone.
           </p>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setDeleteTarget(null)}>
+            <Button
+              variant="outline"
+              onClick={() => setDeleteTarget(null)}
+            >
               Cancel
             </Button>
             <Button
@@ -620,9 +634,14 @@ export function Transactions() {
               <div className="grid gap-2">
                 <Label>Account</Label>
                 <Combobox
-                  options={accounts.map((a) => ({ value: a.id, label: a.name }))}
+                  options={accounts.map((a) => ({
+                    value: a.id,
+                    label: a.name,
+                  }))}
                   value={addForm.accountId || null}
-                  onValueChange={(v) => setAddForm((f) => ({ ...f, accountId: v ?? "" }))}
+                  onValueChange={(v) =>
+                    setAddForm((f) => ({ ...f, accountId: v ?? '' }))
+                  }
                   placeholder="Select account"
                   searchPlaceholder="Type to search..."
                   triggerClassName="w-full"
@@ -634,7 +653,12 @@ export function Transactions() {
                   id="add-date"
                   type="date"
                   value={addForm.date}
-                  onChange={(e) => setAddForm((f) => ({ ...f, date: e.target.value }))}
+                  onChange={(e) =>
+                    setAddForm((f) => ({
+                      ...f,
+                      date: e.target.value,
+                    }))
+                  }
                 />
               </div>
               <div className="grid gap-2">
@@ -643,7 +667,12 @@ export function Transactions() {
                   id="add-description"
                   placeholder="e.g. Coffee shop"
                   value={addForm.description}
-                  onChange={(e) => setAddForm((f) => ({ ...f, description: e.target.value }))}
+                  onChange={(e) =>
+                    setAddForm((f) => ({
+                      ...f,
+                      description: e.target.value,
+                    }))
+                  }
                 />
               </div>
               <div className="grid grid-cols-2 gap-4">
@@ -656,14 +685,21 @@ export function Transactions() {
                     min="0.01"
                     placeholder="0.00"
                     value={addForm.amount}
-                    onChange={(e) => setAddForm((f) => ({ ...f, amount: e.target.value }))}
+                    onChange={(e) =>
+                      setAddForm((f) => ({
+                        ...f,
+                        amount: e.target.value,
+                      }))
+                    }
                   />
                 </div>
                 <div className="grid gap-2">
                   <Label htmlFor="add-type">Type</Label>
                   <Select
                     value={addForm.type}
-                    onValueChange={(v: "debit" | "credit") => setAddForm((f) => ({ ...f, type: v }))}
+                    onValueChange={(v: 'debit' | 'credit') =>
+                      setAddForm((f) => ({ ...f, type: v }))
+                    }
                   >
                     <SelectTrigger id="add-type">
                       <SelectValue />
@@ -678,13 +714,18 @@ export function Transactions() {
               <div className="grid gap-2">
                 <Label>Category</Label>
                 <Combobox
-                  options={categories.map((c) => ({ value: c.id, label: c.name }))}
+                  options={categories.map((c) => ({
+                    value: c.id,
+                    label: c.name,
+                  }))}
                   value={addForm.categoryId}
-                  onValueChange={(v) => setAddForm((f) => ({ ...f, categoryId: v }))}
+                  onValueChange={(v) =>
+                    setAddForm((f) => ({ ...f, categoryId: v }))
+                  }
                   placeholder="Optional"
                   searchPlaceholder="Type to search..."
                   allowEmpty
-                  emptyOption={{ value: null, label: "—" }}
+                  emptyOption={{ value: null, label: '—' }}
                   triggerClassName="w-full"
                 />
               </div>
@@ -694,12 +735,21 @@ export function Transactions() {
                   id="add-notes"
                   placeholder="Optional"
                   value={addForm.notes}
-                  onChange={(e) => setAddForm((f) => ({ ...f, notes: e.target.value }))}
+                  onChange={(e) =>
+                    setAddForm((f) => ({
+                      ...f,
+                      notes: e.target.value,
+                    }))
+                  }
                 />
               </div>
             </div>
             <DialogFooter>
-              <Button type="button" variant="outline" onClick={() => handleAddOpen(false)}>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => handleAddOpen(false)}
+              >
                 Cancel
               </Button>
               <Button
@@ -712,24 +762,36 @@ export function Transactions() {
                   parseFloat(addForm.amount) <= 0
                 }
               >
-                {createMutation.isPending ? "Adding..." : "Add"}
+                {createMutation.isPending ? 'Adding...' : 'Add'}
               </Button>
             </DialogFooter>
           </form>
         </DialogContent>
       </Dialog>
 
-      <Dialog open={deleteMonthOpen} onOpenChange={setDeleteMonthOpen}>
+      <Dialog
+        open={deleteMonthOpen}
+        onOpenChange={setDeleteMonthOpen}
+      >
         <DialogContent className="border-destructive/50 sm:max-w-md">
           <DialogHeader>
-            <DialogTitle className="text-destructive">Delete all for this month</DialogTitle>
+            <DialogTitle className="text-destructive">
+              Delete all for this month
+            </DialogTitle>
           </DialogHeader>
           <p className="text-sm text-muted-foreground">
-            Delete all transactions in {new Date().toLocaleString("default", { month: "long", year: "numeric" })}?
-            This cannot be undone.
+            Delete all transactions in{' '}
+            {new Date().toLocaleString('default', {
+              month: 'long',
+              year: 'numeric',
+            })}
+            ? This cannot be undone.
           </p>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setDeleteMonthOpen(false)}>
+            <Button
+              variant="outline"
+              onClick={() => setDeleteMonthOpen(false)}
+            >
               Cancel
             </Button>
             <Button

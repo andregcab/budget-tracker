@@ -6,9 +6,7 @@ import {
   Validate,
 } from 'class-validator';
 import { IsPasswordMatching } from '../validators/password-match.validator';
-
-const PASSWORD_REGEX =
-  /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)[A-Za-z\d@$!%*?&]{8,}$/;
+import { PASSWORD_REGEX } from '../constants/password';
 
 export class RegisterDto {
   @IsEmail({}, { message: 'Please enter a valid email address' })

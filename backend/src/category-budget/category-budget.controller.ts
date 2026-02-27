@@ -12,7 +12,7 @@ import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { CategoryBudgetService } from './category-budget.service';
 import { UpsertBudgetDto } from './dto/upsert-budget.dto';
 
-type UserPayload = { id: string; email: string };
+import type { UserPayload } from '../auth/types/user-payload';
 
 @Controller('category-budgets')
 @UseGuards(JwtAuthGuard)

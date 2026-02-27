@@ -4,7 +4,19 @@ import {
   useQueryClient,
 } from '@tanstack/react-query';
 import { useState } from 'react';
-import { api } from '@/api/client';
+import {
+  getBudgets,
+  createCategory,
+  updateCategory,
+  deleteCategory,
+  reApplyCategories,
+  getCategoryWithCount,
+  upsertBudget,
+  removeBudget,
+} from '@/api/categories';
+import type { Category } from '@/types';
+import { parseKeywords } from '@/lib/format-utils';
+import { useCategories } from '@/hooks/useCategories';
 import { Button } from '@/components/ui/button';
 import {
   Card,
@@ -35,96 +47,9 @@ import { toast } from 'sonner';
 import { LoadingSpinner } from '@/components/LoadingSpinner';
 import { Pencil, Trash2 } from 'lucide-react';
 
-type Category = {
-  id: string;
-  name: string;
-  isDefault: boolean;
-  isActive: boolean;
-  isFixed: boolean;
-  keywords: string[];
-  userId: string | null;
-};
-
-type CategoryBudget = {
-  categoryId: string;
-  categoryName: string;
-  amount: number;
-};
-
-async function getCategories(): Promise<Category[]> {
-  return api('/categories');
-}
-
-async function getBudgets(): Promise<CategoryBudget[]> {
-  return api('/category-budgets');
-}
-
-async function createCategory(body: {
-  name: string;
-  isFixed?: boolean;
-  keywords?: string[];
-}) {
-  return api('/categories', {
-    method: 'POST',
-    body: JSON.stringify(body),
-  });
-}
-
-async function updateCategory(
-  id: string,
-  body: {
-    name?: string;
-    isActive?: boolean;
-    isFixed?: boolean;
-    keywords?: string[];
-  },
-) {
-  return api(`/categories/${id}`, {
-    method: 'PATCH',
-    body: JSON.stringify(body),
-  });
-}
-
-async function deleteCategory(id: string, migrateTo?: string) {
-  const url = migrateTo
-    ? `/categories/${id}?migrateTo=${encodeURIComponent(migrateTo)}`
-    : `/categories/${id}`;
-  return api(url, { method: 'DELETE' });
-}
-
-async function reApplyCategories(year: number, month: number) {
-  return api<{ updated: number }>(
-    `/transactions/re-apply-categories?year=${year}&month=${month}`,
-    { method: 'POST' },
-  );
-}
-
-async function getCategoryWithCount(id: string) {
-  return api<{ id: string; name: string; transactionCount: number }>(
-    `/categories/${id}`,
-  );
-}
-
-async function upsertBudget(
-  categoryId: string,
-  amount: number,
-): Promise<CategoryBudget> {
-  return api<CategoryBudget>('/category-budgets', {
-    method: 'PUT',
-    body: JSON.stringify({ categoryId, amount }),
-  });
-}
-
-async function removeBudget(categoryId: string) {
-  return api(`/category-budgets/${categoryId}`, { method: 'DELETE' });
-}
-
 export function Categories() {
   const queryClient = useQueryClient();
-  const { data: categories = [], isLoading } = useQuery({
-    queryKey: ['categories'],
-    queryFn: getCategories,
-  });
+  const { data: categories = [], isLoading } = useCategories();
   const { data: budgets = [] } = useQuery({
     queryKey: ['category-budgets'],
     queryFn: getBudgets,
@@ -172,7 +97,9 @@ export function Categories() {
           now.getMonth() + 1,
         );
         queryClient.invalidateQueries({ queryKey: ['transactions'] });
-        queryClient.invalidateQueries({ queryKey: ['analytics', 'monthly'] });
+        queryClient.invalidateQueries({
+          queryKey: ['analytics', 'monthly'],
+        });
         toast.success(
           updated > 0
             ? `Category added. ${updated} transaction(s) updated this month.`
@@ -183,7 +110,9 @@ export function Categories() {
       }
     },
     onError: (err) => {
-      toast.error(err instanceof Error ? err.message : 'Failed to add category');
+      toast.error(
+        err instanceof Error ? err.message : 'Failed to add category',
+      );
     },
   });
 
@@ -211,16 +140,24 @@ export function Categories() {
           now.getMonth() + 1,
         );
         queryClient.invalidateQueries({ queryKey: ['transactions'] });
-        queryClient.invalidateQueries({ queryKey: ['analytics', 'monthly'] });
+        queryClient.invalidateQueries({
+          queryKey: ['analytics', 'monthly'],
+        });
         if (updated > 0) {
-          toast.success(`${updated} transaction(s) updated this month.`);
+          toast.success(
+            `${updated} transaction(s) updated this month.`,
+          );
         }
       } catch {
         // Re-apply failed; category update still succeeded
       }
     },
     onError: (err) => {
-      toast.error(err instanceof Error ? err.message : 'Failed to update category');
+      toast.error(
+        err instanceof Error
+          ? err.message
+          : 'Failed to update category',
+      );
     },
   });
 
@@ -246,7 +183,11 @@ export function Categories() {
       toast.success('Category deleted.');
     },
     onError: (err) => {
-      toast.error(err instanceof Error ? err.message : 'Failed to delete category');
+      toast.error(
+        err instanceof Error
+          ? err.message
+          : 'Failed to delete category',
+      );
     },
   });
 
@@ -269,8 +210,12 @@ export function Categories() {
       amount: number;
     }) => upsertBudget(categoryId, amount),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['category-budgets'] });
-      queryClient.invalidateQueries({ queryKey: ['analytics', 'monthly'] });
+      queryClient.invalidateQueries({
+        queryKey: ['category-budgets'],
+      });
+      queryClient.invalidateQueries({
+        queryKey: ['analytics', 'monthly'],
+      });
       setBudgetEditId(null);
       setBudgetAmount('');
     },
@@ -279,19 +224,16 @@ export function Categories() {
   const removeBudgetMutation = useMutation({
     mutationFn: removeBudget,
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['category-budgets'] });
-      queryClient.invalidateQueries({ queryKey: ['analytics', 'monthly'] });
+      queryClient.invalidateQueries({
+        queryKey: ['category-budgets'],
+      });
+      queryClient.invalidateQueries({
+        queryKey: ['analytics', 'monthly'],
+      });
       setBudgetEditId(null);
       setBudgetAmount('');
     },
   });
-
-  function parseKeywords(s: string): string[] {
-    return s
-      .split(/[,;]/)
-      .map((k) => k.trim())
-      .filter(Boolean);
-  }
 
   function handleCreate(e: React.FormEvent) {
     e.preventDefault();
@@ -330,16 +272,24 @@ export function Categories() {
           now.getMonth() + 1,
         );
         queryClient.invalidateQueries({ queryKey: ['transactions'] });
-        queryClient.invalidateQueries({ queryKey: ['analytics', 'monthly'] });
+        queryClient.invalidateQueries({
+          queryKey: ['analytics', 'monthly'],
+        });
         if (updated > 0) {
-          toast.success(`${updated} transaction(s) updated this month.`);
+          toast.success(
+            `${updated} transaction(s) updated this month.`,
+          );
         }
       } catch {
         // Re-apply failed; keywords update still succeeded
       }
     },
     onError: (err) => {
-      toast.error(err instanceof Error ? err.message : 'Failed to save keywords');
+      toast.error(
+        err instanceof Error
+          ? err.message
+          : 'Failed to save keywords',
+      );
     },
   });
 
@@ -374,7 +324,8 @@ export function Categories() {
     }
   }
 
-  if (isLoading) return <LoadingSpinner message="Loading categories..." />;
+  if (isLoading)
+    return <LoadingSpinner message="Loading categories..." />;
 
   return (
     <div>
@@ -430,8 +381,8 @@ export function Categories() {
                     The category name is always used for matching. Add
                     extras here to map bank categories or match
                     descriptions (e.g. &quot;dining&quot; for Eating
-                    Out, &quot;Food &amp; Drink&quot; for common
-                    bank types).
+                    Out, &quot;Food &amp; Drink&quot; for common bank
+                    types).
                   </p>
                 </div>
               </div>
@@ -789,7 +740,7 @@ export function Categories() {
                             e.stopPropagation();
                             setEditId(cat.id);
                             setEditName(cat.name);
-                            setEditIsFixed(cat.isFixed);
+                            setEditIsFixed(cat.isFixed ?? false);
                           }}
                           title="Edit name"
                         >

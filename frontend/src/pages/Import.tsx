@@ -1,54 +1,55 @@
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { useState, useCallback } from "react";
-import { toast } from "sonner";
-import { api, apiUpload } from "@/api/client";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Label } from "@/components/ui/label";
-import { Combobox } from "@/components/ui/combobox";
-import { cn } from "@/lib/utils";
-
-type Account = { id: string; name: string; isDefault?: boolean };
-
-async function getAccounts(): Promise<Account[]> {
-  return api("/accounts");
-}
-
-type ImportResult = { jobId: string; imported: number; skipped: number; errors: number };
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useState, useCallback } from 'react';
+import { toast } from 'sonner';
+import { apiUpload } from '@/api/client';
+import { useAccounts } from '@/hooks/useAccounts';
+import type { ImportResult } from '@/types';
+import { Button } from '@/components/ui/button';
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
+import { Label } from '@/components/ui/label';
+import { Combobox } from '@/components/ui/combobox';
+import { cn } from '@/lib/utils';
 
 export function Import() {
   const queryClient = useQueryClient();
-  const [accountId, setAccountId] = useState("");
+  const [accountId, setAccountId] = useState('');
   const [file, setFile] = useState<File | null>(null);
   const [dragOver, setDragOver] = useState(false);
 
-  const { data: accounts = [] } = useQuery({
-    queryKey: ["accounts"],
-    queryFn: getAccounts,
-  });
+  const { data: accounts = [] } = useAccounts();
 
   const defaultAccount = accounts.find((a) => a.isDefault);
-  const effectiveAccountId = accountId || defaultAccount?.id || "";
+  const effectiveAccountId = accountId || defaultAccount?.id || '';
 
   const uploadMutation = useMutation({
     mutationFn: async () => {
-      if (!file || !effectiveAccountId) throw new Error("Select an account and a file.");
+      if (!file || !effectiveAccountId)
+        throw new Error('Select an account and a file.');
       const formData = new FormData();
-      formData.append("file", file);
-      formData.append("accountId", effectiveAccountId);
-      return apiUpload<ImportResult>("/imports", formData);
+      formData.append('file', file);
+      formData.append('accountId', effectiveAccountId);
+      return apiUpload<ImportResult>('/imports', formData);
     },
     onSuccess: (data) => {
       setFile(null);
-      queryClient.invalidateQueries({ queryKey: ["transactions"] });
-      queryClient.invalidateQueries({ queryKey: ["imports"] });
-      queryClient.invalidateQueries({ queryKey: ["analytics", "monthly"] });
+      queryClient.invalidateQueries({ queryKey: ['transactions'] });
+      queryClient.invalidateQueries({ queryKey: ['imports'] });
+      queryClient.invalidateQueries({
+        queryKey: ['analytics', 'monthly'],
+      });
       toast.success(
-        `Imported ${data.imported} transaction(s)${data.skipped > 0 ? `, ${data.skipped} skipped (duplicates)` : ""}`,
+        `Imported ${data.imported} transaction(s)${data.skipped > 0 ? `, ${data.skipped} skipped (duplicates)` : ''}`,
       );
     },
     onError: (err) => {
-      toast.error(err instanceof Error ? err.message : "Import failed");
+      toast.error(
+        err instanceof Error ? err.message : 'Import failed',
+      );
     },
   });
 
@@ -57,12 +58,12 @@ export function Import() {
     e.stopPropagation();
     setDragOver(false);
     const f = e.dataTransfer.files?.[0];
-    if (f?.name.toLowerCase().endsWith(".csv")) setFile(f);
+    if (f?.name.toLowerCase().endsWith('.csv')) setFile(f);
   }, []);
 
   const handleDragOver = useCallback((e: React.DragEvent) => {
     e.preventDefault();
-    e.dataTransfer.dropEffect = "copy";
+    e.dataTransfer.dropEffect = 'copy';
     setDragOver(true);
   }, []);
 
@@ -80,7 +81,8 @@ export function Import() {
     <div>
       <h1 className="text-2xl font-semibold">Import CSV</h1>
       <p className="text-muted-foreground mt-1">
-        Upload a bank CSV with Date, Description, and Amount columns. Duplicates are skipped.
+        Upload a bank CSV with Date, Description, and Amount columns.
+        Duplicates are skipped.
       </p>
       <Card className="mt-4">
         <CardHeader>
@@ -90,9 +92,12 @@ export function Import() {
           <div className="grid gap-2">
             <Label>Account</Label>
             <Combobox
-              options={accounts.map((a) => ({ value: a.id, label: a.name }))}
+              options={accounts.map((a) => ({
+                value: a.id,
+                label: a.name,
+              }))}
               value={effectiveAccountId || null}
-              onValueChange={(v) => setAccountId(v ?? "")}
+              onValueChange={(v) => setAccountId(v ?? '')}
               placeholder="Select account"
               searchPlaceholder="Type to search..."
               triggerClassName="w-full sm:w-[280px]"
@@ -105,9 +110,11 @@ export function Import() {
               onDragOver={handleDragOver}
               onDragLeave={handleDragLeave}
               className={cn(
-                "border-2 border-dashed rounded-lg p-8 text-center transition-colors",
-                dragOver ? "border-primary bg-primary/5" : "border-muted-foreground/25",
-                file ? "bg-muted/50" : ""
+                'border-2 border-dashed rounded-lg p-8 text-center transition-colors',
+                dragOver
+                  ? 'border-primary bg-primary/5'
+                  : 'border-muted-foreground/25',
+                file ? 'bg-muted/50' : '',
               )}
             >
               <input
@@ -139,26 +146,31 @@ export function Import() {
           </div>
           <div className="space-y-2">
             <Button
-              disabled={!effectiveAccountId || !file || uploadMutation.isPending}
+              disabled={
+                !effectiveAccountId ||
+                !file ||
+                uploadMutation.isPending
+              }
               onClick={() => uploadMutation.mutate()}
             >
-              {uploadMutation.isPending ? "Importing..." : "Import"}
+              {uploadMutation.isPending ? 'Importing...' : 'Import'}
             </Button>
-            {!uploadMutation.isPending && (!effectiveAccountId || !file) && (
-              <p className="text-sm text-muted-foreground">
-                {!effectiveAccountId && !file
-                  ? "Select an account and choose a CSV file to import."
-                  : !effectiveAccountId
-                    ? "Select an account to import into."
-                    : "Choose a CSV file to import."}
-              </p>
-            )}
+            {!uploadMutation.isPending &&
+              (!effectiveAccountId || !file) && (
+                <p className="text-sm text-muted-foreground">
+                  {!effectiveAccountId && !file
+                    ? 'Select an account and choose a CSV file to import.'
+                    : !effectiveAccountId
+                      ? 'Select an account to import into.'
+                      : 'Choose a CSV file to import.'}
+                </p>
+              )}
           </div>
           {uploadMutation.error && (
             <p className="text-destructive text-sm">
               {uploadMutation.error instanceof Error
                 ? uploadMutation.error.message
-                : "Import failed"}
+                : 'Import failed'}
             </p>
           )}
         </CardContent>

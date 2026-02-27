@@ -13,8 +13,7 @@ import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { AccountsService } from './accounts.service';
 import { CreateAccountDto } from './dto/create-account.dto';
 import { UpdateAccountDto } from './dto/update-account.dto';
-
-type UserPayload = { id: string; email: string };
+import type { UserPayload } from '../auth/types/user-payload';
 
 @Controller('accounts')
 @UseGuards(JwtAuthGuard)

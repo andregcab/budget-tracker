@@ -14,7 +14,7 @@ import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { RevenueService } from './revenue.service';
 import { UpsertRevenueDto } from './dto/upsert-revenue.dto';
 
-type UserPayload = { id: string; email: string };
+import type { UserPayload } from '../auth/types/user-payload';
 
 @Controller('revenue')
 @UseGuards(JwtAuthGuard)

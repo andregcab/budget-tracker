@@ -1,5 +1,6 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { findOneOrThrow } from '../prisma/prisma-helpers';
 import { CreateAccountDto } from './dto/create-account.dto';
 import { UpdateAccountDto } from './dto/update-account.dto';
 
@@ -33,13 +34,13 @@ export class AccountsService {
   }
 
   async findOne(userId: string, id: string) {
-    const account = await this.prisma.account.findFirst({
-      where: { id, userId },
-    });
-    if (!account) {
-      throw new NotFoundException('Account not found');
-    }
-    return account;
+    return findOneOrThrow(
+      () =>
+        this.prisma.account.findFirst({
+          where: { id, userId },
+        }),
+      'Account not found',
+    );
   }
 
   async update(userId: string, id: string, dto: UpdateAccountDto) {

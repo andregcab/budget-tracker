@@ -7,7 +7,7 @@ import { UpdateMeDto } from './dto/update-me.dto';
 import { JwtAuthGuard } from './jwt-auth.guard';
 import { CurrentUser } from './current-user.decorator';
 
-type UserPayload = { id: string; email: string };
+import type { UserPayload } from './types/user-payload';
 
 @Controller('auth')
 export class AuthController {
