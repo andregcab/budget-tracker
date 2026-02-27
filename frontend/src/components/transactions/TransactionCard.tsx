@@ -88,7 +88,9 @@ export function TransactionCard({
               {transaction.description}
             </p>
             <p className="text-sm text-muted-foreground">
-              {new Date(transaction.date).toLocaleDateString()} ·{' '}
+              {new Date(transaction.date).toLocaleDateString()}
+            </p>
+            <div className="mt-0.5 flex items-center gap-x-1.5 text-sm text-muted-foreground">
               {editingAmount ? (
                 <Input
                   type="number"
@@ -101,39 +103,31 @@ export function TransactionCard({
                     if (e.key === 'Enter') handleAmountSave();
                     if (e.key === 'Escape') setEditingAmount(false);
                   }}
-                  className="w-20 h-7 text-sm inline"
+                  className="w-24 h-7 text-sm text-right"
                   autoFocus
                 />
               ) : (
-                <>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setAmountInput(absAmt.toFixed(2));
-                      setEditingAmount(true);
-                    }}
-                    className="hover:underline"
-                  >
-                    {formatAmount(transaction.amount)}
-                  </button>
-                  {myShareVal != null && (
-                    <span className="text-muted-foreground ml-1">
-                      / ${myShareVal.toFixed(2)}
-                    </span>
-                  )}
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    className="h-6 px-1 ml-1 text-xs"
-                    onClick={handleHalfClick}
-                    title={isHalfSplit ? 'Clear split' : 'Split 50/50'}
-                  >
-                    ½
-                  </Button>
-                </>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setAmountInput(absAmt.toFixed(2));
+                    setEditingAmount(true);
+                  }}
+                  className="hover:underline text-left"
+                  title={
+                    myShareVal != null
+                      ? `Total: ${formatAmount(transaction.amount)}`
+                      : undefined
+                  }
+                >
+                  {myShareVal != null
+                    ? amt < 0
+                      ? `(${myShareVal.toFixed(2)})`
+                      : `$${myShareVal.toFixed(2)}`
+                    : formatAmount(transaction.amount)}
+                </button>
               )}
-            </p>
+            </div>
           </div>
           <div className="flex items-center gap-1 shrink-0">
             <Button
@@ -148,22 +142,36 @@ export function TransactionCard({
           </div>
         </div>
         <div className="space-y-2">
-          <div className="flex items-center gap-2">
-            <input
-              type="checkbox"
-              checked={transaction.isExcluded}
-              onChange={() =>
+          <div className="flex flex-wrap gap-2 text-xs">
+            <Button
+              type="button"
+              variant={transaction.isExcluded ? 'secondary' : 'outline'}
+              size="sm"
+              className="h-6 px-2"
+              onClick={() =>
                 updateMutation.mutate({
                   id: transaction.id,
                   body: { isExcluded: !transaction.isExcluded },
                 })
               }
-              title="Exclude from budget"
-              className="h-4 w-4 rounded border-input shrink-0"
-            />
-            <span className="text-xs text-muted-foreground">
-              Exclude from budget
-            </span>
+              title={
+                transaction.isExcluded
+                  ? 'Include in budget'
+                  : 'Exclude from budget'
+              }
+            >
+              Excluded
+            </Button>
+            <Button
+              type="button"
+              variant={myShareVal != null ? 'secondary' : 'outline'}
+              size="sm"
+              className="h-6 px-2"
+              onClick={handleHalfClick}
+              title={isHalfSplit ? 'Clear 50/50 split' : 'Split this 50/50'}
+            >
+              ½ split
+            </Button>
           </div>
           <div className="grid gap-2 sm:grid-cols-2">
             <Combobox

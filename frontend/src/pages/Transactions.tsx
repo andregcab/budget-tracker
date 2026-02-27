@@ -151,13 +151,13 @@ export function Transactions() {
                 <Table className="table-fixed">
                   <TableHeader>
                     <TableRow>
-                      <TableHead className="w-20">Exclude</TableHead>
                       <TableHead className="w-24">Date</TableHead>
-                      <TableHead className="w-[275px]">Description</TableHead>
-                      <TableHead className="text-right">Amount</TableHead>
+                      <TableHead className="w-[220px] min-w-[180px]">Description</TableHead>
+                      <TableHead className="w-24 min-w-[5rem] text-right">Amount</TableHead>
+                      <TableHead className="w-[150px] min-w-[120px]">Flags</TableHead>
                       <TableHead className="w-[160px]">Category</TableHead>
                       <TableHead className="w-[240px]">Notes</TableHead>
-                      <TableHead className="w-10"></TableHead>
+                      <TableHead className="w-10" />
                     </TableRow>
                   </TableHeader>
                   <TableBody>

@@ -77,6 +77,13 @@ export function TransactionTableRow({
     }
   };
 
+  const toggleExclude = () => {
+    updateMutation.mutate({
+      id: transaction.id,
+      body: { isExcluded: !transaction.isExcluded },
+    });
+  };
+
   return (
     <TableRow
       className={
@@ -84,31 +91,17 @@ export function TransactionTableRow({
       }
     >
       <TableCell>
-        <input
-          type="checkbox"
-          checked={transaction.isExcluded}
-          onChange={() =>
-            updateMutation.mutate({
-              id: transaction.id,
-              body: { isExcluded: !transaction.isExcluded },
-            })
-          }
-          title="Exclude from budget (spend/savings)"
-          className="h-4 w-4 rounded border-input"
-        />
-      </TableCell>
-      <TableCell>
         {new Date(transaction.date).toLocaleDateString()}
       </TableCell>
       <TableCell
-        className="max-w-[275px] truncate"
+        className="max-w-[220px] min-w-0 truncate"
         title={transaction.description}
       >
         {transaction.description}
       </TableCell>
-      <TableCell className="text-right font-mono">
-        <div className="flex items-center justify-end gap-1">
-          {editingAmount ? (
+      <TableCell className="min-w-[5rem] w-24 text-right font-mono align-middle whitespace-nowrap">
+        {editingAmount ? (
+          <div className="flex justify-end">
             <Input
               type="number"
               step="0.01"
@@ -120,38 +113,58 @@ export function TransactionTableRow({
                 if (e.key === 'Enter') handleAmountSave();
                 if (e.key === 'Escape') setEditingAmount(false);
               }}
-              className="w-20 h-8 text-right"
+              className="w-24 h-8 text-right"
               autoFocus
             />
-          ) : (
-            <>
-              <button
-                type="button"
-                onClick={() => {
-                  setAmountInput(absAmt.toFixed(2));
-                  setEditingAmount(true);
-                }}
-                className="hover:underline"
-              >
-                {formatAmount(transaction.amount)}
-              </button>
-              {myShareVal != null && (
-                <span className="text-muted-foreground">
-                  / ${myShareVal.toFixed(2)}
-                </span>
-              )}
-              <Button
-                type="button"
-                variant="ghost"
-                size="sm"
-                className="h-6 px-1.5 text-xs"
-                onClick={handleHalfClick}
-                title={isHalfSplit ? 'Clear split' : 'Split 50/50'}
-              >
-                ½
-              </Button>
-            </>
-          )}
+          </div>
+        ) : (
+          <button
+            type="button"
+            onClick={() => {
+              setAmountInput(absAmt.toFixed(2));
+              setEditingAmount(true);
+            }}
+            className="hover:underline"
+            title={
+              myShareVal != null
+                ? `Total: ${formatAmount(transaction.amount)}`
+                : undefined
+            }
+          >
+            {myShareVal != null
+              ? amt < 0
+                ? `(${myShareVal.toFixed(2)})`
+                : `$${myShareVal.toFixed(2)}`
+              : formatAmount(transaction.amount)}
+          </button>
+        )}
+      </TableCell>
+      <TableCell className="w-[150px] min-w-[120px]">
+        <div className="flex flex-wrap gap-1 text-xs">
+          <Button
+            type="button"
+            variant={transaction.isExcluded ? 'secondary' : 'outline'}
+            size="sm"
+            className="h-6 px-2"
+            onClick={toggleExclude}
+            title={
+              transaction.isExcluded
+                ? 'Include in budget'
+                : 'Exclude from budget (spend/savings)'
+            }
+          >
+            Excluded
+          </Button>
+          <Button
+            type="button"
+            variant={myShareVal != null ? 'secondary' : 'outline'}
+            size="sm"
+            className="h-6 px-2"
+            onClick={handleHalfClick}
+            title={isHalfSplit ? 'Clear 50/50 split' : 'Split this 50/50'}
+          >
+            ½ split
+          </Button>
         </div>
       </TableCell>
       <TableCell className="w-[160px]">
