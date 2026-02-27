@@ -1,20 +1,9 @@
-import {
-  useQuery,
-  useMutation,
-  useQueryClient,
-} from '@tanstack/react-query';
-import { useEffect, useState } from 'react';
-import {
-  getTransactions,
-  updateTransaction,
-  deleteTransaction,
-  createTransaction,
-  deleteTransactionsByDateRange,
-  getMonthRange,
-} from '@/api/transactions';
+import { useState } from 'react';
+import { useAuth } from '@/hooks/useAuth';
 import { useAccounts } from '@/hooks/useAccounts';
 import { useCategories } from '@/hooks/useCategories';
-import { useAuth } from '@/hooks/useAuth';
+import { useTransactions } from '@/hooks/useTransactions';
+import { useTransactionMutations } from '@/hooks/useTransactionMutations';
 import type { TransactionRow } from '@/types';
 import { Button } from '@/components/ui/button';
 import {
@@ -23,16 +12,14 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Combobox } from '@/components/ui/combobox';
 import {
-  Dialog,
-  DialogContent,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
+  Table,
+  TableBody,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
+import { Label } from '@/components/ui/label';
 import {
   Select,
   SelectContent,
@@ -40,278 +27,73 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table';
-import { Plus, Trash2 } from 'lucide-react';
-import { toast } from 'sonner';
+import { Plus } from 'lucide-react';
 import { LoadingSpinner } from '@/components/LoadingSpinner';
-import {
-  getTransactionsPerPage,
-  setTransactionsPerPage,
-} from '@/lib/user-preferences';
+import { TransactionFiltersCard } from '@/components/transactions/TransactionFiltersCard';
+import { TransactionCard } from '@/components/transactions/TransactionCard';
+import { TransactionTableRow } from '@/components/transactions/TransactionTableRow';
+import { AddTransactionDialog } from '@/components/transactions/AddTransactionDialog';
+import { DeleteTransactionDialog } from '@/components/transactions/DeleteTransactionDialog';
+import { DeleteMonthDialog } from '@/components/transactions/DeleteMonthDialog';
 
 export function Transactions() {
   const { user } = useAuth();
-  const queryClient = useQueryClient();
-  const userId = user?.id ?? null;
-  const [accountId, setAccountId] = useState<string>('');
-  const [categoryId, setCategoryId] = useState<string>('');
-  const [fromDate, setFromDate] = useState('');
-  const [toDate, setToDate] = useState('');
-  const [page, setPage] = useState(1);
-  const [limit, setLimit] = useState(25);
-
-  useEffect(() => {
-    if (userId) {
-      const stored = getTransactionsPerPage(userId);
-      queueMicrotask(() => setLimit(stored));
-    }
-  }, [userId]);
-  const [deleteTarget, setDeleteTarget] =
-    useState<TransactionRow | null>(null);
-  const [deleteMonthOpen, setDeleteMonthOpen] = useState(false);
-  const [addOpen, setAddOpen] = useState(false);
-  const [addForm, setAddForm] = useState({
-    accountId: '',
-    date: new Date().toISOString().slice(0, 10),
-    description: '',
-    amount: '',
-    type: 'debit' as 'debit' | 'credit',
-    categoryId: '' as string | null,
-    notes: '',
-  });
-
   const { data: accounts = [] } = useAccounts();
   const { data: categories = [] } = useCategories();
+  const {
+    accountId,
+    setAccountId,
+    categoryId,
+    setCategoryId,
+    fromDate,
+    setFromDate,
+    toDate,
+    setToDate,
+    page,
+    setPage,
+    limit,
+    setLimit,
+    isLoading,
+    items,
+    total,
+    totalPages,
+  } = useTransactions(user?.id);
 
-  const { data, isLoading } = useQuery({
-    queryKey: [
-      'transactions',
-      accountId,
-      categoryId,
-      fromDate,
-      toDate,
-      page,
-      limit,
-    ],
-    queryFn: () =>
-      getTransactions({
-        accountId: accountId || undefined,
-        categoryId: categoryId || undefined,
-        fromDate: fromDate || undefined,
-        toDate: toDate || undefined,
-        page,
-        limit,
-      }),
-  });
+  const {
+    updateMutation,
+    deleteMutation,
+    deleteMonthMutation,
+    createMutation,
+  } = useTransactionMutations();
 
-  const updateMutation = useMutation({
-    mutationFn: ({
-      id,
-      body,
-    }: {
-      id: string;
-      body: {
-        categoryId?: string | null;
-        notes?: string | null;
-        isExcluded?: boolean;
-      };
-    }) => updateTransaction(id, body),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['transactions'] });
-      queryClient.invalidateQueries({
-        queryKey: ['analytics', 'monthly'],
-      });
-    },
-    onError: (err) => {
-      toast.error(
-        err instanceof Error
-          ? err.message
-          : 'Failed to update transaction',
-      );
-    },
-  });
-
-  const deleteMutation = useMutation({
-    mutationFn: deleteTransaction,
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['transactions'] });
-      queryClient.invalidateQueries({
-        queryKey: ['analytics', 'monthly'],
-      });
-      setDeleteTarget(null);
-    },
-    onError: (err) => {
-      toast.error(
-        err instanceof Error
-          ? err.message
-          : 'Failed to delete transaction',
-      );
-      setDeleteTarget(null);
-    },
-  });
-
-  const deleteMonthMutation = useMutation({
-    mutationFn: ({ from, to }: { from: string; to: string }) =>
-      deleteTransactionsByDateRange(from, to),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['transactions'] });
-      queryClient.invalidateQueries({
-        queryKey: ['analytics', 'monthly'],
-      });
-      setDeleteMonthOpen(false);
-    },
-    onError: (err) => {
-      toast.error(
-        err instanceof Error
-          ? err.message
-          : 'Failed to delete transactions',
-      );
-      setDeleteMonthOpen(false);
-    },
-  });
-
-  const createMutation = useMutation({
-    mutationFn: createTransaction,
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['transactions'] });
-      queryClient.invalidateQueries({
-        queryKey: ['analytics', 'monthly'],
-      });
-      handleAddOpen(false);
-    },
-    onError: (err) => {
-      toast.error(
-        err instanceof Error
-          ? err.message
-          : 'Failed to add transaction',
-      );
-    },
-  });
-
-  const items = data?.items ?? [];
-  const total = data?.total ?? 0;
-  const totalPages = Math.ceil(total / limit);
-
-  const handleDeleteSingle = () => {
-    if (deleteTarget) deleteMutation.mutate(deleteTarget.id);
-  };
-  const handleDeleteMonth = () => {
-    const { from, to } = getMonthRange();
-    deleteMonthMutation.mutate({ from, to });
-  };
-
-  const handleAddOpen = (open: boolean) => {
-    setAddOpen(open);
-    if (!open) return;
-    setAddForm({
-      accountId: accountId || (accounts[0]?.id ?? ''),
-      date: new Date().toISOString().slice(0, 10),
-      description: '',
-      amount: '',
-      type: 'debit',
-      categoryId: categoryId || null,
-      notes: '',
-    });
-  };
-
-  const handleAddSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    const amt = parseFloat(addForm.amount);
-    if (
-      !addForm.accountId ||
-      !addForm.description ||
-      !addForm.amount ||
-      isNaN(amt) ||
-      amt <= 0
-    )
-      return;
-    createMutation.mutate({
-      accountId: addForm.accountId,
-      date: addForm.date,
-      description: addForm.description.trim(),
-      amount: amt,
-      type: addForm.type,
-      categoryId: addForm.categoryId || null,
-      notes: addForm.notes.trim() || null,
-    });
-  };
+  const [deleteTarget, setDeleteTarget] = useState<TransactionRow | null>(
+    null,
+  );
+  const [deleteMonthOpen, setDeleteMonthOpen] = useState(false);
+  const [addOpen, setAddOpen] = useState(false);
 
   return (
     <div>
       <h1 className="text-2xl font-semibold">Transactions</h1>
-      <Card className="mt-4">
-        <CardHeader>
-          <CardTitle>Filters</CardTitle>
-        </CardHeader>
-        <CardContent className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          <div className="grid gap-2 min-w-0">
-            <Label>Account</Label>
-            <Combobox
-              options={accounts.map((a) => ({
-                value: a.id,
-                label: a.name,
-              }))}
-              value={accountId || null}
-              onValueChange={(v) => setAccountId(v ?? '')}
-              placeholder="All accounts"
-              searchPlaceholder="Type to search..."
-              allowEmpty
-              emptyOption={{ value: null, label: 'All accounts' }}
-              triggerClassName="w-full sm:w-[180px]"
-            />
-          </div>
-          <div className="grid gap-2 min-w-0">
-            <Label>Category</Label>
-            <Combobox
-              options={categories.map((c) => ({
-                value: c.id,
-                label: c.name,
-              }))}
-              value={categoryId || null}
-              onValueChange={(v) => setCategoryId(v ?? '')}
-              placeholder="All"
-              searchPlaceholder="Type to search..."
-              allowEmpty
-              emptyOption={{ value: null, label: 'All' }}
-              triggerClassName="w-full sm:w-[180px]"
-            />
-          </div>
-          <div className="grid gap-2 min-w-0">
-            <Label>From date</Label>
-            <Input
-              type="date"
-              value={fromDate}
-              onChange={(e) => setFromDate(e.target.value)}
-              className="w-full min-w-0 sm:w-[160px]"
-            />
-          </div>
-          <div className="grid gap-2 min-w-0">
-            <Label>To date</Label>
-            <Input
-              type="date"
-              value={toDate}
-              onChange={(e) => setToDate(e.target.value)}
-              className="w-full min-w-0 sm:w-[160px]"
-            />
-          </div>
-        </CardContent>
-      </Card>
+
+      <TransactionFiltersCard
+        accounts={accounts}
+        categories={categories}
+        accountId={accountId}
+        onAccountChange={setAccountId}
+        categoryId={categoryId}
+        onCategoryChange={setCategoryId}
+        fromDate={fromDate}
+        onFromDateChange={setFromDate}
+        toDate={toDate}
+        onToDateChange={setToDate}
+      />
+
       <Card className="mt-4">
         <CardHeader className="flex flex-row items-center justify-between gap-4 flex-wrap">
           <CardTitle>Transactions ({total})</CardTitle>
           <div className="flex items-center gap-2 flex-wrap">
-            <Button
-              variant="default"
-              size="sm"
-              onClick={() => handleAddOpen(true)}
-            >
+            <Button variant="default" size="sm" onClick={() => setAddOpen(true)}>
               <Plus className="mr-1 h-4 w-4" />
               Add
             </Button>
@@ -334,8 +116,6 @@ export function Transactions() {
               onValueChange={(v) => {
                 const next = parseInt(v, 10) as 25 | 50 | 100;
                 setLimit(next);
-                if (userId) setTransactionsPerPage(userId, next);
-                setPage(1);
               }}
             >
               <SelectTrigger id="limit" className="w-[100px]">
@@ -358,208 +138,39 @@ export function Transactions() {
             </p>
           ) : (
             <>
-              {/* Mobile: card layout */}
               <div className="space-y-3 md:hidden">
                 {items.map((tx) => (
-                  <Card
+                  <TransactionCard
                     key={tx.id}
-                    className={
-                      tx.isExcluded ? 'opacity-50 bg-muted/30' : ''
-                    }
-                  >
-                    <CardContent className="p-3 space-y-3">
-                      <div className="flex items-start justify-between gap-2">
-                        <div className="min-w-0 flex-1">
-                          <p
-                            className="font-medium truncate"
-                            title={tx.description}
-                          >
-                            {tx.description}
-                          </p>
-                          <p className="text-sm text-muted-foreground">
-                            {new Date(tx.date).toLocaleDateString()} ·{' '}
-                            {parseFloat(tx.amount) >= 0
-                              ? tx.amount
-                              : `(${tx.amount})`}
-                          </p>
-                        </div>
-                        <div className="flex items-center gap-1 shrink-0">
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-8 w-8 text-muted-foreground hover:text-destructive"
-                            onClick={() => setDeleteTarget(tx)}
-                            aria-label="Delete"
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      </div>
-                      <div className="space-y-2">
-                        <div className="flex items-center gap-2">
-                          <input
-                            type="checkbox"
-                            checked={tx.isExcluded}
-                            onChange={() =>
-                              updateMutation.mutate({
-                                id: tx.id,
-                                body: { isExcluded: !tx.isExcluded },
-                              })
-                            }
-                            title="Exclude from budget"
-                            className="h-4 w-4 rounded border-input shrink-0"
-                          />
-                          <span className="text-xs text-muted-foreground">
-                            Exclude from budget
-                          </span>
-                        </div>
-                        <div className="grid gap-2 sm:grid-cols-2">
-                          <Combobox
-                            options={categories.map((c) => ({
-                              value: c.id,
-                              label: c.name,
-                            }))}
-                            value={tx.category?.id ?? null}
-                            onValueChange={(v) =>
-                              updateMutation.mutate({
-                                id: tx.id,
-                                body: { categoryId: v },
-                              })
-                            }
-                            placeholder="Category"
-                            searchPlaceholder="Type to search..."
-                            allowEmpty
-                            emptyOption={{ value: null, label: '—' }}
-                            triggerClassName="w-full"
-                          />
-                          <Input
-                            className="w-full"
-                            placeholder="Notes"
-                            defaultValue={tx.notes ?? ''}
-                            onBlur={(e) => {
-                              const v = e.target.value.trim();
-                              if (v !== (tx.notes ?? '')) {
-                                updateMutation.mutate({
-                                  id: tx.id,
-                                  body: { notes: v || null },
-                                });
-                              }
-                            }}
-                          />
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
+                    transaction={tx}
+                    categories={categories}
+                    onDelete={setDeleteTarget}
+                    updateMutation={updateMutation}
+                  />
                 ))}
               </div>
-              {/* Desktop: table */}
               <div className="hidden md:block">
                 <Table>
                   <TableHeader>
                     <TableRow>
                       <TableHead className="w-20">Exclude</TableHead>
                       <TableHead>Date</TableHead>
-                      <TableHead className="w-[220px]">
-                        Description
-                      </TableHead>
-                      <TableHead className="text-right">
-                        Amount
-                      </TableHead>
-                      <TableHead className="w-[160px]">
-                        Category
-                      </TableHead>
-                      <TableHead className="w-[240px]">
-                        Notes
-                      </TableHead>
+                      <TableHead className="w-[220px]">Description</TableHead>
+                      <TableHead className="text-right">Amount</TableHead>
+                      <TableHead className="w-[160px]">Category</TableHead>
+                      <TableHead className="w-[240px]">Notes</TableHead>
                       <TableHead className="w-10"></TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {items.map((tx) => (
-                      <TableRow
+                      <TransactionTableRow
                         key={tx.id}
-                        className={
-                          tx.isExcluded
-                            ? 'opacity-50 bg-muted/30'
-                            : ''
-                        }
-                      >
-                        <TableCell>
-                          <input
-                            type="checkbox"
-                            checked={tx.isExcluded}
-                            onChange={() =>
-                              updateMutation.mutate({
-                                id: tx.id,
-                                body: { isExcluded: !tx.isExcluded },
-                              })
-                            }
-                            title="Exclude from budget (spend/savings)"
-                            className="h-4 w-4 rounded border-input"
-                          />
-                        </TableCell>
-                        <TableCell>
-                          {new Date(tx.date).toLocaleDateString()}
-                        </TableCell>
-                        <TableCell
-                          className="max-w-[220px] truncate"
-                          title={tx.description}
-                        >
-                          {tx.description}
-                        </TableCell>
-                        <TableCell className="text-right font-mono">
-                          {parseFloat(tx.amount) >= 0
-                            ? tx.amount
-                            : `(${tx.amount})`}
-                        </TableCell>
-                        <TableCell className="w-[160px]">
-                          <Combobox
-                            options={categories.map((c) => ({
-                              value: c.id,
-                              label: c.name,
-                            }))}
-                            value={tx.category?.id ?? null}
-                            onValueChange={(v) =>
-                              updateMutation.mutate({
-                                id: tx.id,
-                                body: { categoryId: v },
-                              })
-                            }
-                            placeholder="—"
-                            searchPlaceholder="Type to search..."
-                            allowEmpty
-                            emptyOption={{ value: null, label: '—' }}
-                            triggerClassName="w-[160px]"
-                          />
-                        </TableCell>
-                        <TableCell className="w-[240px]">
-                          <Input
-                            className="w-full max-w-[240px]"
-                            placeholder="Notes"
-                            defaultValue={tx.notes ?? ''}
-                            onBlur={(e) => {
-                              const v = e.target.value.trim();
-                              if (v !== (tx.notes ?? '')) {
-                                updateMutation.mutate({
-                                  id: tx.id,
-                                  body: { notes: v || null },
-                                });
-                              }
-                            }}
-                          />
-                        </TableCell>
-                        <TableCell>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-8 w-8 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
-                            onClick={() => setDeleteTarget(tx)}
-                            title="Delete"
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </TableCell>
-                      </TableRow>
+                        transaction={tx}
+                        categories={categories}
+                        onDelete={setDeleteTarget}
+                        updateMutation={updateMutation}
+                      />
                     ))}
                   </TableBody>
                 </Table>
@@ -592,218 +203,27 @@ export function Transactions() {
         </CardContent>
       </Card>
 
-      <Dialog
-        open={!!deleteTarget}
-        onOpenChange={(o) => !o && setDeleteTarget(null)}
-      >
-        <DialogContent className="border-destructive/50 sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle className="text-destructive">
-              Delete transaction
-            </DialogTitle>
-          </DialogHeader>
-          <p className="text-sm text-muted-foreground">
-            Delete &quot;{deleteTarget?.description}&quot;? This
-            cannot be undone.
-          </p>
-          <DialogFooter>
-            <Button
-              variant="outline"
-              onClick={() => setDeleteTarget(null)}
-            >
-              Cancel
-            </Button>
-            <Button
-              variant="destructive"
-              onClick={handleDeleteSingle}
-              disabled={deleteMutation.isPending}
-            >
-              Delete
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <DeleteTransactionDialog
+        target={deleteTarget}
+        onClose={() => setDeleteTarget(null)}
+        deleteMutation={deleteMutation}
+      />
 
-      <Dialog open={addOpen} onOpenChange={handleAddOpen}>
-        <DialogContent className="sm:max-w-md">
-          <form onSubmit={handleAddSubmit}>
-            <DialogHeader>
-              <DialogTitle>Add transaction</DialogTitle>
-            </DialogHeader>
-            <div className="grid gap-4 py-4">
-              <div className="grid gap-2">
-                <Label>Account</Label>
-                <Combobox
-                  options={accounts.map((a) => ({
-                    value: a.id,
-                    label: a.name,
-                  }))}
-                  value={addForm.accountId || null}
-                  onValueChange={(v) =>
-                    setAddForm((f) => ({ ...f, accountId: v ?? '' }))
-                  }
-                  placeholder="Select account"
-                  searchPlaceholder="Type to search..."
-                  triggerClassName="w-full"
-                />
-              </div>
-              <div className="grid gap-2">
-                <Label htmlFor="add-date">Date</Label>
-                <Input
-                  id="add-date"
-                  type="date"
-                  value={addForm.date}
-                  onChange={(e) =>
-                    setAddForm((f) => ({
-                      ...f,
-                      date: e.target.value,
-                    }))
-                  }
-                />
-              </div>
-              <div className="grid gap-2">
-                <Label htmlFor="add-description">Description</Label>
-                <Input
-                  id="add-description"
-                  placeholder="e.g. Coffee shop"
-                  value={addForm.description}
-                  onChange={(e) =>
-                    setAddForm((f) => ({
-                      ...f,
-                      description: e.target.value,
-                    }))
-                  }
-                />
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div className="grid gap-2">
-                  <Label htmlFor="add-amount">Amount</Label>
-                  <Input
-                    id="add-amount"
-                    type="number"
-                    step="0.01"
-                    min="0.01"
-                    placeholder="0.00"
-                    value={addForm.amount}
-                    onChange={(e) =>
-                      setAddForm((f) => ({
-                        ...f,
-                        amount: e.target.value,
-                      }))
-                    }
-                  />
-                </div>
-                <div className="grid gap-2">
-                  <Label htmlFor="add-type">Type</Label>
-                  <Select
-                    value={addForm.type}
-                    onValueChange={(v: 'debit' | 'credit') =>
-                      setAddForm((f) => ({ ...f, type: v }))
-                    }
-                  >
-                    <SelectTrigger id="add-type">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="debit">Expense</SelectItem>
-                      <SelectItem value="credit">Income</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-              <div className="grid gap-2">
-                <Label>Category</Label>
-                <Combobox
-                  options={categories.map((c) => ({
-                    value: c.id,
-                    label: c.name,
-                  }))}
-                  value={addForm.categoryId}
-                  onValueChange={(v) =>
-                    setAddForm((f) => ({ ...f, categoryId: v }))
-                  }
-                  placeholder="Optional"
-                  searchPlaceholder="Type to search..."
-                  allowEmpty
-                  emptyOption={{ value: null, label: '—' }}
-                  triggerClassName="w-full"
-                />
-              </div>
-              <div className="grid gap-2">
-                <Label htmlFor="add-notes">Notes</Label>
-                <Input
-                  id="add-notes"
-                  placeholder="Optional"
-                  value={addForm.notes}
-                  onChange={(e) =>
-                    setAddForm((f) => ({
-                      ...f,
-                      notes: e.target.value,
-                    }))
-                  }
-                />
-              </div>
-            </div>
-            <DialogFooter>
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => handleAddOpen(false)}
-              >
-                Cancel
-              </Button>
-              <Button
-                type="submit"
-                disabled={
-                  createMutation.isPending ||
-                  !addForm.accountId ||
-                  !addForm.description.trim() ||
-                  !addForm.amount ||
-                  parseFloat(addForm.amount) <= 0
-                }
-              >
-                {createMutation.isPending ? 'Adding...' : 'Add'}
-              </Button>
-            </DialogFooter>
-          </form>
-        </DialogContent>
-      </Dialog>
+      <AddTransactionDialog
+        open={addOpen}
+        onOpenChange={setAddOpen}
+        accounts={accounts}
+        categories={categories}
+        defaultAccountId={accountId || (accounts[0]?.id ?? '')}
+        defaultCategoryId={categoryId || null}
+        createMutation={createMutation}
+      />
 
-      <Dialog
+      <DeleteMonthDialog
         open={deleteMonthOpen}
         onOpenChange={setDeleteMonthOpen}
-      >
-        <DialogContent className="border-destructive/50 sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle className="text-destructive">
-              Delete all for this month
-            </DialogTitle>
-          </DialogHeader>
-          <p className="text-sm text-muted-foreground">
-            Delete all transactions in{' '}
-            {new Date().toLocaleString('default', {
-              month: 'long',
-              year: 'numeric',
-            })}
-            ? This cannot be undone.
-          </p>
-          <DialogFooter>
-            <Button
-              variant="outline"
-              onClick={() => setDeleteMonthOpen(false)}
-            >
-              Cancel
-            </Button>
-            <Button
-              variant="destructive"
-              onClick={handleDeleteMonth}
-              disabled={deleteMonthMutation.isPending}
-            >
-              Delete all
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+        deleteMonthMutation={deleteMonthMutation}
+      />
     </div>
   );
 }

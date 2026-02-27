@@ -1,11 +1,6 @@
-import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
-import {
-  createAccount,
-  updateAccount,
-  deleteAccount,
-} from '@/api/accounts';
 import { useAccounts } from '@/hooks/useAccounts';
+import { useAccountMutations } from '@/hooks/useAccountMutations';
 import type { Account } from '@/types';
 import { Button } from '@/components/ui/button';
 import {
@@ -15,22 +10,6 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 import {
-  Dialog,
-  DialogContent,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
-import {
   Table,
   TableBody,
   TableCell,
@@ -38,8 +17,8 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { toast } from 'sonner';
 import { LoadingSpinner } from '@/components/LoadingSpinner';
+import { AccountFormDialog } from '@/components/accounts/AccountFormDialog';
 
 const ACCOUNT_TYPES = [
   { value: 'checking', label: 'Checking' },
@@ -52,202 +31,38 @@ function getTypeLabel(type: string): string {
 }
 
 export function Accounts() {
-  const queryClient = useQueryClient();
   const { data: accounts = [], isLoading } = useAccounts();
+  const {
+    createMutation,
+    updateMutation,
+    deleteMutation,
+  } = useAccountMutations();
+
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<Account | null>(null);
-  const [name, setName] = useState('');
-  const [type, setType] = useState('checking');
-  const [institution, setInstitution] = useState('');
-  const [isDefault, setIsDefault] = useState(false);
 
-  const createMutation = useMutation({
-    mutationFn: createAccount,
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['accounts'] });
-      setOpen(false);
-      resetForm();
-    },
-    onError: (err) => {
-      toast.error(
-        err instanceof Error
-          ? err.message
-          : 'Failed to create account',
-      );
-    },
-  });
+  const handleOpenChange = (nextOpen: boolean) => {
+    setOpen(nextOpen);
+    if (!nextOpen) setEditing(null);
+  };
 
-  const updateMutation = useMutation({
-    mutationFn: ({
-      id,
-      body,
-    }: {
-      id: string;
-      body: Parameters<typeof updateAccount>[1];
-    }) => updateAccount(id, body),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['accounts'] });
-      setEditing(null);
-      resetForm();
-    },
-    onError: (err) => {
-      toast.error(
-        err instanceof Error
-          ? err.message
-          : 'Failed to update account',
-      );
-    },
-  });
-
-  const deleteMutation = useMutation({
-    mutationFn: deleteAccount,
-    onSuccess: () =>
-      queryClient.invalidateQueries({ queryKey: ['accounts'] }),
-    onError: (err) => {
-      toast.error(
-        err instanceof Error
-          ? err.message
-          : 'Failed to delete account',
-      );
-    },
-  });
-
-  function resetForm() {
-    setName('');
-    setType('checking');
-    setInstitution('');
-    setIsDefault(false);
-  }
-
-  function openEdit(acc: Account) {
-    setEditing(acc);
-    setName(acc.name);
-    const matched = ACCOUNT_TYPES.find(
-      (t) =>
-        t.value === acc.type ||
-        t.label.toLowerCase() === (acc.type ?? '').toLowerCase(),
-    );
-    setType(matched?.value ?? 'checking');
-    setInstitution(acc.institution ?? '');
-    setIsDefault(acc.isDefault ?? false);
-  }
-
-  function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    if (editing) {
-      updateMutation.mutate({
-        id: editing.id,
-        body: {
-          name,
-          type,
-          institution: institution || undefined,
-          isDefault,
-        },
-      });
-    } else {
-      createMutation.mutate({
-        name,
-        type,
-        institution: institution || undefined,
-        isDefault,
-      });
-    }
-  }
-
-  if (isLoading)
+  if (isLoading) {
     return <LoadingSpinner message="Loading accounts..." />;
+  }
 
   return (
     <div>
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <h1 className="text-2xl font-semibold">Accounts</h1>
-        <Dialog
-          open={open}
-          onOpenChange={(o) => {
-            setOpen(o);
-            if (!o) {
-              setEditing(null);
-              resetForm();
-            }
-          }}
-        >
-          <Button onClick={() => setOpen(true)}>Add account</Button>
-          <DialogContent>
-            <form onSubmit={handleSubmit}>
-              <DialogHeader>
-                <DialogTitle>
-                  {editing ? 'Edit account' : 'New account'}
-                </DialogTitle>
-              </DialogHeader>
-              <div className="grid gap-4 py-4">
-                <div className="grid gap-2">
-                  <Label htmlFor="name">Name</Label>
-                  <Input
-                    id="name"
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
-                    required
-                  />
-                </div>
-                <div className="grid gap-2">
-                  <Label htmlFor="type">Type</Label>
-                  <Select
-                    value={type}
-                    onValueChange={(v) => setType(v)}
-                  >
-                    <SelectTrigger id="type">
-                      <SelectValue placeholder="Select type" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {ACCOUNT_TYPES.map((t) => (
-                        <SelectItem key={t.value} value={t.value}>
-                          {t.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="grid gap-2">
-                  <Label htmlFor="institution">Institution</Label>
-                  <Input
-                    id="institution"
-                    value={institution}
-                    onChange={(e) => setInstitution(e.target.value)}
-                    placeholder="e.g. Your Bank"
-                  />
-                </div>
-                <div className="flex items-center gap-2">
-                  <input
-                    type="checkbox"
-                    id="default"
-                    checked={isDefault}
-                    onChange={(e) => setIsDefault(e.target.checked)}
-                  />
-                  <Label htmlFor="default">Default for imports</Label>
-                </div>
-              </div>
-              <DialogFooter>
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => setOpen(false)}
-                >
-                  Cancel
-                </Button>
-                <Button
-                  type="submit"
-                  disabled={
-                    createMutation.isPending ||
-                    updateMutation.isPending
-                  }
-                >
-                  {editing ? 'Save' : 'Create'}
-                </Button>
-              </DialogFooter>
-            </form>
-          </DialogContent>
-        </Dialog>
+        <Button onClick={() => setOpen(true)}>Add account</Button>
       </div>
+      <AccountFormDialog
+        open={open}
+        onOpenChange={handleOpenChange}
+        editing={editing}
+        createMutation={createMutation}
+        updateMutation={updateMutation}
+      />
       <Card className="mt-4">
         <CardHeader>
           <CardTitle>Your accounts</CardTitle>
@@ -285,7 +100,7 @@ export function Accounts() {
                           variant="outline"
                           size="sm"
                           onClick={() => {
-                            openEdit(acc);
+                            setEditing(acc);
                             setOpen(true);
                           }}
                         >
