@@ -29,6 +29,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { toast } from "sonner";
+import { LoadingSpinner } from "@/components/LoadingSpinner";
 
 type Account = {
   id: string;
@@ -153,7 +154,7 @@ export function Accounts() {
     }
   }
 
-  if (isLoading) return <p className="text-muted-foreground">Loading accounts...</p>;
+  if (isLoading) return <LoadingSpinner message="Loading accounts..." />;
 
   return (
     <div>

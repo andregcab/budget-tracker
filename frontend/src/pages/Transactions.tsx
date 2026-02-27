@@ -31,6 +31,7 @@ import {
 } from "@/components/ui/table";
 import { Plus, Trash2 } from "lucide-react";
 import { toast } from "sonner";
+import { LoadingSpinner } from "@/components/LoadingSpinner";
 import { getTransactionsPerPage, setTransactionsPerPage } from "@/lib/user-preferences";
 
 type Category = { id: string; name: string };
@@ -377,7 +378,7 @@ export function Transactions() {
         </CardHeader>
         <CardContent>
           {isLoading ? (
-            <p className="text-muted-foreground">Loading...</p>
+            <LoadingSpinner message="Loading transactions..." />
           ) : items.length === 0 ? (
             <p className="text-muted-foreground">No transactions match your filters.</p>
           ) : (

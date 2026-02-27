@@ -42,6 +42,7 @@ import {
 } from 'recharts';
 import { Info, Pencil, Plus, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
+import { LoadingSpinner } from '@/components/LoadingSpinner';
 import {
   Popover,
   PopoverContent,
@@ -545,7 +546,7 @@ export function Dashboard() {
     return (
       <div>
         <h1 className="text-2xl font-semibold">Dashboard</h1>
-        <p className="text-muted-foreground mt-2">Loading...</p>
+        <LoadingSpinner className="mt-4" />
       </div>
     );
   }

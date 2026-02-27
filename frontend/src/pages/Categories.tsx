@@ -32,6 +32,7 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { toast } from 'sonner';
+import { LoadingSpinner } from '@/components/LoadingSpinner';
 import { Pencil, Trash2 } from 'lucide-react';
 
 type Category = {
@@ -373,10 +374,7 @@ export function Categories() {
     }
   }
 
-  if (isLoading)
-    return (
-      <p className="text-muted-foreground">Loading categories...</p>
-    );
+  if (isLoading) return <LoadingSpinner message="Loading categories..." />;
 
   return (
     <div>
