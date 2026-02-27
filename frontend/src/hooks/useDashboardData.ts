@@ -62,7 +62,19 @@ export function useDashboardData(year: number, effectiveMonth: number) {
     expectedFixed.map((e) => [e.categoryId, e]),
   );
 
-  const fixedCategories: FixedCategoryDisplay[] = [...fixedFromChart];
+  const fixedCategories: FixedCategoryDisplay[] = fixedFromChart.map((c) => {
+    const expected = expectedByCategoryId[c.id];
+    const actual = c.total;
+    const total =
+      actual > 0 ? actual : expected ? expected.amount : 0;
+    const budget = expected ? expected.amount : c.budget;
+    return {
+      ...c,
+      total,
+      budget,
+      over: budget > 0 && total > budget,
+    };
+  });
   for (const exp of expectedFixed) {
     if (!fixedCategories.some((c) => c.id === exp.categoryId)) {
       fixedCategories.push({

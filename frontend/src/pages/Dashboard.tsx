@@ -81,8 +81,8 @@ export function Dashboard() {
       {data && (
         <SummaryCard
           income={data.totalRevenue ?? 0}
-          expenses={data.totalSpend ?? 0}
-          savings={data.savings ?? 0}
+          expenses={fixedTotal + variableTotal}
+          savings={(data.totalRevenue ?? 0) - (fixedTotal + variableTotal)}
           incomeAmountSlot={
             <IncomeEditDialog
               year={year}

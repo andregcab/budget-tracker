@@ -22,6 +22,11 @@ import {
   DialogTrigger,
   DialogFooter,
 } from '@/components/ui/dialog';
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '@/components/ui/popover';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import {
@@ -31,7 +36,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Plus, Trash2 } from 'lucide-react';
+import { Info, Plus, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 
 type ExpectedFixedCardProps = {
@@ -119,13 +124,24 @@ export function ExpectedFixedCard({
     <Card className="mt-6">
       <CardHeader className="pb-2">
         <div className="flex items-center justify-between gap-2">
-          <div>
+          <div className="flex items-center gap-1.5">
             <CardTitle className="text-base">
               Fixed bills this month
             </CardTitle>
-            <p className="text-muted-foreground text-sm">
-              Rent, subscriptions, insurance — predictable costs
-            </p>
+            <Popover>
+              <PopoverTrigger asChild>
+                <button
+                  type="button"
+                  className="inline-flex text-muted-foreground hover:text-foreground focus:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded"
+                  aria-label="More information"
+                >
+                  <Info className="h-4 w-4" />
+                </button>
+              </PopoverTrigger>
+              <PopoverContent className="w-72 text-sm" align="start">
+                Rent, subscriptions, insurance — predictable costs
+              </PopoverContent>
+            </Popover>
           </div>
           <Dialog open={open} onOpenChange={handleOpenChange}>
             <DialogTrigger asChild>
@@ -232,8 +248,15 @@ export function ExpectedFixedCard({
       </CardHeader>
       <CardContent>
         <div className="space-y-1.5">
-          {fixedCategories.map((c) => {
+          {fixedCategories
+            .filter((c) => !(c.total === 0 && c.budget === 0))
+            .map((c) => {
             const expected = expectedByCategoryId[c.id];
+            const hasExpected = expected && c.budget > 0;
+            const actual = c.total;
+            const expectedAmt = c.budget;
+            const showDiff =
+              hasExpected && Math.abs(actual - expectedAmt) > 0.01;
             return (
               <div
                 key={c.id}
@@ -242,14 +265,9 @@ export function ExpectedFixedCard({
                 <span className="text-muted-foreground">{c.name}</span>
                 <span className="flex items-center gap-2">
                   ${c.total.toFixed(2)}
-                  {expected && (
+                  {showDiff && (
                     <span className="text-muted-foreground text-xs">
-                      (expected)
-                    </span>
-                  )}
-                  {c.budget > 0 && !expected && (
-                    <span className="text-muted-foreground ml-1">
-                      / ${c.budget.toFixed(2)} expected
+                      (expected ${expectedAmt.toFixed(2)})
                     </span>
                   )}
                   {expected && (
@@ -257,8 +275,19 @@ export function ExpectedFixedCard({
                       variant="ghost"
                       size="icon"
                       className="h-6 w-6 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
-                      onClick={() => removeMutation.mutate(expected.id)}
-                      disabled={removeMutation.isPending}
+                      onClick={() =>
+                        expected.id.startsWith('inherited-')
+                          ? addMutation.mutate({
+                              year,
+                              month,
+                              categoryId: expected.categoryId,
+                              amount: 0,
+                            })
+                          : removeMutation.mutate(expected.id)
+                      }
+                      disabled={
+                        removeMutation.isPending || addMutation.isPending
+                      }
                       title="Remove expected expense"
                     >
                       <Trash2 className="h-3 w-3" />

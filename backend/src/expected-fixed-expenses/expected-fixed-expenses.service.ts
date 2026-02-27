@@ -16,12 +16,44 @@ export class ExpectedFixedExpensesService {
       include: { category: { select: { id: true, name: true } } },
       orderBy: { id: 'asc' },
     });
-    return items.map((i) => ({
-      id: i.id,
-      categoryId: i.categoryId,
-      categoryName: i.category.name,
-      amount: Number(i.amount),
-    }));
+    const byCategory = new Map(
+      items.map((i) => [
+        i.categoryId,
+        {
+          id: i.id,
+          categoryId: i.categoryId,
+          categoryName: i.category.name,
+          amount: Number(i.amount),
+        },
+      ]),
+    );
+
+    // Inherit from most recent previous month for categories user configured before
+    const prevItems = await this.prisma.expectedFixedExpense.findMany({
+      where: {
+        userId,
+        category: { isActive: true },
+        OR: [
+          { year: { lt: year } },
+          { year: { equals: year }, month: { lt: month } },
+        ],
+      },
+      orderBy: [{ year: 'desc' }, { month: 'desc' }],
+      include: { category: { select: { id: true, name: true } } },
+    });
+    const seen = new Set(byCategory.keys());
+    for (const prev of prevItems) {
+      if (seen.has(prev.categoryId)) continue;
+      seen.add(prev.categoryId);
+      byCategory.set(prev.categoryId, {
+        id: `inherited-${prev.categoryId}`,
+        categoryId: prev.categoryId,
+        categoryName: prev.category.name,
+        amount: Number(prev.amount),
+      });
+    }
+
+    return Array.from(byCategory.values());
   }
 
   async create(
