@@ -138,9 +138,10 @@ export function TransactionTableRow({
 
   return (
     <TableRow
-      className={
-        transaction.isExcluded ? 'opacity-50 bg-muted/30' : ''
-      }
+      className={cn(
+        '[&>td]:min-h-[3.25rem]', // Cells control row height; tr min-height is unreliable
+        transaction.isExcluded && 'opacity-50 bg-muted/30',
+      )}
     >
       <TableCell className="min-w-[100px] w-[100px]">
         {isEditing ? (
@@ -247,7 +248,7 @@ export function TransactionTableRow({
             searchPlaceholder="Type to search..."
             allowEmpty
             emptyOption={{ value: null, label: '—' }}
-            triggerClassName="w-[160px] -ml-2 pl-2"
+            triggerClassName="h-8 w-[160px] -ml-2 pl-2"
           />
         ) : (
           <span className="text-muted-foreground">

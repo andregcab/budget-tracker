@@ -54,8 +54,11 @@ export function CategoryTableRow({
   const budget = budgetByCategory[category.id];
 
   return (
-    <TableRow key={category.id}>
-      <TableCell className="min-w-[180px] align-middle">
+    <TableRow
+      key={category.id}
+      className="[&>td]:min-h-[3.25rem]" // Cells control row height; tr min-height is unreliable
+    >
+      <TableCell className="w-[180px] min-w-[180px] max-w-[180px] align-middle">
         {isEditing ? (
           <form
             id={`edit-form-${category.id}`}
@@ -67,15 +70,15 @@ export function CategoryTableRow({
             <Input
               value={editName}
               onChange={(e) => onEditNameChange(e.target.value)}
-              className="h-8 w-[140px] max-w-[180px] text-sm"
+              className="h-8 w-full min-w-0 text-sm"
               autoFocus
             />
           </form>
         ) : (
-          <span>{category.name}</span>
+          <span className="block truncate">{category.name}</span>
         )}
       </TableCell>
-      <TableCell className="align-middle">
+      <TableCell className="w-[130px] min-w-[130px] align-middle">
         {isEditing ? (
           <div
             onClick={(e) => e.stopPropagation()}
@@ -90,8 +93,7 @@ export function CategoryTableRow({
               onChange={(e) =>
                 onEditBudgetAmountChange(e.target.value)
               }
-              className="max-w-[120px]"
-              autoFocus
+              className="h-8 w-full min-w-0"
               form={`edit-form-${category.id}`}
               name="budget"
             />
@@ -106,7 +108,7 @@ export function CategoryTableRow({
           </span>
         )}
       </TableCell>
-      <TableCell className="text-center">
+      <TableCell className="w-[60px] min-w-[60px] text-center align-middle">
         {isEditing ? (
           <div
             className="flex items-center justify-center"
@@ -128,28 +130,29 @@ export function CategoryTableRow({
           '—'
         )}
       </TableCell>
-      <TableCell className="min-w-[200px]">
+      <TableCell className="w-[200px] min-w-[200px] max-w-[200px] align-middle">
         {isEditing ? (
           <div
             onClick={(e) => e.stopPropagation()}
             onPointerDown={(e) => e.stopPropagation()}
+            className="min-w-0"
           >
             <Input
               value={editKeywords}
               onChange={(e) => onEditKeywordsChange(e.target.value)}
               placeholder="dining, Food & Drink"
-              className="h-8 w-full min-w-[180px] text-sm"
+              className="h-8 w-full min-w-0 text-sm"
             />
           </div>
         ) : (
-          <span className="text-muted-foreground text-sm">
+          <span className="block truncate text-muted-foreground text-sm">
             {(category.keywords ?? []).length > 0
               ? (category.keywords ?? []).join(', ')
               : 'Name used by default'}
           </span>
         )}
       </TableCell>
-      <TableCell className="w-[170px] pl-8 align-top">
+      <TableCell className="w-[170px] min-w-[170px] pl-8 align-middle shrink-0">
         {isEditing ? (
           <div className="flex gap-1 shrink-0">
             <Button

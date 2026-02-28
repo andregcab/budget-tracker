@@ -210,13 +210,13 @@ export function Categories() {
           </div>
           {/* Desktop: full-width table */}
           <div className="hidden md:block overflow-x-auto">
-            <Table className="w-full table-auto">
+            <Table className="w-full table-fixed">
               <TableHeader>
                 <TableRow>
                   <TableHead className="w-[180px]">Name</TableHead>
-                  <TableHead>Monthly budget</TableHead>
+                  <TableHead className="w-[130px]">Monthly budget</TableHead>
                   <TableHead className="w-[60px] text-center">Fixed</TableHead>
-                  <TableHead className="min-w-[200px]">
+                  <TableHead className="w-[200px] min-w-[200px]">
                     Keywords <span className="font-normal text-muted-foreground">(comma-separated)</span>
                   </TableHead>
                   <TableHead className="w-[170px] pl-8">Actions</TableHead>
