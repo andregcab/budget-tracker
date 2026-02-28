@@ -1,6 +1,9 @@
 import { useMemo, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { getTransactions, getMonthRangeFor } from '@/api/transactions';
+import {
+  getTransactions,
+  getMonthRangeFor,
+} from '@/api/transactions';
 import { useUserPreferences } from '@/hooks/useUserPreferences';
 
 export function useTransactions() {
@@ -15,10 +18,16 @@ export function useTransactions() {
 
   const { fromDate, toDate } = useMemo(() => {
     if (transactionsFromDate || transactionsToDate) {
-      return { fromDate: transactionsFromDate, toDate: transactionsToDate };
+      return {
+        fromDate: transactionsFromDate,
+        toDate: transactionsToDate,
+      };
     }
     if (dashboardMonth) {
-      const { from, to } = getMonthRangeFor(dashboardMonth.year, dashboardMonth.month);
+      const { from, to } = getMonthRangeFor(
+        dashboardMonth.year,
+        dashboardMonth.month,
+      );
       return { fromDate: from, toDate: to };
     }
     return { fromDate: '', toDate: '' };
@@ -63,8 +72,8 @@ export function useTransactions() {
     setPage(1);
   };
 
-  const items = data?.items ?? [];
   const total = data?.total ?? 0;
+  const items = data?.items ?? [];
   const totalPages = Math.ceil(total / limit);
 
   return {

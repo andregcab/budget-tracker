@@ -1,10 +1,7 @@
 import type { TransactionRow } from '@/types';
 import type { Category } from '@/types';
 import { Button } from '@/components/ui/button';
-import {
-  TableCell,
-  TableRow,
-} from '@/components/ui/table';
+import { TableCell, TableRow } from '@/components/ui/table';
 import { Input } from '@/components/ui/input';
 import { Combobox } from '@/components/ui/combobox';
 import {
@@ -236,7 +233,9 @@ export function TransactionTableRow({
                 'border-flag-active/55 bg-flag-active/35 text-flag-active-foreground hover:bg-flag-active/45',
             )}
             onClick={handleHalfClick}
-            title={isHalfSplit ? 'Clear 50/50 split' : 'Split this 50/50'}
+            title={
+              isHalfSplit ? 'Clear 50/50 split' : 'Split this 50/50'
+            }
           >
             Split
           </Button>
@@ -297,7 +296,7 @@ export function TransactionTableRow({
                 type="submit"
                 variant="ghost"
                 size="icon"
-                className="h-8 w-8 text-primary hover:text-primary"
+                className="h-8 w-8 text-foreground dark:text-primary dark:hover:text-primary"
                 title="Save"
               >
                 <Check className="h-4 w-4" />

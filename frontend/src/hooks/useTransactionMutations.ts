@@ -5,6 +5,7 @@ import {
   createTransaction,
   deleteTransactionsByDateRange,
 } from '@/api/transactions';
+import type { TransactionRow, TransactionsResponse } from '@/types';
 import { toast } from 'sonner';
 
 export function useTransactionMutations() {
@@ -12,7 +13,9 @@ export function useTransactionMutations() {
 
   const invalidate = () => {
     queryClient.invalidateQueries({ queryKey: ['transactions'] });
-    queryClient.invalidateQueries({ queryKey: ['analytics', 'monthly'] });
+    queryClient.invalidateQueries({
+      queryKey: ['analytics', 'monthly'],
+    });
   };
 
   const updateMutation = useMutation({
@@ -31,10 +34,29 @@ export function useTransactionMutations() {
         myShare?: number | null;
       };
     }) => updateTransaction(id, body),
-    onSuccess: invalidate,
+    onSuccess: (updated: TransactionRow) => {
+      // Update cache in place so list order is preserved (no refetch).
+      queryClient.setQueriesData<TransactionsResponse>(
+        { queryKey: ['transactions'] },
+        (old) => {
+          if (!old?.items) return old;
+          return {
+            ...old,
+            items: old.items.map((t) =>
+              t.id === updated.id ? updated : t,
+            ),
+          };
+        },
+      );
+      queryClient.invalidateQueries({
+        queryKey: ['analytics', 'monthly'],
+      });
+    },
     onError: (err) => {
       toast.error(
-        err instanceof Error ? err.message : 'Failed to update transaction',
+        err instanceof Error
+          ? err.message
+          : 'Failed to update transaction',
       );
     },
   });
@@ -44,7 +66,9 @@ export function useTransactionMutations() {
     onSuccess: invalidate,
     onError: (err) => {
       toast.error(
-        err instanceof Error ? err.message : 'Failed to delete transaction',
+        err instanceof Error
+          ? err.message
+          : 'Failed to delete transaction',
       );
     },
   });
@@ -55,7 +79,9 @@ export function useTransactionMutations() {
     onSuccess: invalidate,
     onError: (err) => {
       toast.error(
-        err instanceof Error ? err.message : 'Failed to delete transactions',
+        err instanceof Error
+          ? err.message
+          : 'Failed to delete transactions',
       );
     },
   });
@@ -65,7 +91,9 @@ export function useTransactionMutations() {
     onSuccess: invalidate,
     onError: (err) => {
       toast.error(
-        err instanceof Error ? err.message : 'Failed to add transaction',
+        err instanceof Error
+          ? err.message
+          : 'Failed to add transaction',
       );
     },
   });
