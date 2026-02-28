@@ -24,9 +24,12 @@ export function collapseForPie<T extends ChartCategoryForPie>(
   } as T & { _otherCategories?: T[] };
   return [...top, other];
 }
-export const LABEL_OFFSET = 44;
+export const LABEL_OFFSET = 62;
 const LINE_BUFFER = 8;
 const LINE_GAP_FROM_LABEL = 14;
+/** Spread small-slice labels around a center so they don't overlap each other or neighbors */
+const SMALL_SLICE_CENTER_PERCENT = 0.0135;
+const SMALL_SLICE_NUDGE_PX_PER_PERCENT = 1500;
 
 export function polarToCartesian(
   cx: number,
@@ -56,12 +59,15 @@ export interface RenderPieLabelProps {
 export function renderPieLabel(props: RenderPieLabelProps) {
   const { cx, cy, midAngle, outerRadius, percent } = props;
   const name = props.name ?? props.payload?.name ?? '';
-  const labelX =
+  let labelX =
     props.x ??
     cx + (outerRadius + LABEL_OFFSET) * Math.cos(-midAngle * RADIAN);
-  const labelY =
+  let labelY =
     props.y ??
     cy + (outerRadius + LABEL_OFFSET) * Math.sin(-midAngle * RADIAN);
+  if (percent < 0.04) {
+    labelY += (percent - SMALL_SLICE_CENTER_PERCENT) * SMALL_SLICE_NUDGE_PX_PER_PERCENT;
+  }
   const isRight = labelX > cx;
   const pct = (percent * 100).toFixed(1);
   const shortName = name.length > 20 ? `${name.slice(0, 18)}…` : name;
