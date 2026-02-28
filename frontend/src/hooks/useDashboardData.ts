@@ -33,7 +33,8 @@ export function useDashboardData(year: number, effectiveMonth: number) {
 
   const { data: override } = useQuery({
     queryKey: ['revenue', year, effectiveMonth],
-    queryFn: () => getRevenueOverride(year, effectiveMonth),
+    queryFn: async () =>
+      (await getRevenueOverride(year, effectiveMonth)) ?? null,
     placeholderData: (prev) => prev,
   });
 
