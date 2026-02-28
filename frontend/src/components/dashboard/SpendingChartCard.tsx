@@ -115,7 +115,19 @@ export function SpendingChartCard({
     }
   };
 
-  const pieData = collapseForPie(variableCategories);
+  // Table/chart order: budgeted categories first, then non-budgeted; alphabetical within each group.
+  const sortedVariableCategories = [...variableCategories].sort(
+    (a, b) => {
+      const aHasBudget = a.budget > 0;
+      const bHasBudget = b.budget > 0;
+      if (aHasBudget !== bHasBudget) return aHasBudget ? -1 : 1;
+      return a.name.localeCompare(b.name, undefined, {
+        sensitivity: 'base',
+      });
+    },
+  );
+
+  const pieData = collapseForPie(sortedVariableCategories);
   const pieChartConfig: ChartConfig = (() => {
     const config: ChartConfig = { ...chartConfig };
     pieData.forEach((c, i) => {
@@ -148,15 +160,15 @@ export function SpendingChartCard({
         />
       </CardHeader>
       <CardContent className="space-y-4">
-        <div className="w-full max-w-[50%] min-w-0 space-y-2">
+        <div className="w-full min-w-0 space-y-2">
           <div className="space-y-3">
-            {variableCategories.map((c) => {
+            {sortedVariableCategories.map((c) => {
               const pct =
                 c.budget > 0
                   ? Math.min((c.total / c.budget) * 100, 100)
                   : 0;
               return (
-                <div key={c.name} className="space-y-1">
+                <div key={c.id} className="space-y-1">
                   <div className="flex items-center justify-between text-sm">
                     <span
                       className={
@@ -240,7 +252,10 @@ export function SpendingChartCard({
                 ? {
                     height: Math.max(
                       200,
-                      Math.min(400, variableCategories.length * 36),
+                      Math.min(
+                        400,
+                        sortedVariableCategories.length * 36,
+                      ),
                     ),
                   }
                 : undefined
@@ -251,7 +266,7 @@ export function SpendingChartCard({
                 <BarChart
                   layout="vertical"
                   data={
-                    variableCategories as {
+                    sortedVariableCategories as {
                       name: string;
                       total: number;
                     }[]
@@ -297,9 +312,11 @@ export function SpendingChartCard({
                     radius={[0, 4, 4, 0]}
                     onClick={handleMobileBarClick}
                   >
-                    {variableCategories.map((entry, index) => {
+                    {sortedVariableCategories.map((entry, index) => {
                       const maxTotal = Math.max(
-                        ...variableCategories.map((c) => c.total),
+                        ...sortedVariableCategories.map(
+                          (c) => c.total,
+                        ),
                         1,
                       );
                       const ratio = entry.total / maxTotal;
@@ -315,7 +332,7 @@ export function SpendingChartCard({
               ) : (
                 <BarChart
                   data={
-                    variableCategories as {
+                    sortedVariableCategories as {
                       name: string;
                       total: number;
                     }[]
@@ -346,9 +363,11 @@ export function SpendingChartCard({
                     tickMargin={8}
                   />
                   <Bar dataKey="total" radius={[4, 4, 0, 0]}>
-                    {variableCategories.map((entry, index) => {
+                    {sortedVariableCategories.map((entry, index) => {
                       const maxTotal = Math.max(
-                        ...variableCategories.map((c) => c.total),
+                        ...sortedVariableCategories.map(
+                          (c) => c.total,
+                        ),
                         1,
                       );
                       const ratio = entry.total / maxTotal;
