@@ -54,7 +54,7 @@ export function CategoryTableRow({
 
   return (
     <TableRow key={category.id}>
-      <TableCell className="min-w-[180px] align-top">
+      <TableCell className="min-w-[180px] align-middle">
         {isEditing ? (
           <form
             id={`edit-form-${category.id}`}
@@ -74,7 +74,7 @@ export function CategoryTableRow({
           <span>{category.name}</span>
         )}
       </TableCell>
-      <TableCell className="align-top">
+      <TableCell className="align-middle">
         {isEditing ? (
           <div
             onClick={(e) => e.stopPropagation()}

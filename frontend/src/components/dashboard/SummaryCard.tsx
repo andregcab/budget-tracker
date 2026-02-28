@@ -30,7 +30,9 @@ export function SummaryCard({
       <CardContent className="space-y-4">
         <div className="space-y-3">
           <div className="flex items-center gap-3">
-            <span className="text-sm font-medium w-20 shrink-0">Income</span>
+            <span className="text-sm font-medium w-20 shrink-0">
+              Income
+            </span>
             <div className="flex-1 min-w-0 h-6 rounded-md overflow-hidden bg-muted/50">
               <div
                 className="h-full rounded-md bg-[oklch(0.76_0.19_145)]/90 dark:bg-[oklch(0.78_0.19_145)]/90 transition-[width] duration-300 ease-out"
@@ -42,7 +44,9 @@ export function SummaryCard({
             </div>
           </div>
           <div className="flex items-center gap-3">
-            <span className="text-sm font-medium w-20 shrink-0">Expenses</span>
+            <span className="text-sm font-medium w-20 shrink-0">
+              Expenses
+            </span>
             <div className="flex-1 min-w-0 h-6 rounded-md overflow-hidden bg-muted/50">
               <div
                 className="h-full rounded-md bg-[oklch(0.78_0.17_55)]/90 dark:bg-[oklch(0.80_0.16_55)]/90 transition-[width] duration-300 ease-out"
@@ -55,7 +59,7 @@ export function SummaryCard({
           </div>
         </div>
         {savings !== 0 && (
-          <div className="rounded-lg border border-dashed border-border pt-3 pb-3 px-4 flex items-center gap-4">
+          <div className="rounded-lg border border-dashed border-border pt-3 pb-2 px-4 flex items-end gap-4">
             <div>
               <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
                 {savings >= 0 ? 'Savings' : 'Overspent'}
@@ -70,10 +74,10 @@ export function SummaryCard({
                 ${Math.abs(savings).toFixed(2)}
               </p>
             </div>
-            <p className="text-sm text-muted-foreground flex-1">
+            <p className="text-sm text-muted-foreground mb-1 flex-1">
               {savings >= 0
-                ? 'Your income was greater than your expenses this month.'
-                : 'Expenses exceeded income this month.'}
+                ? 'You saved money this month! 🎉'
+                : 'Oops, your expenses exceeded your income this month.'}
             </p>
           </div>
         )}
