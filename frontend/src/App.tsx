@@ -7,6 +7,7 @@ import { ThemeProvider } from "@/contexts/ThemeContext";
 import { UserPreferencesProvider } from "@/contexts/UserPreferencesContext";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { Layout } from "@/components/Layout";
+import { TooltipProvider } from "@/components/ui/tooltip";
 import { Login } from "@/pages/Login";
 import { Register } from "@/pages/Register";
 import { Dashboard } from "@/pages/Dashboard";
@@ -23,6 +24,7 @@ function App() {
     <QueryClientProvider client={queryClient}>
       <Toaster richColors position="bottom-center" />
       <ThemeProvider>
+        <TooltipProvider delayDuration={300}>
         <BrowserRouter>
           <ScrollRestoration />
           <AuthProvider>
@@ -50,6 +52,7 @@ function App() {
             </UserPreferencesProvider>
           </AuthProvider>
         </BrowserRouter>
+        </TooltipProvider>
       </ThemeProvider>
     </QueryClientProvider>
   );

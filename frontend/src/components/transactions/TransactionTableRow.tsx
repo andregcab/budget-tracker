@@ -7,8 +7,13 @@ import {
 } from '@/components/ui/table';
 import { Input } from '@/components/ui/input';
 import { Combobox } from '@/components/ui/combobox';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
 import { Check, Pencil, Trash2, X } from 'lucide-react';
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { cn } from '@/lib/utils';
 import {
   formatAmount,
@@ -57,6 +62,36 @@ type TransactionTableRowProps = {
   onEditStart: (tx: TransactionRow) => void;
 };
 
+function EditDateInput({
+  editDate,
+  onEditDateChange,
+  formId,
+}: {
+  editDate: string;
+  onEditDateChange: (iso: string) => void;
+  formId: string;
+}) {
+  const [dateInputValue, setDateInputValue] = useState(() =>
+    formatDateToMMDDYY(editDate),
+  );
+  const handleChange = (value: string) => {
+    setDateInputValue(value);
+    const iso = parseMMDDYYToISO(value);
+    if (iso) onEditDateChange(iso);
+  };
+  return (
+    <Input
+      type="text"
+      inputMode="numeric"
+      placeholder="M/D/YY"
+      value={dateInputValue}
+      onChange={(e) => handleChange(e.target.value)}
+      className="h-8 w-full min-w-0 pl-2 -ml-2 font-mono"
+      form={formId}
+    />
+  );
+}
+
 export function TransactionTableRow({
   transaction,
   categories,
@@ -78,18 +113,6 @@ export function TransactionTableRow({
   onEditStart,
 }: TransactionTableRowProps) {
   const isEditing = editId === transaction.id;
-  const [dateInputValue, setDateInputValue] = useState('');
-
-  useEffect(() => {
-    if (isEditing) setDateInputValue(formatDateToMMDDYY(editDate));
-  }, [isEditing, editDate]);
-
-  const handleDateInputChange = (value: string) => {
-    setDateInputValue(value);
-    const iso = parseMMDDYYToISO(value);
-    if (iso) onEditDateChange(iso);
-  };
-
   const amt = parseFloat(transaction.amount);
   const absAmt = Math.abs(amt);
   const myShareVal = transaction.myShare
@@ -127,14 +150,10 @@ export function TransactionTableRow({
     >
       <TableCell className="min-w-[100px] w-[100px]">
         {isEditing ? (
-          <Input
-            type="text"
-            inputMode="numeric"
-            placeholder="M/D/YY"
-            value={dateInputValue}
-            onChange={(e) => handleDateInputChange(e.target.value)}
-            className="h-8 w-full min-w-0 pl-2 -ml-2 font-mono"
-            form={`edit-tx-form-${transaction.id}`}
+          <EditDateInput
+            editDate={editDate}
+            onEditDateChange={onEditDateChange}
+            formId={`edit-tx-form-${transaction.id}`}
           />
         ) : (
           formatTransactionDateDisplay(transaction.date)
@@ -254,12 +273,16 @@ export function TransactionTableRow({
             form={`edit-tx-form-${transaction.id}`}
           />
         ) : (
-          <span
-            className="text-muted-foreground text-sm truncate block min-w-0"
-            title={transaction.notes ?? '—'}
-          >
-            {transaction.notes ?? '—'}
-          </span>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <span className="text-muted-foreground text-sm truncate block min-w-0 cursor-default">
+                {transaction.notes ?? '—'}
+              </span>
+            </TooltipTrigger>
+            <TooltipContent>
+              {transaction.notes ?? '—'}
+            </TooltipContent>
+          </Tooltip>
         )}
       </TableCell>
       <TableCell className="w-20 shrink-0">

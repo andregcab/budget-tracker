@@ -5,6 +5,11 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Combobox } from '@/components/ui/combobox';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
 import { Pencil, Trash2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import {
@@ -282,13 +287,17 @@ export function TransactionCard({
             {transaction.category?.name ?? '—'}
           </p>
           {transaction.notes && (
-            <p
-              className="text-xs text-muted-foreground truncate"
-              title={transaction.notes}
-            >
-              <span className="font-medium text-foreground">Notes: </span>
-              {transaction.notes}
-            </p>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <p className="text-xs text-muted-foreground truncate cursor-default">
+                  <span className="font-medium text-foreground">Notes: </span>
+                  {transaction.notes}
+                </p>
+              </TooltipTrigger>
+              <TooltipContent>
+                {transaction.notes}
+              </TooltipContent>
+            </Tooltip>
           )}
         </div>
       </CardContent>
