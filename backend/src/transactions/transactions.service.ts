@@ -220,6 +220,8 @@ export class TransactionsService {
     }
 
     const data: Prisma.TransactionUpdateInput = {};
+    if (dto.date !== undefined) data.date = new Date(dto.date);
+    if (dto.description !== undefined) data.description = dto.description;
     if (dto.categoryId !== undefined) {
       data.category =
         dto.categoryId === null

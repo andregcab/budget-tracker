@@ -70,6 +70,42 @@ export function Transactions() {
   const [deleteMonthOpen, setDeleteMonthOpen] = useState(false);
   const [addOpen, setAddOpen] = useState(false);
 
+  const [editId, setEditId] = useState<string | null>(null);
+  const [editDate, setEditDate] = useState('');
+  const [editDescription, setEditDescription] = useState('');
+  const [editAmount, setEditAmount] = useState('');
+  const [editCategoryId, setEditCategoryId] = useState<string | null>(null);
+  const [editNotes, setEditNotes] = useState('');
+
+  const handleEditStart = (tx: TransactionRow) => {
+    setEditId(tx.id);
+    setEditDate(tx.date.slice(0, 10));
+    setEditDescription(tx.description);
+    setEditAmount(Math.abs(parseFloat(tx.amount)).toFixed(2));
+    setEditCategoryId(tx.category?.id ?? null);
+    setEditNotes(tx.notes ?? '');
+  };
+  const handleEditCancel = () => setEditId(null);
+  const handleEditSave = (e: React.FormEvent, id: string) => {
+    e.preventDefault();
+    const amt = parseFloat(editAmount);
+    if (!Number.isNaN(amt) && amt > 0) {
+      updateMutation.mutate(
+        {
+          id,
+          body: {
+            date: editDate,
+            description: editDescription.trim(),
+            amount: amt,
+            categoryId: editCategoryId,
+            notes: editNotes.trim() || null,
+          },
+        },
+        { onSuccess: () => setEditId(null) },
+      );
+    }
+  };
+
   return (
     <div>
       <h1 className="text-2xl font-semibold">Transactions</h1>
@@ -144,6 +180,20 @@ export function Transactions() {
                     categories={categories}
                     onDelete={setDeleteTarget}
                     updateMutation={updateMutation}
+                    editId={editId}
+                    editDate={editDate}
+                    editDescription={editDescription}
+                    editAmount={editAmount}
+                    editCategoryId={editCategoryId}
+                    editNotes={editNotes}
+                    onEditDateChange={setEditDate}
+                    onEditDescriptionChange={setEditDescription}
+                    onEditAmountChange={setEditAmount}
+                    onEditCategoryIdChange={setEditCategoryId}
+                    onEditNotesChange={setEditNotes}
+                    onEditSave={(e) => handleEditSave(e, tx.id)}
+                    onEditCancel={handleEditCancel}
+                    onEditStart={handleEditStart}
                   />
                 ))}
               </div>
@@ -151,13 +201,13 @@ export function Transactions() {
                 <Table className="table-fixed">
                   <TableHeader>
                     <TableRow>
-                      <TableHead className="w-24">Date</TableHead>
+                      <TableHead className="min-w-[100px] w-[100px]">Date</TableHead>
                       <TableHead className="w-[220px] min-w-[180px]">Description</TableHead>
                       <TableHead className="w-24 min-w-[5rem] text-right">Amount</TableHead>
                       <TableHead className="w-[150px] min-w-[120px]">Flags</TableHead>
                       <TableHead className="w-[160px]">Category</TableHead>
-                      <TableHead className="w-[240px]">Notes</TableHead>
-                      <TableHead className="w-10" />
+                      <TableHead className="w-[120px] min-w-[100px]">Notes</TableHead>
+                      <TableHead className="w-20 shrink-0" />
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -168,6 +218,20 @@ export function Transactions() {
                         categories={categories}
                         onDelete={setDeleteTarget}
                         updateMutation={updateMutation}
+                        editId={editId}
+                        editDate={editDate}
+                        editDescription={editDescription}
+                        editAmount={editAmount}
+                        editCategoryId={editCategoryId}
+                        editNotes={editNotes}
+                        onEditDateChange={setEditDate}
+                        onEditDescriptionChange={setEditDescription}
+                        onEditAmountChange={setEditAmount}
+                        onEditCategoryIdChange={setEditCategoryId}
+                        onEditNotesChange={setEditNotes}
+                        onEditSave={(e) => handleEditSave(e, tx.id)}
+                        onEditCancel={handleEditCancel}
+                        onEditStart={handleEditStart}
                       />
                     ))}
                   </TableBody>

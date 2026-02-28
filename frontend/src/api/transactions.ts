@@ -22,6 +22,8 @@ export async function getTransactions(params: {
 export async function updateTransaction(
   id: string,
   body: {
+    date?: string;
+    description?: string;
     categoryId?: string | null;
     notes?: string | null;
     isExcluded?: boolean;

@@ -22,9 +22,13 @@ export function useTransactionMutations() {
     }: {
       id: string;
       body: {
+        date?: string;
+        description?: string;
         categoryId?: string | null;
         notes?: string | null;
         isExcluded?: boolean;
+        amount?: number;
+        myShare?: number | null;
       };
     }) => updateTransaction(id, body),
     onSuccess: invalidate,

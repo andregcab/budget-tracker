@@ -11,6 +11,14 @@ import { Type } from 'class-transformer';
 export class UpdateTransactionDto {
   @IsString()
   @IsOptional()
+  date?: string;
+
+  @IsString()
+  @IsOptional()
+  description?: string;
+
+  @IsString()
+  @IsOptional()
   categoryId?: string | null;
 
   @IsString()

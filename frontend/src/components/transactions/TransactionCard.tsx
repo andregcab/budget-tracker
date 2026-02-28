@@ -1,11 +1,11 @@
-import { useState } from 'react';
 import type { TransactionRow } from '@/types';
 import type { Category } from '@/types';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { Combobox } from '@/components/ui/combobox';
-import { Trash2 } from 'lucide-react';
+import { Pencil, Trash2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { formatAmount } from '@/lib/transaction-utils';
 import type { UseMutationResult } from '@tanstack/react-query';
@@ -16,6 +16,8 @@ type UpdateMutation = UseMutationResult<
   {
     id: string;
     body: {
+      date?: string;
+      description?: string;
       categoryId?: string | null;
       notes?: string | null;
       isExcluded?: boolean;
@@ -31,6 +33,20 @@ type TransactionCardProps = {
   categories: Category[];
   onDelete: (tx: TransactionRow) => void;
   updateMutation: UpdateMutation;
+  editId: string | null;
+  editDate: string;
+  editDescription: string;
+  editAmount: string;
+  editCategoryId: string | null;
+  editNotes: string;
+  onEditDateChange: (v: string) => void;
+  onEditDescriptionChange: (v: string) => void;
+  onEditAmountChange: (v: string) => void;
+  onEditCategoryIdChange: (v: string | null) => void;
+  onEditNotesChange: (v: string) => void;
+  onEditSave: (e: React.FormEvent) => void;
+  onEditCancel: () => void;
+  onEditStart: (tx: TransactionRow) => void;
 };
 
 export function TransactionCard({
@@ -38,10 +54,22 @@ export function TransactionCard({
   categories,
   onDelete,
   updateMutation,
+  editId,
+  editDate,
+  editDescription,
+  editAmount,
+  editCategoryId,
+  editNotes,
+  onEditDateChange,
+  onEditDescriptionChange,
+  onEditAmountChange,
+  onEditCategoryIdChange,
+  onEditNotesChange,
+  onEditSave,
+  onEditCancel,
+  onEditStart,
 }: TransactionCardProps) {
-  const [editingAmount, setEditingAmount] = useState(false);
-  const [amountInput, setAmountInput] = useState('');
-
+  const isEditing = editId === transaction.id;
   const amt = parseFloat(transaction.amount);
   const absAmt = Math.abs(amt);
   const myShareVal = transaction.myShare
@@ -49,17 +77,6 @@ export function TransactionCard({
     : null;
   const isHalfSplit =
     myShareVal != null && Math.abs(myShareVal - absAmt / 2) < 0.01;
-
-  const handleAmountSave = () => {
-    const val = parseFloat(amountInput);
-    if (!isNaN(val) && val > 0) {
-      updateMutation.mutate({
-        id: transaction.id,
-        body: { amount: val },
-      });
-    }
-    setEditingAmount(false);
-  };
 
   const handleHalfClick = () => {
     if (isHalfSplit) {
@@ -75,6 +92,94 @@ export function TransactionCard({
     }
   };
 
+  if (isEditing) {
+    return (
+      <Card
+        className={transaction.isExcluded ? 'opacity-50 bg-muted/30' : ''}
+      >
+        <CardContent className="p-3">
+          <form
+            id={`edit-tx-card-form-${transaction.id}`}
+            onSubmit={onEditSave}
+            className="space-y-3"
+          >
+            <div className="grid gap-2">
+              <Label htmlFor={`tx-date-${transaction.id}`}>Date</Label>
+              <Input
+                id={`tx-date-${transaction.id}`}
+                type="date"
+                value={editDate}
+                onChange={(e) => onEditDateChange(e.target.value)}
+                className="h-8"
+              />
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor={`tx-desc-${transaction.id}`}>Description</Label>
+              <Input
+                id={`tx-desc-${transaction.id}`}
+                value={editDescription}
+                onChange={(e) => onEditDescriptionChange(e.target.value)}
+                placeholder="Description"
+                className="h-8"
+              />
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor={`tx-amount-${transaction.id}`}>Amount</Label>
+              <Input
+                id={`tx-amount-${transaction.id}`}
+                type="number"
+                step="0.01"
+                min="0.01"
+                value={editAmount}
+                onChange={(e) => onEditAmountChange(e.target.value)}
+                className="h-8 w-24"
+              />
+            </div>
+            <div className="grid gap-2">
+              <Label>Category</Label>
+              <Combobox
+                options={categories.map((c) => ({
+                  value: c.id,
+                  label: c.name,
+                }))}
+                value={editCategoryId}
+                onValueChange={(v) => onEditCategoryIdChange(v)}
+                placeholder="—"
+                searchPlaceholder="Type to search..."
+                allowEmpty
+                emptyOption={{ value: null, label: '—' }}
+                triggerClassName="w-full"
+              />
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor={`tx-notes-${transaction.id}`}>Notes</Label>
+              <Input
+                id={`tx-notes-${transaction.id}`}
+                value={editNotes}
+                onChange={(e) => onEditNotesChange(e.target.value)}
+                placeholder="Notes"
+                className="h-8"
+              />
+            </div>
+            <div className="flex flex-wrap gap-2">
+              <Button type="submit" size="sm">
+                Save
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={onEditCancel}
+              >
+                Cancel
+              </Button>
+            </div>
+          </form>
+        </CardContent>
+      </Card>
+    );
+  }
+
   return (
     <Card
       className={transaction.isExcluded ? 'opacity-50 bg-muted/30' : ''}
@@ -89,49 +194,40 @@ export function TransactionCard({
               {transaction.description}
             </p>
             <p className="text-sm text-muted-foreground">
-              {new Date(transaction.date).toLocaleDateString()}
+              {new Date(transaction.date).toLocaleDateString(undefined, {
+                year: '2-digit',
+                month: 'numeric',
+                day: 'numeric',
+              })}
             </p>
-            <div className="mt-0.5 flex items-center gap-x-1.5 text-sm text-muted-foreground">
-              {editingAmount ? (
-                <Input
-                  type="number"
-                  step="0.01"
-                  min="0.01"
-                  value={amountInput}
-                  onChange={(e) => setAmountInput(e.target.value)}
-                  onBlur={handleAmountSave}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter') handleAmountSave();
-                    if (e.key === 'Escape') setEditingAmount(false);
-                  }}
-                  className="w-24 h-7 text-sm text-right"
-                  autoFocus
-                />
-              ) : (
-                <button
-                  type="button"
-                  onClick={() => {
-                    setAmountInput(absAmt.toFixed(2));
-                    setEditingAmount(true);
-                  }}
-                  className="hover:underline text-left"
-                  title={
-                    myShareVal != null
-                      ? `Total: ${formatAmount(transaction.amount)}`
-                      : undefined
-                  }
-                >
-                  {myShareVal != null
-                    ? amt < 0
-                      ? `(${myShareVal.toFixed(2)})`
-                      : `$${myShareVal.toFixed(2)}`
-                    : formatAmount(transaction.amount)}
-                </button>
-              )}
-            </div>
+            <p
+              className="mt-0.5 text-sm font-mono"
+              title={
+                myShareVal != null
+                  ? `Total: ${formatAmount(transaction.amount)}`
+                  : undefined
+              }
+            >
+              {myShareVal != null
+                ? amt < 0
+                  ? `(${myShareVal.toFixed(2)})`
+                  : `$${myShareVal.toFixed(2)}`
+                : formatAmount(transaction.amount)}
+            </p>
           </div>
           <div className="flex items-center gap-1 shrink-0">
             <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8"
+              onClick={() => onEditStart(transaction)}
+              aria-label="Edit"
+            >
+              <Pencil className="h-4 w-4" />
+            </Button>
+            <Button
+              type="button"
               variant="ghost"
               size="icon"
               className="h-8 w-8 text-muted-foreground hover:text-destructive"
@@ -149,7 +245,7 @@ export function TransactionCard({
               variant="outline"
               size="sm"
               className={cn(
-                'h-6 px-2',
+                'h-6 px-2.5 py-1',
                 transaction.isExcluded &&
                   'border-flag-active/55 bg-flag-active/35 text-flag-active-foreground hover:bg-flag-active/45',
               )}
@@ -162,60 +258,36 @@ export function TransactionCard({
               title={
                 transaction.isExcluded
                   ? 'Include in budget'
-                  : 'Exclude from budget'
+                  : 'Omit from budget'
               }
             >
-              Excluded
+              Omit
             </Button>
             <Button
               type="button"
               variant="outline"
               size="sm"
               className={cn(
-                'h-6 px-2',
+                'h-6 px-2.5 py-1',
                 myShareVal != null &&
                   'border-flag-active/55 bg-flag-active/35 text-flag-active-foreground hover:bg-flag-active/45',
               )}
               onClick={handleHalfClick}
               title={isHalfSplit ? 'Clear 50/50 split' : 'Split this 50/50'}
             >
-              ½ split
+              ½
             </Button>
           </div>
-          <div className="grid gap-2 sm:grid-cols-2">
-            <Combobox
-              options={categories.map((c) => ({
-                value: c.id,
-                label: c.name,
-              }))}
-              value={transaction.category?.id ?? null}
-              onValueChange={(v) =>
-                updateMutation.mutate({
-                  id: transaction.id,
-                  body: { categoryId: v },
-                })
-              }
-              placeholder="Category"
-              searchPlaceholder="Type to search..."
-              allowEmpty
-              emptyOption={{ value: null, label: '—' }}
-              triggerClassName="w-full"
-            />
-            <Input
-              className="w-full"
-              placeholder="Notes"
-              defaultValue={transaction.notes ?? ''}
-              onBlur={(e) => {
-                const v = e.target.value.trim();
-                if (v !== (transaction.notes ?? '')) {
-                  updateMutation.mutate({
-                    id: transaction.id,
-                    body: { notes: v || null },
-                  });
-                }
-              }}
-            />
-          </div>
+          <p className="text-xs text-muted-foreground">
+            <span className="font-medium text-foreground">Category: </span>
+            {transaction.category?.name ?? '—'}
+          </p>
+          {transaction.notes && (
+            <p className="text-xs text-muted-foreground truncate">
+              <span className="font-medium text-foreground">Notes: </span>
+              {transaction.notes}
+            </p>
+          )}
         </div>
       </CardContent>
     </Card>
