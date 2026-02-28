@@ -9,6 +9,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { Combobox } from '@/components/ui/combobox';
 import { Trash2 } from 'lucide-react';
+import { cn } from '@/lib/utils';
 import { formatAmount } from '@/lib/transaction-utils';
 import type { UseMutationResult } from '@tanstack/react-query';
 
@@ -145,7 +146,10 @@ export function TransactionTableRow({
             type="button"
             variant={transaction.isExcluded ? 'secondary' : 'outline'}
             size="sm"
-            className="h-6 px-2"
+            className={cn(
+              'h-6 px-2',
+              transaction.isExcluded && 'border border-white/50',
+            )}
             onClick={toggleExclude}
             title={
               transaction.isExcluded
@@ -159,7 +163,10 @@ export function TransactionTableRow({
             type="button"
             variant={myShareVal != null ? 'secondary' : 'outline'}
             size="sm"
-            className="h-6 px-2"
+            className={cn(
+              'h-6 px-2',
+              myShareVal != null && 'border border-white/50',
+            )}
             onClick={handleHalfClick}
             title={isHalfSplit ? 'Clear 50/50 split' : 'Split this 50/50'}
           >
