@@ -205,7 +205,7 @@ export function TransactionTableRow({
             title={
               transaction.isExcluded
                 ? 'Include in budget'
-                : 'Omit from budget (spend/savings)'
+                : 'Omit from budget'
             }
           >
             Omit
@@ -222,7 +222,7 @@ export function TransactionTableRow({
             onClick={handleHalfClick}
             title={isHalfSplit ? 'Clear 50/50 split' : 'Split this 50/50'}
           >
-            ½
+            Split
           </Button>
         </div>
       </TableCell>
@@ -257,7 +257,10 @@ export function TransactionTableRow({
             form={`edit-tx-form-${transaction.id}`}
           />
         ) : (
-          <span className="text-muted-foreground text-sm truncate block min-w-0">
+          <span
+            className="text-muted-foreground text-sm truncate block min-w-0"
+            title={transaction.notes ?? '—'}
+          >
             {transaction.notes ?? '—'}
           </span>
         )}

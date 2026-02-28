@@ -275,7 +275,7 @@ export function TransactionCard({
               onClick={handleHalfClick}
               title={isHalfSplit ? 'Clear 50/50 split' : 'Split this 50/50'}
             >
-              ½
+              Split
             </Button>
           </div>
           <p className="text-xs text-muted-foreground">
@@ -283,7 +283,10 @@ export function TransactionCard({
             {transaction.category?.name ?? '—'}
           </p>
           {transaction.notes && (
-            <p className="text-xs text-muted-foreground truncate">
+            <p
+              className="text-xs text-muted-foreground truncate"
+              title={transaction.notes}
+            >
               <span className="font-medium text-foreground">Notes: </span>
               {transaction.notes}
             </p>

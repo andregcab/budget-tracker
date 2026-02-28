@@ -204,7 +204,7 @@ export function Transactions() {
                       <TableHead className="min-w-[100px] w-[100px]">Date</TableHead>
                       <TableHead className="w-[220px] min-w-[180px]">Description</TableHead>
                       <TableHead className="w-24 min-w-[5rem] text-right">Amount</TableHead>
-                      <TableHead className="w-[150px] min-w-[120px]">Flags</TableHead>
+                      <TableHead className="w-[150px] min-w-[120px]">Actions</TableHead>
                       <TableHead className="w-[160px]">Category</TableHead>
                       <TableHead className="w-[120px] min-w-[100px]">Notes</TableHead>
                       <TableHead className="w-20 shrink-0" />
