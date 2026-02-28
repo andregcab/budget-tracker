@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -17,6 +17,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
 import type { UseMutationResult } from '@tanstack/react-query';
 
 type Account = { id: string; name: string };
@@ -47,42 +48,41 @@ type AddTransactionDialogProps = {
   createMutation: AddTransactionMutation;
 };
 
-export function AddTransactionDialog({
-  open,
-  onOpenChange,
+function AddTransactionForm({
   accounts,
   categories,
   defaultAccountId,
   defaultCategoryId,
   createMutation,
-}: AddTransactionDialogProps) {
-  const [form, setForm] = useState({
-    accountId: '',
+  onClose,
+}: {
+  accounts: Account[];
+  categories: Category[];
+  defaultAccountId: string;
+  defaultCategoryId: string | null;
+  createMutation: AddTransactionMutation;
+  onClose: () => void;
+}) {
+  const [form, setForm] = useState(() => ({
+    accountId: defaultAccountId || (accounts[0]?.id ?? ''),
     date: new Date().toISOString().slice(0, 10),
     description: '',
     amount: '',
     myShare: '' as string,
     type: 'debit' as 'debit' | 'credit',
-    categoryId: '' as string | null,
+    categoryId: defaultCategoryId ?? null,
     notes: '',
-  });
-
-  useEffect(() => {
-    if (open) {
-      setForm({
-        accountId: defaultAccountId || (accounts[0]?.id ?? ''),
-        date: new Date().toISOString().slice(0, 10),
-        description: '',
-        amount: '',
-        myShare: '',
-        type: 'debit',
-        categoryId: defaultCategoryId,
-        notes: '',
-      });
-    }
-  }, [open, defaultAccountId, defaultCategoryId, accounts]);
+  }));
+  const [showValidation, setShowValidation] = useState(false);
 
   const amt = parseFloat(form.amount);
+  const amountValid = !Number.isNaN(amt) && amt > 0;
+  const hasAccount = Boolean(form.accountId);
+  const hasDescription = Boolean(form.description.trim());
+  const hasAmount = Boolean(form.amount);
+  const isFormValid =
+    hasAccount && hasDescription && hasAmount && amountValid;
+
   const absAmt = Math.abs(amt);
   const myShareNum = form.myShare ? parseFloat(form.myShare) : null;
   const isHalfSplit =
@@ -100,21 +100,13 @@ export function AddTransactionDialog({
     }
   };
 
-  const handleOpenChange = (nextOpen: boolean) => {
-    onOpenChange(nextOpen);
-  };
-
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    const amt = parseFloat(form.amount);
-    if (
-      !form.accountId ||
-      !form.description ||
-      !form.amount ||
-      isNaN(amt) ||
-      amt <= 0
-    )
+    if (!isFormValid) {
+      setShowValidation(true);
       return;
+    }
+    const amt = parseFloat(form.amount);
     createMutation.mutate(
       {
         accountId: form.accountId,
@@ -128,20 +120,18 @@ export function AddTransactionDialog({
         categoryId: form.categoryId || null,
         notes: form.notes.trim() || null,
       },
-      { onSuccess: () => onOpenChange(false) },
+      { onSuccess: onClose },
     );
   };
 
   return (
-    <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogContent className="sm:max-w-md">
-        <form onSubmit={handleSubmit}>
-          <DialogHeader>
-            <DialogTitle>Add transaction</DialogTitle>
-          </DialogHeader>
-          <div className="grid gap-4 py-4">
-            <div className="grid gap-2">
-              <Label>Account</Label>
+    <form onSubmit={handleSubmit}>
+      <DialogHeader>
+        <DialogTitle>Add transaction</DialogTitle>
+      </DialogHeader>
+      <div className="grid gap-4 py-4">
+        <div className="grid gap-2">
+          <Label>Account</Label>
               <Combobox
                 options={accounts.map((a) => ({
                   value: a.id,
@@ -153,8 +143,16 @@ export function AddTransactionDialog({
                 }
                 placeholder="Select account"
                 searchPlaceholder="Type to search..."
-                triggerClassName="w-full"
+                triggerClassName={cn(
+                  'w-full',
+                  showValidation && !hasAccount && 'border-destructive',
+                )}
               />
+              {showValidation && !hasAccount && (
+                <p className="text-sm text-destructive">
+                  Select an account
+                </p>
+              )}
             </div>
             <div className="grid gap-2">
               <Label htmlFor="add-date">Date</Label>
@@ -176,7 +174,15 @@ export function AddTransactionDialog({
                 onChange={(e) =>
                   setForm((f) => ({ ...f, description: e.target.value }))
                 }
+                className={cn(
+                  showValidation && !hasDescription && 'border-destructive',
+                )}
               />
+              {showValidation && !hasDescription && (
+                <p className="text-sm text-destructive">
+                  Description is required
+                </p>
+              )}
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div className="grid gap-2">
@@ -196,6 +202,11 @@ export function AddTransactionDialog({
                         myShare: '',
                       }))
                     }
+                    className={cn(
+                      showValidation &&
+                        (!hasAmount || !amountValid) &&
+                        'border-destructive',
+                    )}
                   />
                   <Button
                     type="button"
@@ -208,6 +219,16 @@ export function AddTransactionDialog({
                     ½
                   </Button>
                 </div>
+                {showValidation && !hasAmount && (
+                  <p className="text-sm text-destructive">
+                    Enter an amount
+                  </p>
+                )}
+                {showValidation && hasAmount && !amountValid && (
+                  <p className="text-sm text-destructive">
+                    Amount must be greater than 0
+                  </p>
+                )}
                 {form.myShare && (
                   <p className="text-xs text-muted-foreground">
                     My share: ${parseFloat(form.myShare).toFixed(2)}
@@ -266,24 +287,43 @@ export function AddTransactionDialog({
             <Button
               type="button"
               variant="outline"
-              onClick={() => onOpenChange(false)}
+              onClick={onClose}
             >
               Cancel
             </Button>
             <Button
               type="submit"
-              disabled={
-                createMutation.isPending ||
-                !form.accountId ||
-                !form.description.trim() ||
-                !form.amount ||
-                parseFloat(form.amount) <= 0
-              }
+              disabled={createMutation.isPending}
             >
               {createMutation.isPending ? 'Adding...' : 'Add'}
             </Button>
           </DialogFooter>
-        </form>
+    </form>
+  );
+}
+
+export function AddTransactionDialog({
+  open,
+  onOpenChange,
+  accounts,
+  categories,
+  defaultAccountId,
+  defaultCategoryId,
+  createMutation,
+}: AddTransactionDialogProps) {
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-md">
+        {open ? (
+          <AddTransactionForm
+            accounts={accounts}
+            categories={categories}
+            defaultAccountId={defaultAccountId}
+            defaultCategoryId={defaultCategoryId}
+            createMutation={createMutation}
+            onClose={() => onOpenChange(false)}
+          />
+        ) : null}
       </DialogContent>
     </Dialog>
   );
