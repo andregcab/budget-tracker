@@ -1,4 +1,5 @@
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { ScrollRestoration } from "@/components/ScrollRestoration";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "sonner";
 import { AuthProvider } from "@/contexts/AuthContext";
@@ -23,6 +24,7 @@ function App() {
       <Toaster richColors position="bottom-center" />
       <ThemeProvider>
         <BrowserRouter>
+          <ScrollRestoration />
           <AuthProvider>
             <UserPreferencesProvider>
             <Routes>
