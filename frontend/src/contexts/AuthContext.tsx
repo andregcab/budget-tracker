@@ -3,19 +3,19 @@ import {
   useEffect,
   useState,
   type ReactNode,
-} from "react";
-import { useQueryClient } from "@tanstack/react-query";
-import { api } from "@/api/client";
-import { AuthContext, type User } from "./auth-context";
+} from 'react';
+import { useQueryClient } from '@tanstack/react-query';
+import { api } from '@/api/client';
+import { AuthContext, type User } from './auth-context';
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const queryClient = useQueryClient();
   const [token, setToken] = useState<string | null>(() =>
-    localStorage.getItem("token")
+    localStorage.getItem('token'),
   );
-  const [fetchedUser, setFetchedUser] = useState<User | null | undefined>(
-    undefined
-  );
+  const [fetchedUser, setFetchedUser] = useState<
+    User | null | undefined
+  >(undefined);
 
   const user = token ? (fetchedUser ?? null) : null;
   const loading = token !== null && fetchedUser === undefined;
@@ -23,7 +23,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const setAuth = useCallback((u: User, t: string) => {
     setToken(t);
     setFetchedUser(u);
-    localStorage.setItem("token", t);
+    localStorage.setItem('token', t);
   }, []);
 
   const updateUser = useCallback((u: User) => {
@@ -33,32 +33,52 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const logout = useCallback(() => {
     setToken(null);
     setFetchedUser(null);
-    localStorage.removeItem("token");
+    localStorage.removeItem('token');
     queryClient.clear();
   }, [queryClient]);
 
-  const login = useCallback(async (email: string, password: string) => {
-    const res = await api<{ user: User; token: string }>("/auth/login", {
-      method: "POST",
-      body: JSON.stringify({ email, password }),
-    });
-    setAuth(res.user, res.token);
-  }, [setAuth]);
+  const login = useCallback(
+    async (username: string, password: string) => {
+      const res = await api<{ user: User; token: string }>(
+        '/auth/login',
+        {
+          method: 'POST',
+          body: JSON.stringify({ username, password }),
+        },
+      );
+      setAuth(res.user, res.token);
+    },
+    [setAuth],
+  );
 
-  const register = useCallback(async (email: string, password: string, passwordConfirm: string) => {
-    const res = await api<{ user: User; token: string }>("/auth/register", {
-      method: "POST",
-      body: JSON.stringify({ email, password, passwordConfirm }),
-    });
-    setAuth(res.user, res.token);
-  }, [setAuth]);
+  const register = useCallback(
+    async (
+      username: string,
+      password: string,
+      passwordConfirm: string,
+    ) => {
+      const res = await api<{ user: User; token: string }>(
+        '/auth/register',
+        {
+          method: 'POST',
+          body: JSON.stringify({
+            username,
+            password,
+            passwordConfirm,
+          }),
+        },
+      );
+      setAuth(res.user, res.token);
+    },
+    [setAuth],
+  );
 
   useEffect(() => {
     if (!token) return;
     void Promise.resolve().then(() => {
       setFetchedUser(undefined);
     });
-    api<User>("/auth/me")
+    api<User>('/auth/me')
       .then(setFetchedUser)
       .catch(() => {
         logout();
@@ -66,7 +86,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [token, logout]);
   return (
     <AuthContext.Provider
-      value={{ user, token, loading, login, register, logout, setAuth, updateUser }}
+      value={{
+        user,
+        token,
+        loading,
+        login,
+        register,
+        logout,
+        setAuth,
+        updateUser,
+      }}
     >
       {children}
     </AuthContext.Provider>

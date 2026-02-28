@@ -1,7 +1,7 @@
 /** User-facing messages we want to show as-is from the API */
 const KNOWN_AUTH_MESSAGES = [
-  'Email already registered',
-  'Invalid email or password',
+  'Username already taken',
+  'Invalid username or password',
 ] as const;
 
 const GENERIC_AUTH_ERROR =
@@ -14,9 +14,13 @@ const GENERIC_AUTH_ERROR =
 export function getAuthErrorMessage(err: unknown): string {
   const message = err instanceof Error ? err.message : '';
   if (!message) return GENERIC_AUTH_ERROR;
-  if (KNOWN_AUTH_MESSAGES.some((known) => message === known)) return message;
+  if (KNOWN_AUTH_MESSAGES.some((known) => message === known))
+    return message;
   // Technical or unknown: show generic
-  if (/^HTTP \d{3}/.test(message) || /failed to fetch|network error/i.test(message)) {
+  if (
+    /^HTTP \d{3}/.test(message) ||
+    /failed to fetch|network error/i.test(message)
+  ) {
     return GENERIC_AUTH_ERROR;
   }
   return GENERIC_AUTH_ERROR;

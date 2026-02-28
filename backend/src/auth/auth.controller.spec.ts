@@ -23,34 +23,34 @@ describe('AuthController', () => {
   });
 
   describe('register', () => {
-    it('calls authService.register with email and password', async () => {
+    it('calls authService.register with username and password', async () => {
       mockAuthService.register.mockResolvedValue({
-        user: { id: '1', email: 'a@b.com', monthlyIncome: null },
+        user: { id: '1', username: 'alice', monthlyIncome: null },
         token: 'token',
       });
       await controller.register({
-        email: 'a@b.com',
+        username: 'alice',
         password: 'Pass1234',
         passwordConfirm: 'Pass1234',
       });
       expect(mockAuthService.register).toHaveBeenCalledWith(
-        'a@b.com',
+        'alice',
         'Pass1234',
       );
     });
   });
 
   describe('login', () => {
-    it('calls authService.login with email and password', async () => {
+    it('calls authService.login with username and password', async () => {
       mockAuthService.login.mockResolvedValue({
-        user: { id: '1', email: 'a@b.com', monthlyIncome: null },
+        user: { id: '1', username: 'alice', monthlyIncome: null },
         token: 'token',
       });
       await controller.login({
-        email: 'a@b.com',
+        username: 'alice',
         password: 'Pass1234',
       });
-      expect(mockAuthService.login).toHaveBeenCalledWith('a@b.com', 'Pass1234');
+      expect(mockAuthService.login).toHaveBeenCalledWith('alice', 'Pass1234');
     });
   });
 });

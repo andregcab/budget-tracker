@@ -15,15 +15,15 @@ export class AuthService {
     private readonly jwtService: JwtService,
   ) {}
 
-  async register(email: string, password: string) {
-    const existing = await this.prisma.user.findUnique({ where: { email } });
+  async register(username: string, password: string) {
+    const existing = await this.prisma.user.findUnique({ where: { username } });
     if (existing) {
-      throw new ConflictException('Email already registered');
+      throw new ConflictException('Username already taken');
     }
     const passwordHash = await bcrypt.hash(password, 10);
     const user = await this.prisma.user.create({
       data: {
-        email,
+        username,
         passwordHash,
         categories: {
           create: DEFAULT_CATEGORIES.map((c) => ({
@@ -35,13 +35,13 @@ export class AuthService {
           })),
         },
       },
-      select: { id: true, email: true, monthlyIncome: true },
+      select: { id: true, username: true, monthlyIncome: true },
     });
     const token = this.jwtService.sign({ sub: user.id });
     return {
       user: {
         id: user.id,
-        email: user.email,
+        username: user.username,
         monthlyIncome:
           user.monthlyIncome != null ? Number(user.monthlyIncome) : null,
       },
@@ -49,28 +49,28 @@ export class AuthService {
     };
   }
 
-  async login(email: string, password: string) {
+  async login(username: string, password: string) {
     const user = await this.prisma.user.findUnique({
-      where: { email },
+      where: { username },
       select: {
         id: true,
-        email: true,
+        username: true,
         passwordHash: true,
         monthlyIncome: true,
       },
     });
     if (!user) {
-      throw new UnauthorizedException('Invalid email or password');
+      throw new UnauthorizedException('Invalid username or password');
     }
     const valid = await bcrypt.compare(password, user.passwordHash);
     if (!valid) {
-      throw new UnauthorizedException('Invalid email or password');
+      throw new UnauthorizedException('Invalid username or password');
     }
     const token = this.jwtService.sign({ sub: user.id });
     return {
       user: {
         id: user.id,
-        email: user.email,
+        username: user.username,
         monthlyIncome:
           user.monthlyIncome != null ? Number(user.monthlyIncome) : null,
       },
@@ -81,14 +81,14 @@ export class AuthService {
   async me(userId: string) {
     const user = await this.prisma.user.findUnique({
       where: { id: userId },
-      select: { id: true, email: true, monthlyIncome: true },
+      select: { id: true, username: true, monthlyIncome: true },
     });
     if (!user) {
       throw new UnauthorizedException();
     }
     return {
       id: user.id,
-      email: user.email,
+      username: user.username,
       monthlyIncome:
         user.monthlyIncome != null ? Number(user.monthlyIncome) : null,
     };
@@ -125,11 +125,11 @@ export class AuthService {
           monthlyIncome: dto.monthlyIncome,
         }),
       },
-      select: { id: true, email: true, monthlyIncome: true },
+      select: { id: true, username: true, monthlyIncome: true },
     });
     return {
       id: user.id,
-      email: user.email,
+      username: user.username,
       monthlyIncome:
         user.monthlyIncome != null ? Number(user.monthlyIncome) : null,
     };

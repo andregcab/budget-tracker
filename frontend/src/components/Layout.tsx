@@ -67,11 +67,16 @@ export function Layout() {
             onClick={() => setMobileMenuOpen(false)}
           >
             <span className="text-3xl font-semibold">Pigg</span>
-            <span className="font-piggy-tail text-5xl font-bold leading-none" style={{ marginBottom: '-0.2em' }}>y</span>
+            <span
+              className="font-piggy-tail text-5xl font-bold leading-none"
+              style={{ marginBottom: '-0.2em' }}
+            >
+              y
+            </span>
           </Link>
           <div className="ml-auto flex shrink-0 items-center gap-2">
             <span className="text-muted-foreground text-sm truncate max-w-[120px] sm:max-w-[180px]">
-              {user?.email}
+              {user?.username}
             </span>
             <ThemeToggle />
             <Button

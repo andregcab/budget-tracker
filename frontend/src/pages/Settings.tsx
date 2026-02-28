@@ -15,7 +15,7 @@ export function Settings() {
   async function handleSaveIncome(value: number | null) {
     const updated = await api<{
       id: string;
-      email: string;
+      username: string;
       monthlyIncome: number | null;
     }>('/auth/me', {
       method: 'PATCH',
@@ -23,7 +23,7 @@ export function Settings() {
     });
     updateUser({
       id: updated.id,
-      email: updated.email,
+      username: updated.username,
       monthlyIncome: updated.monthlyIncome,
     });
   }
@@ -37,7 +37,7 @@ export function Settings() {
         </CardHeader>
         <CardContent className="space-y-2">
           <p className="text-muted-foreground text-sm">
-            Email: {user?.email}
+            Username: {user?.username}
           </p>
         </CardContent>
       </Card>

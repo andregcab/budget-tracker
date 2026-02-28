@@ -1,15 +1,16 @@
-export const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+/** Username: letters, numbers, and . _ @ + - (so email can be used as username) */
+export const USERNAME_REGEX = /^[a-zA-Z0-9._@+-]+$/;
 
 export const PASSWORD_REGEX =
   /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)[A-Za-z\d@$!%*?&]{8,}$/;
 
 /**
- * Validates email. Returns error message or null if valid.
+ * Validates username. Returns error message or null if valid.
  */
-export function validateEmail(email: string): string | null {
-  if (!email.trim()) return 'Email is required';
-  if (!EMAIL_REGEX.test(email))
-    return 'Please enter a valid email address';
+export function validateUsername(username: string): string | null {
+  if (!username.trim()) return 'Username is required';
+  if (!USERNAME_REGEX.test(username))
+    return 'Username can only contain letters, numbers, and . _ @ + -';
   return null;
 }
 

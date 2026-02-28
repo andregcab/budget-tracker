@@ -39,14 +39,14 @@ describe('AuthService', () => {
       (bcrypt.hash as jest.Mock).mockResolvedValue('hashed');
       mockPrisma.user.create.mockResolvedValue({
         id: 'user-1',
-        email: 'a@b.com',
+        username: 'alice',
         monthlyIncome: null,
       });
 
-      const result = await service.register('a@b.com', 'password123');
+      const result = await service.register('alice', 'password123');
       expect(result.user).toEqual({
         id: 'user-1',
-        email: 'a@b.com',
+        username: 'alice',
         monthlyIncome: null,
       });
       expect(result.token).toBe('mock-token');
@@ -54,9 +54,9 @@ describe('AuthService', () => {
       expect(mockPrisma.user.create).toHaveBeenCalled();
     });
 
-    it('throws ConflictException if email exists', async () => {
+    it('throws ConflictException if username exists', async () => {
       mockPrisma.user.findUnique.mockResolvedValue({ id: 'existing' });
-      await expect(service.register('a@b.com', 'password123')).rejects.toThrow(
+      await expect(service.register('alice', 'password123')).rejects.toThrow(
         ConflictException,
       );
       expect(mockPrisma.user.create).not.toHaveBeenCalled();
@@ -67,15 +67,15 @@ describe('AuthService', () => {
     it('returns user and token when password is valid', async () => {
       mockPrisma.user.findUnique.mockResolvedValue({
         id: 'user-1',
-        email: 'a@b.com',
+        username: 'alice',
         passwordHash: 'hashed',
       });
       (bcrypt.compare as jest.Mock).mockResolvedValue(true);
 
-      const result = await service.login('a@b.com', 'password123');
+      const result = await service.login('alice', 'password123');
       expect(result.user).toEqual({
         id: 'user-1',
-        email: 'a@b.com',
+        username: 'alice',
         monthlyIncome: null,
       });
       expect(result.token).toBe('mock-token');
@@ -83,7 +83,7 @@ describe('AuthService', () => {
 
     it('throws UnauthorizedException when user not found', async () => {
       mockPrisma.user.findUnique.mockResolvedValue(null);
-      await expect(service.login('a@b.com', 'password123')).rejects.toThrow(
+      await expect(service.login('alice', 'password123')).rejects.toThrow(
         UnauthorizedException,
       );
     });
@@ -91,11 +91,11 @@ describe('AuthService', () => {
     it('throws UnauthorizedException when password invalid', async () => {
       mockPrisma.user.findUnique.mockResolvedValue({
         id: 'user-1',
-        email: 'a@b.com',
+        username: 'alice',
         passwordHash: 'hashed',
       });
       (bcrypt.compare as jest.Mock).mockResolvedValue(false);
-      await expect(service.login('a@b.com', 'wrong')).rejects.toThrow(
+      await expect(service.login('alice', 'wrong')).rejects.toThrow(
         UnauthorizedException,
       );
     });
@@ -105,12 +105,12 @@ describe('AuthService', () => {
     it('returns user when found', async () => {
       mockPrisma.user.findUnique.mockResolvedValue({
         id: 'user-1',
-        email: 'a@b.com',
+        username: 'alice',
       });
       const result = await service.me('user-1');
       expect(result).toEqual({
         id: 'user-1',
-        email: 'a@b.com',
+        username: 'alice',
         monthlyIncome: null,
       });
     });

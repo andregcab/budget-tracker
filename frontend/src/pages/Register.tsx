@@ -6,15 +6,15 @@ import { Input } from '@/components/ui/input';
 import { AuthPageLayout } from '@/components/AuthPageLayout';
 import { getAuthErrorMessage } from '@/lib/auth-errors';
 import { cn } from '@/lib/utils';
-import { validateEmail, validatePassword } from '@/lib/validation';
+import { validateUsername, validatePassword } from '@/lib/validation';
 
 export function Register() {
-  const [email, setEmail] = useState('');
+  const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [passwordConfirm, setPasswordConfirm] = useState('');
   const [error, setError] = useState('');
   const [fieldErrors, setFieldErrors] = useState<{
-    email?: string;
+    username?: string;
     password?: string;
     passwordConfirm?: string;
   }>({});
@@ -27,14 +27,14 @@ export function Register() {
     setError('');
     setFieldErrors({});
 
-    const emailErr = validateEmail(email);
+    const usernameErr = validateUsername(username);
     const passwordErr = validatePassword(password);
     const confirmErr =
       password !== passwordConfirm ? 'Passwords do not match' : null;
 
-    if (emailErr || passwordErr || confirmErr) {
+    if (usernameErr || passwordErr || confirmErr) {
       setFieldErrors({
-        email: emailErr ?? undefined,
+        username: usernameErr ?? undefined,
         password: passwordErr ?? undefined,
         passwordConfirm: confirmErr ?? undefined,
       });
@@ -43,7 +43,7 @@ export function Register() {
 
     setLoading(true);
     try {
-      await register(email, password, passwordConfirm);
+      await register(username, password, passwordConfirm);
       navigate('/', { replace: true });
     } catch (err) {
       setError(getAuthErrorMessage(err));
@@ -75,27 +75,33 @@ export function Register() {
         )}
         <div>
           <label
-            htmlFor="email"
+            htmlFor="username"
             className="mb-1 block text-sm font-medium text-foreground"
           >
-            Email
+            Username
           </label>
           <Input
-            id="email"
-            type="email"
-            value={email}
+            id="username"
+            type="text"
+            value={username}
             onChange={(e) => {
-              setEmail(e.target.value);
-              if (fieldErrors.email)
-                setFieldErrors((f) => ({ ...f, email: undefined }));
+              setUsername(e.target.value);
+              if (fieldErrors.username)
+                setFieldErrors((f) => ({
+                  ...f,
+                  username: undefined,
+                }));
             }}
-            className={cn('bg-muted', fieldErrors.email && 'border-destructive')}
+            className={cn(
+              'bg-muted',
+              fieldErrors.username && 'border-destructive',
+            )}
             required
-            autoComplete="email"
+            autoComplete="username"
           />
-          {fieldErrors.email && (
+          {fieldErrors.username && (
             <p className="mt-1 text-xs text-destructive">
-              {fieldErrors.email}
+              {fieldErrors.username}
             </p>
           )}
         </div>
@@ -113,7 +119,10 @@ export function Register() {
             onChange={(e) => {
               setPassword(e.target.value);
               if (fieldErrors.password)
-                setFieldErrors((f) => ({ ...f, password: undefined }));
+                setFieldErrors((f) => ({
+                  ...f,
+                  password: undefined,
+                }));
               if (
                 fieldErrors.passwordConfirm &&
                 e.target.value !== passwordConfirm
@@ -132,13 +141,16 @@ export function Register() {
                 }));
               }
             }}
-            className={cn('bg-muted', fieldErrors.password && 'border-destructive')}
+            className={cn(
+              'bg-muted',
+              fieldErrors.password && 'border-destructive',
+            )}
             required
             autoComplete="new-password"
           />
           <p className="mt-1 text-xs text-muted-foreground">
-            At least 8 characters, with one uppercase, one
-            lowercase, and one number
+            At least 8 characters, with one uppercase, one lowercase,
+            and one number
           </p>
           {fieldErrors.password && (
             <p className="mt-1 text-xs text-destructive">
@@ -165,7 +177,10 @@ export function Register() {
                   passwordConfirm: undefined,
                 }));
             }}
-            className={cn('bg-muted', fieldErrors.passwordConfirm && 'border-destructive')}
+            className={cn(
+              'bg-muted',
+              fieldErrors.passwordConfirm && 'border-destructive',
+            )}
             required
             autoComplete="new-password"
           />

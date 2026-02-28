@@ -1,36 +1,31 @@
 import { describe, it, expect } from 'vitest';
 import {
-  validateEmail,
+  validateUsername,
   validatePassword,
-  EMAIL_REGEX,
+  USERNAME_REGEX,
   PASSWORD_REGEX,
 } from './validation';
 
-describe('validateEmail', () => {
-  it('returns error for empty email', () => {
-    expect(validateEmail('')).toBe('Email is required');
-    expect(validateEmail('   ')).toBe('Email is required');
+describe('validateUsername', () => {
+  it('returns error for empty username', () => {
+    expect(validateUsername('')).toBe('Username is required');
+    expect(validateUsername('   ')).toBe('Username is required');
   });
 
-  it('returns error for invalid email formats', () => {
-    expect(validateEmail('invalid')).toBe(
-      'Please enter a valid email address',
+  it('returns error for invalid characters', () => {
+    expect(validateUsername('user name')).toBe(
+      'Username can only contain letters, numbers, and . _ @ + -',
     );
-    expect(validateEmail('missing@domain')).toBe(
-      'Please enter a valid email address',
-    );
-    expect(validateEmail('@nodomain.com')).toBe(
-      'Please enter a valid email address',
-    );
-    expect(validateEmail('noatsign.com')).toBe(
-      'Please enter a valid email address',
+    expect(validateUsername('bad#char')).toBe(
+      'Username can only contain letters, numbers, and . _ @ + -',
     );
   });
 
-  it('returns null for valid emails', () => {
-    expect(validateEmail('user@example.com')).toBeNull();
-    expect(validateEmail('test.user@domain.co')).toBeNull();
-    expect(validateEmail('a@b.co')).toBeNull();
+  it('returns null for valid usernames', () => {
+    expect(validateUsername('alice')).toBeNull();
+    expect(validateUsername('user_123')).toBeNull();
+    expect(validateUsername('a@b.com')).toBeNull();
+    expect(validateUsername('user+tag')).toBeNull();
   });
 });
 
@@ -73,15 +68,17 @@ describe('validatePassword', () => {
   });
 });
 
-describe('EMAIL_REGEX', () => {
-  it('matches valid email patterns', () => {
-    expect(EMAIL_REGEX.test('a@b.co')).toBe(true);
-    expect(EMAIL_REGEX.test('user@example.com')).toBe(true);
+describe('USERNAME_REGEX', () => {
+  it('matches valid username patterns', () => {
+    expect(USERNAME_REGEX.test('alice')).toBe(true);
+    expect(USERNAME_REGEX.test('a@b.co')).toBe(true);
+    expect(USERNAME_REGEX.test('user_123')).toBe(true);
   });
 
   it('rejects invalid patterns', () => {
-    expect(EMAIL_REGEX.test('')).toBe(false);
-    expect(EMAIL_REGEX.test('no-at')).toBe(false);
+    expect(USERNAME_REGEX.test('')).toBe(false);
+    expect(USERNAME_REGEX.test('user name')).toBe(false);
+    expect(USERNAME_REGEX.test('bad#char')).toBe(false);
   });
 });
 
