@@ -129,6 +129,7 @@ export function Categories() {
         <h1 className="text-2xl font-semibold">Categories</h1>
         <CategoryCreateDialog
           createMutation={createMutation}
+          budgetMutation={budgetMutation}
           trigger={<Button>Add category</Button>}
         />
       </div>

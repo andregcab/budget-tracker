@@ -13,8 +13,8 @@ export async function createCategory(body: {
   name: string;
   isFixed?: boolean;
   keywords?: string[];
-}) {
-  return api('/categories', {
+}): Promise<Category> {
+  return api<Category>('/categories', {
     method: 'POST',
     body: JSON.stringify(body),
   });

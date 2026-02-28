@@ -12,12 +12,19 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { parseKeywords } from '@/lib/format-utils';
 import type { UseMutationResult } from '@tanstack/react-query';
+import type { Category } from '@/types';
 
 type CategoryCreateDialogProps = {
   createMutation: UseMutationResult<
-    unknown,
+    Category,
     Error,
     { name: string; isFixed?: boolean; keywords?: string[] },
+    unknown
+  >;
+  budgetMutation: UseMutationResult<
+    unknown,
+    Error,
+    { categoryId: string; amount: number },
     unknown
   >;
   onSuccess?: () => void;
@@ -26,6 +33,7 @@ type CategoryCreateDialogProps = {
 
 export function CategoryCreateDialog({
   createMutation,
+  budgetMutation,
   onSuccess,
   trigger,
 }: CategoryCreateDialogProps) {
@@ -33,18 +41,28 @@ export function CategoryCreateDialog({
   const [name, setName] = useState('');
   const [isFixed, setIsFixed] = useState(false);
   const [keywords, setKeywords] = useState('');
+  const [budget, setBudget] = useState('');
 
   const handleOpenChange = (nextOpen: boolean) => {
     if (!nextOpen) {
       setName('');
       setIsFixed(false);
       setKeywords('');
+      setBudget('');
     }
     setOpen(nextOpen);
   };
 
   const handleCreate = (e: React.FormEvent) => {
     e.preventDefault();
+    const trimmedBudget = budget.trim();
+    const parsedBudget =
+      trimmedBudget === '' ? NaN : parseFloat(trimmedBudget);
+    const hasBudget =
+      trimmedBudget !== '' &&
+      !isNaN(parsedBudget) &&
+      parsedBudget >= 0;
+
     createMutation.mutate(
       {
         name,
@@ -52,9 +70,15 @@ export function CategoryCreateDialog({
         keywords: parseKeywords(keywords),
       },
       {
-        onSuccess: () => {
+        onSuccess: (category) => {
           handleOpenChange(false);
           onSuccess?.();
+          if (hasBudget && category?.id) {
+            budgetMutation.mutate({
+              categoryId: category.id,
+              amount: parsedBudget,
+            });
+          }
         },
       },
     );
@@ -68,24 +92,38 @@ export function CategoryCreateDialog({
           <DialogHeader>
             <DialogTitle>New category</DialogTitle>
           </DialogHeader>
-          <div className="grid gap-4 py-4">
-            <div className="grid gap-2">
-              <Label htmlFor="name">Name</Label>
-              <Input
-                id="name"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                required
-              />
+          <div className="grid gap-6 py-4">
+            <div className="grid gap-3">
+              <div className="grid gap-2">
+                <Label htmlFor="name">Name</Label>
+                <Input
+                  id="name"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  required
+                />
+              </div>
+              <div className="flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  id="create-fixed"
+                  checked={isFixed}
+                  onChange={(e) => setIsFixed(e.target.checked)}
+                />
+                <Label htmlFor="create-fixed">Fixed monthly cost</Label>
+              </div>
             </div>
-            <div className="flex items-center gap-2">
-              <input
-                type="checkbox"
-                id="create-fixed"
-                checked={isFixed}
-                onChange={(e) => setIsFixed(e.target.checked)}
+            <div className="grid gap-2">
+              <Label htmlFor="create-budget">Monthly budget (optional)</Label>
+              <Input
+                id="create-budget"
+                type="number"
+                step="0.01"
+                min="0"
+                value={budget}
+                onChange={(e) => setBudget(e.target.value)}
+                placeholder="0"
               />
-              <Label htmlFor="create-fixed">Fixed monthly cost</Label>
             </div>
             <div className="grid gap-2">
               <Label htmlFor="create-keywords">

@@ -3,7 +3,7 @@ import { formatCurrency } from '@/lib/transaction-utils';
 import { Button } from '@/components/ui/button';
 import { TableCell, TableRow } from '@/components/ui/table';
 import { Input } from '@/components/ui/input';
-import { Pencil, Trash2 } from 'lucide-react';
+import { Check, Pencil, Trash2, X } from 'lucide-react';
 import type { UseMutationResult } from '@tanstack/react-query';
 
 type DeleteMutation = UseMutationResult<
@@ -97,20 +97,13 @@ export function CategoryTableRow({
             />
           </div>
         ) : (
-          <button
-            type="button"
-            onClick={(e) => {
-              e.stopPropagation();
-              onEditStart(category);
-            }}
-            className="text-left hover:underline text-muted-foreground"
-          >
+          <span className="text-muted-foreground">
             {budget != null
               ? formatCurrency(budget)
               : category.isFixed
                 ? 'Set amount'
                 : 'Set budget'}
-          </button>
+          </span>
         )}
       </TableCell>
       <TableCell className="text-center">
@@ -158,22 +151,26 @@ export function CategoryTableRow({
       </TableCell>
       <TableCell className="w-[170px] pl-8 align-top">
         {isEditing ? (
-          <div className="flex items-center gap-2 shrink-0">
+          <div className="flex gap-1 shrink-0">
             <Button
               type="submit"
               form={`edit-form-${category.id}`}
-              size="sm"
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8 text-foreground dark:text-primary dark:hover:text-primary"
+              title="Save"
             >
-              Save
+              <Check className="h-4 w-4" />
             </Button>
             <Button
               type="button"
-              variant="outline"
-              size="sm"
-              className="border-border"
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8 text-muted-foreground hover:text-foreground"
               onClick={onEditCancel}
+              title="Cancel"
             >
-              Cancel
+              <X className="h-4 w-4" />
             </Button>
           </div>
         ) : (
