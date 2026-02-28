@@ -24,7 +24,10 @@ export type FixedCategoryDisplay = {
   over: boolean;
 };
 
-export function useDashboardData(year: number, effectiveMonth: number) {
+export function useDashboardData(
+  year: number,
+  effectiveMonth: number,
+) {
   const { data, isLoading } = useQuery({
     queryKey: ['analytics', 'monthly', year, effectiveMonth],
     queryFn: () => getMonthlySummary(year, effectiveMonth),
@@ -66,19 +69,22 @@ export function useDashboardData(year: number, effectiveMonth: number) {
     expectedFixed.map((e) => [e.categoryId, e]),
   );
 
-  const fixedCategories: FixedCategoryDisplay[] = fixedFromChart.map((c) => {
-    const expected = expectedByCategoryId[c.id];
-    const actual = c.total;
-    const total =
-      actual > 0 ? actual : expected ? expected.amount : 0;
-    const budget = expected ? expected.amount : c.budget;
-    return {
-      ...c,
-      total,
-      budget,
-      over: budget > 0 && total > budget,
-    };
-  });
+  const fixedCategories: FixedCategoryDisplay[] = fixedFromChart.map(
+    (c) => {
+      const expected = expectedByCategoryId[c.id];
+      const actual = c.total;
+      // For fixed categories with no transaction: use explicit expected amount, or else category budget as "expected" so it shows and counts (e.g. Gym $300 from Categories, no tx).
+      const expectedAmount = expected ? expected.amount : c.budget;
+      const total = actual > 0 ? actual : expectedAmount;
+      const budget = expectedAmount;
+      return {
+        ...c,
+        total,
+        budget,
+        over: budget > 0 && total > budget,
+      };
+    },
+  );
   for (const exp of expectedFixed) {
     if (!fixedCategories.some((c) => c.id === exp.categoryId)) {
       fixedCategories.push({
@@ -92,9 +98,17 @@ export function useDashboardData(year: number, effectiveMonth: number) {
     }
   }
 
-  const fixedCategoriesForPicker = categories.filter((c) => c.isFixed);
-  const fixedTotal = fixedCategories.reduce((sum, c) => sum + c.total, 0);
-  const variableTotal = variableCategories.reduce((sum, c) => sum + c.total, 0);
+  const fixedCategoriesForPicker = categories.filter(
+    (c) => c.isFixed,
+  );
+  const fixedTotal = fixedCategories.reduce(
+    (sum, c) => sum + c.total,
+    0,
+  );
+  const variableTotal = variableCategories.reduce(
+    (sum, c) => sum + c.total,
+    0,
+  );
 
   return {
     data,

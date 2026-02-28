@@ -8,6 +8,27 @@ import {
 import type { Category, ExpectedFixedItem } from '@/types';
 import type { FixedCategoryDisplay } from '@/hooks/useDashboardData';
 import { Button } from '@/components/ui/button';
+
+type EditTarget = {
+  categoryId: string;
+  categoryName: string;
+  amount: number;
+};
+
+function filterAndSortFixedCategories(
+  categories: FixedCategoryDisplay[],
+): FixedCategoryDisplay[] {
+  return [...categories]
+    .filter((c) => !(c.total === 0 && c.budget === 0))
+    .sort((a, b) => {
+      const aHasAmount = a.budget > 0 || a.total > 0;
+      const bHasAmount = b.budget > 0 || b.total > 0;
+      if (aHasAmount !== bHasAmount) return aHasAmount ? -1 : 1;
+      return a.name.localeCompare(b.name, undefined, {
+        sensitivity: 'base',
+      });
+    });
+}
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { CardTitleWithInfo } from '@/components/ui/card-title-with-info';
 import {
@@ -15,7 +36,6 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
   DialogFooter,
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
@@ -27,7 +47,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Plus, Trash2 } from 'lucide-react';
+import { Pencil } from 'lucide-react';
 import { toast } from 'sonner';
 import { formatCurrency } from '@/lib/transaction-utils';
 import { getMutationErrorMessage } from '@/lib/error-utils';
@@ -55,6 +75,9 @@ export function ExpectedFixedCard({
 }: ExpectedFixedCardProps) {
   const queryClient = useQueryClient();
   const [open, setOpen] = useState(false);
+  const [editTarget, setEditTarget] = useState<EditTarget | null>(
+    null,
+  );
   const [categoryId, setCategoryId] = useState('');
   const [amount, setAmount] = useState('');
 
@@ -98,7 +121,7 @@ export function ExpectedFixedCard({
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     const amt = parseFloat(amount);
-    if (isNaN(amt) || amt <= 0 || !categoryId) return;
+    if (isNaN(amt) || amt < 0 || !categoryId) return;
     addMutation.mutate({
       year,
       month,
@@ -109,10 +132,51 @@ export function ExpectedFixedCard({
 
   const handleOpenChange = (nextOpen: boolean) => {
     if (!nextOpen) {
+      setEditTarget(null);
       setCategoryId('');
       setAmount('');
     }
     setOpen(nextOpen);
+  };
+
+  const openForEdit = (category: FixedCategoryDisplay) => {
+    setEditTarget({
+      categoryId: category.id,
+      categoryName: category.name,
+      amount: category.budget,
+    });
+    setCategoryId(category.id);
+    setAmount(category.budget > 0 ? String(category.budget) : '');
+    setOpen(true);
+  };
+
+  const handleCategorySelect = (value: string) => {
+    setCategoryId(value);
+    const fixed = value
+      ? fixedCategories.find((c) => c.id === value)
+      : null;
+    setAmount(fixed && fixed.budget > 0 ? String(fixed.budget) : '');
+  };
+
+  const handleClearOverride = () => {
+    const expectedItem = categoryId
+      ? expectedByCategoryId[categoryId]
+      : null;
+    if (!expectedItem) return;
+    if (expectedItem.id.startsWith('inherited-')) {
+      addMutation.mutate({
+        year,
+        month,
+        categoryId: expectedItem.categoryId,
+        amount: 0,
+      });
+    } else {
+      removeMutation.mutate(expectedItem.id);
+      setOpen(false);
+      setEditTarget(null);
+      setCategoryId('');
+      setAmount('');
+    }
   };
 
   if (fixedCategories.length === 0 && expectedFixed.length === 0) {
@@ -129,75 +193,95 @@ export function ExpectedFixedCard({
               <>Rent, subscriptions, insurance — predictable costs</>
             }
           />
+          <Button
+            variant="default"
+            size="sm"
+            onClick={() => {
+              setEditTarget(null);
+              setCategoryId('');
+              setAmount('');
+              setOpen(true);
+            }}
+          >
+            Set for this month
+          </Button>
           <Dialog open={open} onOpenChange={handleOpenChange}>
-            <DialogTrigger asChild>
-              <Button variant="default" size="sm">
-                <Plus className="h-4 w-4 mr-1" />
-                Add expected
-              </Button>
-            </DialogTrigger>
             <DialogContent className="text-foreground">
               <form onSubmit={handleSubmit}>
                 <DialogHeader>
                   <DialogTitle>
-                    Add expected fixed expense
+                    {editTarget
+                      ? `Set amount for ${editTarget.categoryName}`
+                      : 'Set fixed amount for this month'}
                   </DialogTitle>
                 </DialogHeader>
-                <p className="text-muted-foreground text-sm mt-2">
-                  For expenses paid from accounts you don&apos;t track
-                  (e.g. rent). Add a fixed category in{' '}
-                  <Link
-                    to="/categories"
-                    className="underline"
-                    onClick={() => setOpen(false)}
-                  >
-                    Categories
-                  </Link>{' '}
-                  first if needed.
-                </p>
+                {!editTarget && (
+                  <p className="text-muted-foreground text-sm mt-2">
+                    Set or override the amount for this month. For
+                    costs not in your tracked accounts (e.g. rent),
+                    add a fixed category in{' '}
+                    <Link
+                      to="/categories"
+                      className="underline"
+                      onClick={() => setOpen(false)}
+                    >
+                      Categories
+                    </Link>{' '}
+                    first if needed.
+                  </p>
+                )}
                 <div className="grid gap-4 py-4">
-                  <div className="grid gap-2">
-                    <Label htmlFor="expected-category">
-                      Category
-                    </Label>
-                    {fixedCategoriesForPicker.length === 0 ? (
+                  {editTarget ? (
+                    <div className="grid gap-2">
+                      <Label>Category</Label>
                       <p className="text-sm text-muted-foreground">
-                        No fixed categories yet. Create one (e.g.
-                        Rent) in{' '}
-                        <Link
-                          to="/categories"
-                          className="underline"
-                          onClick={() => setOpen(false)}
-                        >
-                          Categories
-                        </Link>{' '}
-                        and mark it as fixed.
+                        {editTarget.categoryName}
                       </p>
-                    ) : (
-                      <Select
-                        value={categoryId}
-                        onValueChange={setCategoryId}
-                      >
-                        <SelectTrigger
-                          id="expected-category"
-                          className="bg-background text-foreground"
+                    </div>
+                  ) : (
+                    <div className="grid gap-2">
+                      <Label htmlFor="expected-category">
+                        Category
+                      </Label>
+                      {fixedCategoriesForPicker.length === 0 ? (
+                        <p className="text-sm text-muted-foreground">
+                          No fixed categories yet. Create one (e.g.
+                          Rent) in{' '}
+                          <Link
+                            to="/categories"
+                            className="underline"
+                            onClick={() => setOpen(false)}
+                          >
+                            Categories
+                          </Link>{' '}
+                          and mark it as fixed.
+                        </p>
+                      ) : (
+                        <Select
+                          value={categoryId}
+                          onValueChange={handleCategorySelect}
                         >
-                          <SelectValue placeholder="Select category" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {fixedCategoriesForPicker.map((cat) => (
-                            <SelectItem
-                              key={cat.id}
-                              value={cat.id}
-                              className="text-foreground"
-                            >
-                              {cat.name}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    )}
-                  </div>
+                          <SelectTrigger
+                            id="expected-category"
+                            className="bg-background text-foreground"
+                          >
+                            <SelectValue placeholder="Select category" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {fixedCategoriesForPicker.map((cat) => (
+                              <SelectItem
+                                key={cat.id}
+                                value={cat.id}
+                                className="text-foreground"
+                              >
+                                {cat.name}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      )}
+                    </div>
+                  )}
                   <div className="grid gap-2">
                     <Label htmlFor="expected-amount">Amount</Label>
                     <Input
@@ -212,25 +296,45 @@ export function ExpectedFixedCard({
                     />
                   </div>
                 </div>
-                <DialogFooter>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={() => setOpen(false)}
-                  >
-                    Cancel
-                  </Button>
-                  <Button
-                    type="submit"
-                    disabled={
-                      addMutation.isPending ||
-                      !categoryId ||
-                      !amount ||
-                      parseFloat(amount) <= 0
-                    }
-                  >
-                    Add
-                  </Button>
+                <DialogFooter className="flex-col gap-2 sm:flex-row sm:justify-between">
+                  <div className="w-full sm:w-auto order-2 sm:order-1">
+                    {categoryId &&
+                      expectedByCategoryId[categoryId] && (
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          className="text-muted-foreground hover:text-destructive"
+                          onClick={handleClearOverride}
+                          disabled={
+                            removeMutation.isPending ||
+                            addMutation.isPending
+                          }
+                        >
+                          Clear override for this month
+                        </Button>
+                      )}
+                  </div>
+                  <div className="flex gap-2 w-full sm:w-auto order-1 sm:order-2">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => setOpen(false)}
+                    >
+                      Cancel
+                    </Button>
+                    <Button
+                      type="submit"
+                      disabled={
+                        addMutation.isPending ||
+                        !categoryId ||
+                        amount === '' ||
+                        parseFloat(amount) < 0
+                      }
+                    >
+                      {editTarget ? 'Save' : 'Add'}
+                    </Button>
+                  </div>
                 </DialogFooter>
               </form>
             </DialogContent>
@@ -239,12 +343,8 @@ export function ExpectedFixedCard({
       </CardHeader>
       <CardContent>
         <div className="space-y-1.5">
-          {fixedCategories
-            .filter(
-              (category) =>
-                !(category.total === 0 && category.budget === 0),
-            )
-            .map((category) => {
+          {filterAndSortFixedCategories(fixedCategories).map(
+            (category) => {
               const expectedItem = expectedByCategoryId[category.id];
               const hasExpected = expectedItem && category.budget > 0;
               const actual = category.total;
@@ -255,49 +355,44 @@ export function ExpectedFixedCard({
               return (
                 <div
                   key={category.id}
-                  className="flex items-center justify-between text-sm group"
+                  className="group flex items-center justify-between text-sm"
                 >
                   <span className="text-muted-foreground">
                     {category.name}
                   </span>
                   <span className="flex items-center gap-2">
+                    <span className="w-8 shrink-0 flex justify-end">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-6 w-6 text-muted-foreground opacity-0 transition-opacity focus:opacity-100 group-hover:opacity-100 hover:text-foreground"
+                        onClick={() => openForEdit(category)}
+                        disabled={
+                          addMutation.isPending ||
+                          removeMutation.isPending
+                        }
+                        title="Set amount for this month"
+                      >
+                        <Pencil className="h-3 w-3" />
+                      </Button>
+                    </span>
                     {formatCurrency(category.total)}
                     {showExpectedDiff && (
                       <span className="text-muted-foreground text-xs">
                         (expected {formatCurrency(expectedAmount)})
                       </span>
                     )}
-                    {expectedItem && (
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-6 w-6 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
-                        onClick={() =>
-                          expectedItem.id.startsWith('inherited-')
-                            ? addMutation.mutate({
-                                year,
-                                month,
-                                categoryId: expectedItem.categoryId,
-                                amount: 0,
-                              })
-                            : removeMutation.mutate(expectedItem.id)
-                        }
-                        disabled={
-                          removeMutation.isPending ||
-                          addMutation.isPending
-                        }
-                        title="Remove expected expense"
-                      >
-                        <Trash2 className="h-3 w-3" />
-                      </Button>
-                    )}
                   </span>
                 </div>
               );
-            })}
+            },
+          )}
           <div className="flex items-center justify-between border-t border-border pt-2 mt-2 font-medium">
             <span>Total fixed</span>
-            <span>{formatCurrency(fixedTotal)}</span>
+            <span className="flex items-center gap-2">
+              <span className="w-8 shrink-0" aria-hidden />
+              {formatCurrency(fixedTotal)}
+            </span>
           </div>
         </div>
       </CardContent>
