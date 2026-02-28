@@ -29,7 +29,7 @@ body[data-scroll-locked] {
   --card-foreground: oklch(0.145 0 0);
   --popover: oklch(1 0 0);
   --popover-foreground: oklch(0.145 0 0);
-  --primary: oklch(0.205 0 0);
+  --primary: var(--brand-piggy);
   --primary-foreground: oklch(0.985 0 0);
   --secondary: oklch(0.97 0 0);
   --secondary-foreground: oklch(0.205 0 0);
@@ -55,15 +55,18 @@ body[data-scroll-locked] {
   --chart-9: oklch(0.52 0.13 250);
   --chart-10: oklch(0.55 0.12 275);
   --positive: oklch(0.5 0.18 145);
-  --brand-piggy: oklch(0.6 0.12 350);
+  --brand-piggy: oklch(0.8 0.087 5);
   --sidebar: oklch(0.985 0 0);
   --sidebar-foreground: oklch(0.145 0 0);
-  --sidebar-primary: oklch(0.205 0 0);
+  --sidebar-primary: var(--brand-piggy);
   --sidebar-primary-foreground: oklch(0.985 0 0);
   --sidebar-accent: oklch(0.97 0 0);
   --sidebar-accent-foreground: oklch(0.205 0 0);
   --sidebar-border: oklch(0.922 0 0);
   --sidebar-ring: oklch(0.708 0 0);
+  /* Active flag chips: same as primary (brand-piggy) so one color for all buttons/chips */
+  --flag-active: var(--primary);
+  --flag-active-foreground: var(--primary-foreground);
 }
 
 /* Dark mode: no pure white; use softer off-whites with hierarchy for ADA contrast */
@@ -75,8 +78,8 @@ body[data-scroll-locked] {
   --card-foreground: oklch(0.92 0 0);
   --popover: oklch(0.269 0 0);
   --popover-foreground: oklch(0.92 0 0);
-  --primary: oklch(0.922 0 0);
-  --primary-foreground: oklch(0.205 0 0);
+  --primary: var(--brand-piggy);
+  --primary-foreground: oklch(0.22 0 0);
   --secondary: oklch(0.269 0 0);
   /* Secondary text - slightly softer for hierarchy */
   --secondary-foreground: oklch(0.88 0 0);
@@ -105,12 +108,15 @@ body[data-scroll-locked] {
   --brand-piggy: oklch(0.72 0.12 350);
   --sidebar: oklch(0.205 0 0);
   --sidebar-foreground: oklch(0.92 0 0);
-  --sidebar-primary: oklch(0.488 0.243 264.376);
-  --sidebar-primary-foreground: oklch(0.92 0 0);
+  --sidebar-primary: var(--brand-piggy);
+  --sidebar-primary-foreground: oklch(0.22 0 0);
   --sidebar-accent: oklch(0.269 0 0);
   --sidebar-accent-foreground: oklch(0.88 0 0);
   --sidebar-border: oklch(0.92 0 0 / 12%);
   --sidebar-ring: oklch(0.6 0 0);
+  /* Active flag chips: same as primary (brand-piggy) in dark mode too */
+  --flag-active: var(--primary);
+  --flag-active-foreground: var(--primary-foreground);
 }
 
 /* Pie slice raise animation - runs when active slice mounts */
@@ -132,12 +138,15 @@ body[data-scroll-locked] {
 
 /* Subtle nudge glow — like video game hints: soft, attention-drawing without being loud */
 @keyframes nudge-glow {
-  0%, 100% {
-    box-shadow: 0 0 0 1px oklch(0.7 0.12 85 / 0.25),
+  0%,
+  100% {
+    box-shadow:
+      0 0 0 1px oklch(0.7 0.12 85 / 0.25),
       0 0 0 1px oklch(0.7 0.12 85 / 0.08) inset;
   }
   50% {
-    box-shadow: 0 0 0 1px oklch(0.7 0.12 85 / 0.4),
+    box-shadow:
+      0 0 0 1px oklch(0.7 0.12 85 / 0.4),
       0 0 12px oklch(0.7 0.12 85 / 0.12),
       0 0 0 1px oklch(0.7 0.12 85 / 0.08) inset;
   }
@@ -189,6 +198,8 @@ body[data-scroll-locked] {
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-ring: var(--sidebar-ring);
+  --color-flag-active: var(--flag-active);
+  --color-flag-active-foreground: var(--flag-active-foreground);
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: calc(var(--radius) + 2px);
