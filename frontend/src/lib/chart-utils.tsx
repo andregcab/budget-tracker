@@ -3,7 +3,11 @@ const RADIAN = Math.PI / 180;
 /** Max segments to show in pie before collapsing rest into "Other" */
 export const PIE_MAX_VISIBLE = 6;
 
-export type ChartCategoryForPie = { name: string; total: number; [key: string]: unknown };
+export type ChartCategoryForPie = {
+  name: string;
+  total: number;
+  [key: string]: unknown;
+};
 
 /** Collapse small categories into "Other" when there are too many for readable labels */
 export function collapseForPie<T extends ChartCategoryForPie>(
@@ -15,7 +19,8 @@ export function collapseForPie<T extends ChartCategoryForPie>(
   const top = sorted.slice(0, maxVisible);
   const rest = sorted.slice(maxVisible);
   const otherTotal = rest.reduce((sum, c) => sum + c.total, 0);
-  if (otherTotal <= 0) return top as (T & { _otherCategories?: T[] })[];
+  if (otherTotal <= 0)
+    return top as (T & { _otherCategories?: T[] })[];
   const other = {
     ...rest[0],
     name: 'Other',
@@ -59,14 +64,16 @@ export interface RenderPieLabelProps {
 export function renderPieLabel(props: RenderPieLabelProps) {
   const { cx, cy, midAngle, outerRadius, percent } = props;
   const name = props.name ?? props.payload?.name ?? '';
-  let labelX =
+  const labelX =
     props.x ??
     cx + (outerRadius + LABEL_OFFSET) * Math.cos(-midAngle * RADIAN);
   let labelY =
     props.y ??
     cy + (outerRadius + LABEL_OFFSET) * Math.sin(-midAngle * RADIAN);
   if (percent < 0.04) {
-    labelY += (percent - SMALL_SLICE_CENTER_PERCENT) * SMALL_SLICE_NUDGE_PX_PER_PERCENT;
+    labelY +=
+      (percent - SMALL_SLICE_CENTER_PERCENT) *
+      SMALL_SLICE_NUDGE_PX_PER_PERCENT;
   }
   const isRight = labelX > cx;
   const pct = (percent * 100).toFixed(1);
