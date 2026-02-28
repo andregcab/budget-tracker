@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
+import { getAuthErrorMessage } from '@/lib/auth-errors';
 import { cn } from '@/lib/utils';
 import { validateEmail, validatePassword } from '@/lib/validation';
 
@@ -43,9 +44,7 @@ export function Register() {
       await register(email, password, passwordConfirm);
       navigate('/', { replace: true });
     } catch (err) {
-      setError(
-        err instanceof Error ? err.message : 'Registration failed',
-      );
+      setError(getAuthErrorMessage(err));
     } finally {
       setLoading(false);
     }

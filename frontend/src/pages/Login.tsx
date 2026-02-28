@@ -3,6 +3,7 @@ import { Link, useNavigate, useLocation } from "react-router-dom";
 import { Info } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
+import { getAuthErrorMessage } from "@/lib/auth-errors";
 import { cn } from "@/lib/utils";
 
 export function Login() {
@@ -23,7 +24,7 @@ export function Login() {
       await login(email, password);
       navigate(from, { replace: true });
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Login failed");
+      setError(getAuthErrorMessage(err));
     } finally {
       setLoading(false);
     }
