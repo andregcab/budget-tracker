@@ -79,8 +79,9 @@ body[data-scroll-locked] {
   --card-foreground: oklch(0.92 0 0);
   --popover: oklch(0.269 0 0);
   --popover-foreground: oklch(0.92 0 0);
-  --primary: oklch(0.922 0 0);
-  --primary-foreground: oklch(0.205 0 0);
+  /* Same neon-pale orange as light mode for primary/active buttons and chips */
+  --primary: oklch(0.83 0.14 55);
+  --primary-foreground: oklch(0.985 0 0);
   --secondary: oklch(0.269 0 0);
   /* Secondary text - slightly softer for hierarchy */
   --secondary-foreground: oklch(0.88 0 0);
@@ -114,9 +115,9 @@ body[data-scroll-locked] {
   --sidebar-accent-foreground: oklch(0.88 0 0);
   --sidebar-border: oklch(0.92 0 0 / 12%);
   --sidebar-ring: oklch(0.6 0 0);
-  /* Active flag chips: secondary (grey) in dark mode to keep white/black motif */
-  --flag-active: var(--secondary);
-  --flag-active-foreground: var(--secondary-foreground);
+  /* Active flag chips: same orange as light mode */
+  --flag-active: var(--primary);
+  --flag-active-foreground: var(--primary-foreground);
 }
 
 /* Pie slice raise animation - runs when active slice mounts */
