@@ -77,7 +77,9 @@ export function ExpectedFixedCard({
     },
     onError: (err) => {
       toast.error(
-        err instanceof Error ? err.message : 'Failed to add expected expense',
+        err instanceof Error
+          ? err.message
+          : 'Failed to add expected expense',
       );
     },
   });
@@ -91,7 +93,9 @@ export function ExpectedFixedCard({
     },
     onError: (err) => {
       toast.error(
-        err instanceof Error ? err.message : 'Failed to remove expected expense',
+        err instanceof Error
+          ? err.message
+          : 'Failed to remove expected expense',
       );
     },
   });
@@ -123,7 +127,7 @@ export function ExpectedFixedCard({
   return (
     <Card className="mt-6">
       <CardHeader className="pb-2">
-        <div className="flex items-center justify-between gap-2">
+        <div className="flex items-center justify-between mb-4 gap-2">
           <div className="flex items-center gap-1.5">
             <CardTitle className="text-base">
               Fixed bills this month
@@ -145,7 +149,7 @@ export function ExpectedFixedCard({
           </div>
           <Dialog open={open} onOpenChange={handleOpenChange}>
             <DialogTrigger asChild>
-              <Button variant="outline" size="sm">
+              <Button variant="default" size="sm">
                 <Plus className="h-4 w-4 mr-1" />
                 Add expected
               </Button>
@@ -153,11 +157,13 @@ export function ExpectedFixedCard({
             <DialogContent className="text-foreground">
               <form onSubmit={handleSubmit}>
                 <DialogHeader>
-                  <DialogTitle>Add expected fixed expense</DialogTitle>
+                  <DialogTitle>
+                    Add expected fixed expense
+                  </DialogTitle>
                 </DialogHeader>
                 <p className="text-muted-foreground text-sm mt-2">
-                  For expenses paid from accounts you don&apos;t track (e.g.
-                  rent). Add a fixed category in{' '}
+                  For expenses paid from accounts you don&apos;t track
+                  (e.g. rent). Add a fixed category in{' '}
                   <Link
                     to="/categories"
                     className="underline"
@@ -169,10 +175,13 @@ export function ExpectedFixedCard({
                 </p>
                 <div className="grid gap-4 py-4">
                   <div className="grid gap-2">
-                    <Label htmlFor="expected-category">Category</Label>
+                    <Label htmlFor="expected-category">
+                      Category
+                    </Label>
                     {fixedCategoriesForPicker.length === 0 ? (
                       <p className="text-sm text-muted-foreground">
-                        No fixed categories yet. Create one (e.g. Rent) in{' '}
+                        No fixed categories yet. Create one (e.g.
+                        Rent) in{' '}
                         <Link
                           to="/categories"
                           className="underline"
@@ -251,52 +260,55 @@ export function ExpectedFixedCard({
           {fixedCategories
             .filter((c) => !(c.total === 0 && c.budget === 0))
             .map((c) => {
-            const expected = expectedByCategoryId[c.id];
-            const hasExpected = expected && c.budget > 0;
-            const actual = c.total;
-            const expectedAmt = c.budget;
-            const showDiff =
-              hasExpected && Math.abs(actual - expectedAmt) > 0.01;
-            return (
-              <div
-                key={c.id}
-                className="flex items-center justify-between text-sm group"
-              >
-                <span className="text-muted-foreground">{c.name}</span>
-                <span className="flex items-center gap-2">
-                  ${c.total.toFixed(2)}
-                  {showDiff && (
-                    <span className="text-muted-foreground text-xs">
-                      (expected ${expectedAmt.toFixed(2)})
-                    </span>
-                  )}
-                  {expected && (
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-6 w-6 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
-                      onClick={() =>
-                        expected.id.startsWith('inherited-')
-                          ? addMutation.mutate({
-                              year,
-                              month,
-                              categoryId: expected.categoryId,
-                              amount: 0,
-                            })
-                          : removeMutation.mutate(expected.id)
-                      }
-                      disabled={
-                        removeMutation.isPending || addMutation.isPending
-                      }
-                      title="Remove expected expense"
-                    >
-                      <Trash2 className="h-3 w-3" />
-                    </Button>
-                  )}
-                </span>
-              </div>
-            );
-          })}
+              const expected = expectedByCategoryId[c.id];
+              const hasExpected = expected && c.budget > 0;
+              const actual = c.total;
+              const expectedAmt = c.budget;
+              const showDiff =
+                hasExpected && Math.abs(actual - expectedAmt) > 0.01;
+              return (
+                <div
+                  key={c.id}
+                  className="flex items-center justify-between text-sm group"
+                >
+                  <span className="text-muted-foreground">
+                    {c.name}
+                  </span>
+                  <span className="flex items-center gap-2">
+                    ${c.total.toFixed(2)}
+                    {showDiff && (
+                      <span className="text-muted-foreground text-xs">
+                        (expected ${expectedAmt.toFixed(2)})
+                      </span>
+                    )}
+                    {expected && (
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-6 w-6 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
+                        onClick={() =>
+                          expected.id.startsWith('inherited-')
+                            ? addMutation.mutate({
+                                year,
+                                month,
+                                categoryId: expected.categoryId,
+                                amount: 0,
+                              })
+                            : removeMutation.mutate(expected.id)
+                        }
+                        disabled={
+                          removeMutation.isPending ||
+                          addMutation.isPending
+                        }
+                        title="Remove expected expense"
+                      >
+                        <Trash2 className="h-3 w-3" />
+                      </Button>
+                    )}
+                  </span>
+                </div>
+              );
+            })}
           <div className="flex items-center justify-between border-t border-border pt-2 mt-2 font-medium">
             <span>Total fixed</span>
             <span>${fixedTotal.toFixed(2)}</span>

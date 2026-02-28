@@ -4,31 +4,31 @@ export const chartConfig = {
   total: { label: 'Spend', color: 'var(--chart-1)' },
 } satisfies ChartConfig;
 
-/** Expanded palette for pie chart — spans full hue range for contrast with many categories */
+/** Pie chart: toned-down bright palette (green, orange, pink vibe) */
 export const PIE_COLORS = [
-  'oklch(0.65 0.18 25)',   // warm red-orange
-  'oklch(0.7 0.15 85)',    // amber
-  'oklch(0.72 0.16 130)',  // lime-green
-  'oklch(0.68 0.16 165)',  // teal
-  'oklch(0.62 0.15 200)',  // cyan
-  'oklch(0.6 0.14 230)',   // blue
-  'oklch(0.58 0.16 265)',  // violet
-  'oklch(0.62 0.18 310)',  // magenta
-  'oklch(0.65 0.14 350)',  // rose
-  'oklch(0.55 0.2 145)',   // deeper green
-  'oklch(0.5 0.18 250)',   // deep blue
-  'oklch(0.68 0.12 45)',   // gold
-  'oklch(0.6 0.14 180)',   // turquoise
-  'oklch(0.58 0.15 290)',  // purple
-  'oklch(0.7 0.1 200)',    // soft cyan
-  'oklch(0.6 0.12 330)',   // pink
+  'oklch(0.74 0.14 55)',   // orange (app primary vibe)
+  'oklch(0.72 0.15 145)',  // green (app positive vibe)
+  'oklch(0.68 0.15 330)',  // pink
+  'oklch(0.7 0.16 165)',   // teal
+  'oklch(0.68 0.15 310)',  // magenta
+  'oklch(0.66 0.15 200)',  // cyan
+  'oklch(0.7 0.14 25)',    // coral
+  'oklch(0.68 0.15 265)',  // violet
+  'oklch(0.72 0.14 130)',  // lime-green
+  'oklch(0.66 0.15 350)',  // rose
+  'oklch(0.7 0.14 185)',   // teal
+  'oklch(0.68 0.14 230)',  // blue
+  'oklch(0.72 0.13 85)',   // amber
+  'oklch(0.66 0.15 290)',  // purple
+  'oklch(0.7 0.14 180)',   // turquoise
+  'oklch(0.68 0.14 45)',   // gold
 ];
 
-/** Bar chart: cool (blue) for low values, hot (red) for high. Ratio 0–1. Goes via purple, no yellow/green. */
+/** Bar chart: cool (cyan) to hot (coral/orange). Ratio 0–1. Toned-down. */
 export function barColorByRatio(ratio: number): string {
   const t = Math.max(0, Math.min(1, ratio));
-  const hue = (240 + 145 * t) % 360; // 240 (blue) → 25 (red) via purple/magenta
-  const chroma = 0.14 + 0.04 * t;
-  const lightness = 0.58 + 0.06 * (1 - t);
+  const hue = 200 + 130 * t;
+  const chroma = 0.14 + 0.03 * t;
+  const lightness = 0.66 + 0.06 * t;
   return `oklch(${lightness} ${chroma} ${hue})`;
 }

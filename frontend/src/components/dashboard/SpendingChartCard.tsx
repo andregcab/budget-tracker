@@ -21,11 +21,8 @@ import { Button } from '@/components/ui/button';
 import { Bar, BarChart, Cell, Pie, PieChart, Sector, XAxis, YAxis } from 'recharts';
 import { Info } from 'lucide-react';
 import { barColorByRatio, chartConfig, PIE_COLORS } from '@/lib/chart-config';
-import {
-  collapseForPie,
-  renderPieLabel,
-  renderPieLabelLine,
-} from '@/lib/chart-utils';
+import { collapseForPie } from '@/lib/chart-utils';
+import { renderPieLabel, renderPieLabelLine } from '@/lib/chart-pie-labels';
 import { useUserPreferences } from '@/hooks/useUserPreferences';
 import type { ChartCategory } from '@/hooks/useDashboardData';
 
@@ -203,9 +200,9 @@ export function SpendingChartCard({
               <PieChart
                 margin={{
                   top: 40,
-                  right: 80,
+                  right: 100,
                   bottom: 40,
-                  left: 80,
+                  left: 100,
                 }}
               >
                 <ChartTooltip
@@ -222,7 +219,8 @@ export function SpendingChartCard({
                   dataKey="total"
                   nameKey="name"
                   innerRadius={0}
-                  strokeWidth={0}
+                  stroke="var(--border)"
+                  strokeWidth={1.5}
                   animationDuration={300}
                   animationEasing="ease-in-out"
                   activeIndex={pieActiveIndex}

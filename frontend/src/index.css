@@ -43,18 +43,17 @@ body[data-scroll-locked] {
   --border: oklch(0.922 0 0);
   --input: oklch(0.922 0 0);
   --ring: oklch(0.708 0 0);
-  /* Financial: chart = neutral teal (consistent light/dark), positive = green, negative = destructive */
-  --chart-1: oklch(0.55 0.16 185);
-  --chart-2: oklch(0.5 0.14 200);
-  --chart-3: oklch(0.45 0.12 220);
-  --chart-4: oklch(0.6 0.14 170);
-  --chart-5: oklch(0.5 0.15 210);
-  /* Extended palette for pie/donut - wider hue spread for distinguishability */
-  --chart-6: oklch(0.58 0.17 165);
-  --chart-7: oklch(0.52 0.15 205);
-  --chart-8: oklch(0.5 0.14 225);
-  --chart-9: oklch(0.52 0.13 250);
-  --chart-10: oklch(0.55 0.12 275);
+  /* Chart: bright but toned-down palette (green/orange/pink vibe) */
+  --chart-1: oklch(0.7 0.16 165);
+  --chart-2: oklch(0.72 0.15 145);
+  --chart-3: oklch(0.74 0.14 55);
+  --chart-4: oklch(0.68 0.16 310);
+  --chart-5: oklch(0.66 0.15 200);
+  --chart-6: oklch(0.68 0.15 330);
+  --chart-7: oklch(0.7 0.14 185);
+  --chart-8: oklch(0.66 0.15 265);
+  --chart-9: oklch(0.68 0.14 230);
+  --chart-10: oklch(0.66 0.15 350);
   --positive: oklch(0.83 0.14 145);
   --brand-piggy: oklch(0.79 0.122 14);
   --sidebar: oklch(0.985 0 0);
@@ -95,17 +94,17 @@ body[data-scroll-locked] {
   --border: oklch(0.92 0 0 / 12%);
   --input: oklch(0.92 0 0 / 14%);
   --ring: oklch(0.6 0 0);
-  /* Same teal family as light mode for consistent chart appearance */
-  --chart-1: oklch(0.68 0.16 185);
-  --chart-2: oklch(0.62 0.14 200);
-  --chart-3: oklch(0.58 0.12 220);
-  --chart-4: oklch(0.7 0.14 170);
-  --chart-5: oklch(0.64 0.15 210);
-  --chart-6: oklch(0.7 0.17 165);
-  --chart-7: oklch(0.64 0.15 205);
-  --chart-8: oklch(0.62 0.14 225);
-  --chart-9: oklch(0.64 0.13 250);
-  --chart-10: oklch(0.68 0.12 275);
+  /* Same toned-down palette as light mode */
+  --chart-1: oklch(0.72 0.16 165);
+  --chart-2: oklch(0.74 0.15 145);
+  --chart-3: oklch(0.76 0.14 55);
+  --chart-4: oklch(0.7 0.16 310);
+  --chart-5: oklch(0.68 0.15 200);
+  --chart-6: oklch(0.7 0.15 330);
+  --chart-7: oklch(0.72 0.14 185);
+  --chart-8: oklch(0.68 0.15 265);
+  --chart-9: oklch(0.7 0.14 230);
+  --chart-10: oklch(0.68 0.15 350);
   --positive: oklch(0.72 0.14 145);
   --sidebar: oklch(0.205 0 0);
   --sidebar-foreground: oklch(0.92 0 0);
