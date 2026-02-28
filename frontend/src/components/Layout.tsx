@@ -94,7 +94,7 @@ export function Layout() {
                 className={cn(
                   'rounded-md px-3 py-2 text-sm font-medium transition-colors',
                   location.pathname === to
-                    ? 'bg-primary text-primary-foreground'
+                    ? 'border border-primary/55 bg-primary/35 text-primary-foreground hover:bg-primary/45'
                     : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground',
                 )}
               >
@@ -115,7 +115,7 @@ export function Layout() {
             className={cn(
               'rounded-md px-3 py-2 text-sm font-medium transition-colors',
               location.pathname === to
-                ? 'bg-primary text-primary-foreground'
+                ? 'border border-primary/55 bg-primary/35 text-primary-foreground hover:bg-primary/45'
                 : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground',
             )}
           >

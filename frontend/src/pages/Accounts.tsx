@@ -107,8 +107,9 @@ export function Accounts() {
                           Edit
                         </Button>
                         <Button
-                          variant="destructive"
+                          variant="outline"
                           size="sm"
+                          className="border-destructive/40 text-destructive bg-destructive/10 hover:bg-destructive/20"
                           onClick={() => {
                             if (confirm('Delete this account?'))
                               deleteMutation.mutate(acc.id);

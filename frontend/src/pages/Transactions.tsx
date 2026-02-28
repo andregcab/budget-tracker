@@ -98,7 +98,7 @@ export function Transactions() {
             <Button
               variant="outline"
               size="sm"
-              className="border-destructive/50 text-destructive hover:bg-destructive/10 hover:border-destructive"
+              className="border-destructive/40 text-destructive bg-destructive/10 hover:bg-destructive/20"
               onClick={() => setDeleteMonthOpen(true)}
             >
               Delete All

@@ -149,7 +149,7 @@ export function TransactionTableRow({
             className={cn(
               'h-6 px-2',
               transaction.isExcluded &&
-                'bg-flag-active text-flag-active-foreground border-flag-active/40 dark:border-white/50 hover:bg-[color-mix(in_srgb,var(--flag-active)_80%,white)] dark:hover:bg-[color-mix(in_srgb,var(--secondary)_80%,white)]',
+                'border-flag-active/55 bg-flag-active/35 text-flag-active-foreground hover:bg-flag-active/45',
             )}
             onClick={toggleExclude}
             title={
@@ -167,7 +167,7 @@ export function TransactionTableRow({
             className={cn(
               'h-6 px-2',
               myShareVal != null &&
-                'bg-flag-active text-flag-active-foreground border-flag-active/40 dark:border-white/50 hover:bg-[color-mix(in_srgb,var(--flag-active)_80%,white)] dark:hover:bg-[color-mix(in_srgb,var(--secondary)_80%,white)]',
+                'border-flag-active/55 bg-flag-active/35 text-flag-active-foreground hover:bg-flag-active/45',
             )}
             onClick={handleHalfClick}
             title={isHalfSplit ? 'Clear 50/50 split' : 'Split this 50/50'}

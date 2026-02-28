@@ -33,7 +33,7 @@ export function SummaryCard({
             <span className="text-sm font-medium w-20 shrink-0">Income</span>
             <div className="flex-1 min-w-0 h-6 rounded-md overflow-hidden bg-muted/50">
               <div
-                className="h-full rounded-md bg-emerald-500/80 dark:bg-emerald-600/80 transition-[width] duration-300 ease-out"
+                className="h-full rounded-md bg-[oklch(0.76_0.19_145)]/90 dark:bg-[oklch(0.78_0.19_145)]/90 transition-[width] duration-300 ease-out"
                 style={{ width: `${incomePct}%` }}
               />
             </div>
@@ -45,7 +45,7 @@ export function SummaryCard({
             <span className="text-sm font-medium w-20 shrink-0">Expenses</span>
             <div className="flex-1 min-w-0 h-6 rounded-md overflow-hidden bg-muted/50">
               <div
-                className="h-full rounded-md bg-amber-600/70 dark:bg-amber-700/70 transition-[width] duration-300 ease-out"
+                className="h-full rounded-md bg-[oklch(0.78_0.17_55)]/90 dark:bg-[oklch(0.80_0.16_55)]/90 transition-[width] duration-300 ease-out"
                 style={{ width: `${expensesPct}%` }}
               />
             </div>
@@ -63,7 +63,7 @@ export function SummaryCard({
               <p
                 className={`text-2xl font-bold ${
                   savings >= 0
-                    ? 'text-[var(--positive)]'
+                    ? 'text-[oklch(0.52_0.2_145)] dark:text-[oklch(0.62_0.2_145)]'
                     : 'text-destructive'
                 }`}
               >
