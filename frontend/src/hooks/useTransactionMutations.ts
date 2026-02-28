@@ -7,6 +7,7 @@ import {
 } from '@/api/transactions';
 import type { TransactionRow, TransactionsResponse } from '@/types';
 import { toast } from 'sonner';
+import { getMutationErrorMessage } from '@/lib/error-utils';
 
 export function useTransactionMutations() {
   const queryClient = useQueryClient();
@@ -54,9 +55,7 @@ export function useTransactionMutations() {
     },
     onError: (err) => {
       toast.error(
-        err instanceof Error
-          ? err.message
-          : 'Failed to update transaction',
+        getMutationErrorMessage(err, 'Failed to update transaction'),
       );
     },
   });
@@ -66,9 +65,7 @@ export function useTransactionMutations() {
     onSuccess: invalidate,
     onError: (err) => {
       toast.error(
-        err instanceof Error
-          ? err.message
-          : 'Failed to delete transaction',
+        getMutationErrorMessage(err, 'Failed to delete transaction'),
       );
     },
   });
@@ -79,9 +76,7 @@ export function useTransactionMutations() {
     onSuccess: invalidate,
     onError: (err) => {
       toast.error(
-        err instanceof Error
-          ? err.message
-          : 'Failed to delete transactions',
+        getMutationErrorMessage(err, 'Failed to delete transactions'),
       );
     },
   });
@@ -91,9 +86,7 @@ export function useTransactionMutations() {
     onSuccess: invalidate,
     onError: (err) => {
       toast.error(
-        err instanceof Error
-          ? err.message
-          : 'Failed to add transaction',
+        getMutationErrorMessage(err, 'Failed to add transaction'),
       );
     },
   });

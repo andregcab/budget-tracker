@@ -8,6 +8,7 @@ import {
   removeBudget,
 } from '@/api/categories';
 import { toast } from 'sonner';
+import { getMutationErrorMessage } from '@/lib/error-utils';
 
 const INVALIDATE_KEYS = [
   'categories',
@@ -37,7 +38,9 @@ export function useCategoryMutations() {
           now.getMonth() + 1,
         );
         queryClient.invalidateQueries({ queryKey: ['transactions'] });
-        queryClient.invalidateQueries({ queryKey: ['analytics', 'monthly'] });
+        queryClient.invalidateQueries({
+          queryKey: ['analytics', 'monthly'],
+        });
         toast.success(
           updated > 0
             ? `Category added. ${updated} transaction(s) updated this month.`
@@ -49,7 +52,7 @@ export function useCategoryMutations() {
     },
     onError: (err) => {
       toast.error(
-        err instanceof Error ? err.message : 'Failed to add category',
+        getMutationErrorMessage(err, 'Failed to add category'),
       );
     },
   });
@@ -77,9 +80,13 @@ export function useCategoryMutations() {
           now.getMonth() + 1,
         );
         queryClient.invalidateQueries({ queryKey: ['transactions'] });
-        queryClient.invalidateQueries({ queryKey: ['analytics', 'monthly'] });
+        queryClient.invalidateQueries({
+          queryKey: ['analytics', 'monthly'],
+        });
         if (updated > 0) {
-          toast.success(`${updated} transaction(s) updated this month.`);
+          toast.success(
+            `${updated} transaction(s) updated this month.`,
+          );
         }
       } catch {
         // Re-apply failed; category update still succeeded
@@ -87,7 +94,7 @@ export function useCategoryMutations() {
     },
     onError: (err) => {
       toast.error(
-        err instanceof Error ? err.message : 'Failed to update category',
+        getMutationErrorMessage(err, 'Failed to update category'),
       );
     },
   });
@@ -106,7 +113,7 @@ export function useCategoryMutations() {
     },
     onError: (err) => {
       toast.error(
-        err instanceof Error ? err.message : 'Failed to delete category',
+        getMutationErrorMessage(err, 'Failed to delete category'),
       );
     },
   });
@@ -120,16 +127,24 @@ export function useCategoryMutations() {
       amount: number;
     }) => upsertBudget(categoryId, amount),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['category-budgets'] });
-      queryClient.invalidateQueries({ queryKey: ['analytics', 'monthly'] });
+      queryClient.invalidateQueries({
+        queryKey: ['category-budgets'],
+      });
+      queryClient.invalidateQueries({
+        queryKey: ['analytics', 'monthly'],
+      });
     },
   });
 
   const removeBudgetMutation = useMutation({
     mutationFn: removeBudget,
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['category-budgets'] });
-      queryClient.invalidateQueries({ queryKey: ['analytics', 'monthly'] });
+      queryClient.invalidateQueries({
+        queryKey: ['category-budgets'],
+      });
+      queryClient.invalidateQueries({
+        queryKey: ['analytics', 'monthly'],
+      });
     },
   });
 
@@ -150,9 +165,13 @@ export function useCategoryMutations() {
           now.getMonth() + 1,
         );
         queryClient.invalidateQueries({ queryKey: ['transactions'] });
-        queryClient.invalidateQueries({ queryKey: ['analytics', 'monthly'] });
+        queryClient.invalidateQueries({
+          queryKey: ['analytics', 'monthly'],
+        });
         if (updated > 0) {
-          toast.success(`${updated} transaction(s) updated this month.`);
+          toast.success(
+            `${updated} transaction(s) updated this month.`,
+          );
         }
       } catch {
         // Re-apply failed; keywords update still succeeded
@@ -160,7 +179,7 @@ export function useCategoryMutations() {
     },
     onError: (err) => {
       toast.error(
-        err instanceof Error ? err.message : 'Failed to save keywords',
+        getMutationErrorMessage(err, 'Failed to save keywords'),
       );
     },
   });

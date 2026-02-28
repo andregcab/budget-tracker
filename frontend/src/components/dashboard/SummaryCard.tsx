@@ -4,6 +4,7 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
+import { formatCurrency } from '@/lib/transaction-utils';
 
 type SummaryCardProps = {
   income: number;
@@ -54,7 +55,7 @@ export function SummaryCard({
               />
             </div>
             <span className="text-sm font-mono tabular-nums shrink-0 w-[8rem] pl-8">
-              ${expenses.toFixed(2)}
+              {formatCurrency(expenses)}
             </span>
           </div>
         </div>
@@ -71,7 +72,7 @@ export function SummaryCard({
                     : 'text-destructive'
                 }`}
               >
-                ${Math.abs(savings).toFixed(2)}
+                {formatCurrency(Math.abs(savings))}
               </p>
             </div>
             <p className="text-sm text-muted-foreground mb-1 flex-1">

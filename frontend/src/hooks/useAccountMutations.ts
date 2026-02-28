@@ -5,6 +5,7 @@ import {
   deleteAccount,
 } from '@/api/accounts';
 import { toast } from 'sonner';
+import { getMutationErrorMessage } from '@/lib/error-utils';
 
 export function useAccountMutations() {
   const queryClient = useQueryClient();
@@ -16,7 +17,7 @@ export function useAccountMutations() {
     },
     onError: (err) => {
       toast.error(
-        err instanceof Error ? err.message : 'Failed to create account',
+        getMutationErrorMessage(err, 'Failed to create account'),
       );
     },
   });
@@ -34,7 +35,7 @@ export function useAccountMutations() {
     },
     onError: (err) => {
       toast.error(
-        err instanceof Error ? err.message : 'Failed to update account',
+        getMutationErrorMessage(err, 'Failed to update account'),
       );
     },
   });
@@ -46,7 +47,7 @@ export function useAccountMutations() {
     },
     onError: (err) => {
       toast.error(
-        err instanceof Error ? err.message : 'Failed to delete account',
+        getMutationErrorMessage(err, 'Failed to delete account'),
       );
     },
   });

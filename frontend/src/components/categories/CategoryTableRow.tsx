@@ -1,4 +1,5 @@
 import type { Category } from '@/types';
+import { formatCurrency } from '@/lib/transaction-utils';
 import { Button } from '@/components/ui/button';
 import { TableCell, TableRow } from '@/components/ui/table';
 import { Input } from '@/components/ui/input';
@@ -86,7 +87,9 @@ export function CategoryTableRow({
               step="0.01"
               min="0"
               value={editBudgetAmount}
-              onChange={(e) => onEditBudgetAmountChange(e.target.value)}
+              onChange={(e) =>
+                onEditBudgetAmountChange(e.target.value)
+              }
               className="max-w-[120px]"
               autoFocus
               form={`edit-form-${category.id}`}
@@ -103,7 +106,7 @@ export function CategoryTableRow({
             className="text-left hover:underline text-muted-foreground"
           >
             {budget != null
-              ? `$${budget.toFixed(2)}`
+              ? formatCurrency(budget)
               : category.isFixed
                 ? 'Set amount'
                 : 'Set budget'}
@@ -156,7 +159,11 @@ export function CategoryTableRow({
       <TableCell className="w-[170px] pl-8 align-top">
         {isEditing ? (
           <div className="flex items-center gap-2 shrink-0">
-            <Button type="submit" form={`edit-form-${category.id}`} size="sm">
+            <Button
+              type="submit"
+              form={`edit-form-${category.id}`}
+              size="sm"
+            >
               Save
             </Button>
             <Button

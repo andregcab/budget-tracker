@@ -10,28 +10,13 @@ import { SummaryCard } from '@/components/dashboard/SummaryCard';
 import { IncomeEditDialog } from '@/components/dashboard/IncomeEditDialog';
 import { ExpectedFixedCard } from '@/components/dashboard/ExpectedFixedCard';
 import { SpendingChartCard } from '@/components/dashboard/SpendingChartCard';
+import { getInitialMonth } from '@/lib/dashboard-month';
 
 const INVALIDATE_KEYS = [
   'analytics',
   'revenue',
   'expected-fixed-expenses',
 ];
-
-function getInitialMonth(
-  prefs: {
-    dashboardMonth: { year: number; month: number } | null;
-    dashboardSelectionIsFromPreviousMonth: () => boolean;
-  },
-  currentYear: number,
-  currentMonth: number,
-): { year: number; month: number } {
-  const stored = prefs.dashboardMonth;
-  if (!stored) return { year: currentYear, month: currentMonth };
-  if (prefs.dashboardSelectionIsFromPreviousMonth()) {
-    return { year: currentYear, month: currentMonth };
-  }
-  return { year: stored.year, month: stored.month };
-}
 
 export function Dashboard() {
   const { user } = useAuth();
@@ -52,6 +37,7 @@ export function Dashboard() {
   const [year, setYear] = useState(initial.year);
   const [month, setMonth] = useState(initial.month);
 
+  // Sync local year/month state when user preferences (or "current month") change so the picker and data stay in sync.
   useEffect(() => {
     if (!dashboardMonth) return;
     const enteredNewMonth = dashboardSelectionIsFromPreviousMonth();

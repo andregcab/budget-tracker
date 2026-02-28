@@ -23,13 +23,6 @@ export type Category = CategoryMinimal & {
   userId?: string | null;
 };
 
-/** Category for picker (Dashboard expected fixed) */
-export type CategoryForPicker = {
-  id: string;
-  name: string;
-  isFixed: boolean;
-};
-
 /** Category budget from API */
 export type CategoryBudget = {
   categoryId: string;

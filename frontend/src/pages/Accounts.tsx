@@ -32,11 +32,8 @@ function getTypeLabel(type: string): string {
 
 export function Accounts() {
   const { data: accounts = [], isLoading } = useAccounts();
-  const {
-    createMutation,
-    updateMutation,
-    deleteMutation,
-  } = useAccountMutations();
+  const { createMutation, updateMutation, deleteMutation } =
+    useAccountMutations();
 
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<Account | null>(null);
@@ -107,9 +104,8 @@ export function Accounts() {
                           Edit
                         </Button>
                         <Button
-                          variant="outline"
+                          variant="destructiveOutline"
                           size="sm"
-                          className="border-destructive/40 text-destructive bg-destructive/10 hover:bg-destructive/20"
                           onClick={() => {
                             if (confirm('Delete this account?'))
                               deleteMutation.mutate(acc.id);

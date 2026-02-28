@@ -6,23 +6,31 @@ import {
   ChartTooltipContent,
   type ChartConfig,
 } from '@/components/ui/chart';
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card';
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from '@/components/ui/popover';
+import { Card, CardContent, CardHeader } from '@/components/ui/card';
+import { CardTitleWithInfo } from '@/components/ui/card-title-with-info';
 import { Button } from '@/components/ui/button';
-import { Bar, BarChart, Cell, Pie, PieChart, Sector, XAxis, YAxis } from 'recharts';
-import { Info } from 'lucide-react';
-import { barColorByRatio, chartConfig, PIE_COLORS } from '@/lib/chart-config';
+import {
+  Bar,
+  BarChart,
+  Cell,
+  Pie,
+  PieChart,
+  XAxis,
+  YAxis,
+} from 'recharts';
+import {
+  barColorByRatio,
+  chartConfig,
+  PIE_COLORS,
+} from '@/lib/chart-config';
 import { collapseForPie } from '@/lib/chart-utils';
-import { renderPieLabel, renderPieLabelLine } from '@/lib/chart-pie-labels';
+import { PieSelectedSliceSummary } from '@/lib/chart-pie-labels';
+import {
+  renderPieActiveShape,
+  renderPieLabel,
+  renderPieLabelLine,
+} from '@/lib/chart-pie-renderers';
+import { formatCurrency } from '@/lib/transaction-utils';
 import { useUserPreferences } from '@/hooks/useUserPreferences';
 import type { ChartCategory } from '@/hooks/useDashboardData';
 
@@ -65,34 +73,27 @@ export function SpendingChartCard({
   return (
     <Card className="mt-6">
       <CardHeader>
-        <div className="flex items-center gap-1.5">
-          <CardTitle>Spending</CardTitle>
-          <Popover>
-            <PopoverTrigger asChild>
-              <button
-                type="button"
-                className="inline-flex text-muted-foreground hover:text-foreground focus:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded"
-                aria-label="More information"
-              >
-                <Info className="h-4 w-4" />
-              </button>
-            </PopoverTrigger>
-            <PopoverContent className="w-72 text-sm" align="start">
+        <CardTitleWithInfo
+          title="Spending"
+          infoContent={
+            <>
               Groceries, dining, shopping — set budgets in{' '}
               <Link to="/categories" className="underline">
                 Categories
               </Link>
               . Over-budget items are highlighted.
-            </PopoverContent>
-          </Popover>
-        </div>
+            </>
+          }
+        />
       </CardHeader>
       <CardContent className="space-y-4">
         <div className="w-full max-w-[50%] min-w-0 space-y-2">
           <div className="space-y-3">
             {variableCategories.map((c) => {
               const pct =
-                c.budget > 0 ? Math.min((c.total / c.budget) * 100, 100) : 0;
+                c.budget > 0
+                  ? Math.min((c.total / c.budget) * 100, 100)
+                  : 0;
               return (
                 <div key={c.name} className="space-y-1">
                   <div className="flex items-center justify-between text-sm">
@@ -106,11 +107,11 @@ export function SpendingChartCard({
                       {c.name}
                     </span>
                     <span className="text-muted-foreground">
-                      ${c.total.toFixed(2)}
+                      {formatCurrency(c.total)}
                       {c.budget > 0 && (
                         <>
                           {' '}
-                          / ${c.budget.toFixed(2)}
+                          / {formatCurrency(c.budget)}
                           <span
                             className={
                               c.over
@@ -142,7 +143,7 @@ export function SpendingChartCard({
           </div>
           <div className="flex items-center justify-between border-t border-border pt-2 text-sm font-medium">
             <span>Total</span>
-            <span>${variableTotal.toFixed(2)}</span>
+            <span>{formatCurrency(variableTotal)}</span>
           </div>
         </div>
 
@@ -161,12 +162,19 @@ export function SpendingChartCard({
             ))}
           </div>
           <ChartContainer
-            config={chartType === 'bar' ? chartConfig : pieChartConfig}
+            config={
+              chartType === 'bar' ? chartConfig : pieChartConfig
+            }
             className="h-[340px] w-full"
           >
             {chartType === 'bar' ? (
               <BarChart
-                data={variableCategories as { name: string; total: number }[]}
+                data={
+                  variableCategories as {
+                    name: string;
+                    total: number;
+                  }[]
+                }
                 margin={{ left: 12, right: 12 }}
               >
                 <XAxis
@@ -210,7 +218,9 @@ export function SpendingChartCard({
                     <ChartTooltipContent
                       labelKey="name"
                       nameKey="name"
-                      formatter={(value) => `$${Number(value).toFixed(2)}`}
+                      formatter={(value) =>
+                        formatCurrency(Number(value))
+                      }
                     />
                   }
                 />
@@ -226,46 +236,7 @@ export function SpendingChartCard({
                   activeIndex={pieActiveIndex}
                   label={renderPieLabel}
                   labelLine={renderPieLabelLine}
-                  activeShape={(props: unknown) => {
-                    const p = props as {
-                      outerRadius?: number;
-                      cx?: number;
-                      cy?: number;
-                      startAngle?: number;
-                      endAngle?: number;
-                      [key: string]: unknown;
-                    };
-                    const { cx = 0, cy = 0 } = p;
-                    const midAngle =
-                      ((p.startAngle ?? 0) + (p.endAngle ?? 0)) / 2;
-                    const rad = (midAngle * Math.PI) / 180;
-                    const slideOutPx = 4;
-                    const dx = Math.cos(rad) * slideOutPx;
-                    const dy = -Math.sin(rad) * slideOutPx;
-                    return (
-                      <g
-                        className="pie-active-slice"
-                        style={
-                          {
-                            transformOrigin: `${cx}px ${cy}px`,
-                            '--slide-dx': `${dx}px`,
-                            '--slide-dy': `${dy}px`,
-                          } as React.CSSProperties
-                        }
-                      >
-                        <Sector
-                          {...p}
-                          stroke="rgba(0,0,0,0.35)"
-                          strokeWidth={1}
-                          vectorEffect="non-scaling-stroke"
-                          style={{
-                            filter:
-                              'drop-shadow(0 4px 8px rgba(0,0,0,0.35))',
-                          }}
-                        />
-                      </g>
-                    );
-                  }}
+                  activeShape={renderPieActiveShape}
                   onClick={(_, index) =>
                     setPieActiveIndex(
                       pieActiveIndex === index ? undefined : index,
@@ -285,34 +256,15 @@ export function SpendingChartCard({
           {chartType === 'pie' &&
             pieActiveIndex !== undefined &&
             pieData[pieActiveIndex] && (
-              <div
-                className="rounded-md border border-border/50 bg-background px-3 py-2 text-sm shadow-sm"
-                role="status"
-                aria-live="polite"
-              >
-                <span className="font-medium">
-                  {pieData[pieActiveIndex].name}
-                </span>
-                <span className="ml-2 text-muted-foreground">
-                  $
-                  {pieData[pieActiveIndex].total.toFixed(2)}
-                </span>
-                {'_otherCategories' in pieData[pieActiveIndex] &&
-                  (pieData[pieActiveIndex] as { _otherCategories?: { name: string }[] })
-                    ._otherCategories && (
-                    <div className="mt-1 text-xs text-muted-foreground">
-                      {(
-                        (pieData[pieActiveIndex] as { _otherCategories: { name: string }[] })
-                          ._otherCategories
-                      )
-                        .map((c) => c.name)
-                        .join(', ')}
-                    </div>
-                  )}
-                <span className="ml-1 text-xs text-muted-foreground">
-                  (tap again to dismiss)
-                </span>
-              </div>
+              <PieSelectedSliceSummary
+                slice={
+                  pieData[pieActiveIndex] as {
+                    name: string;
+                    total: number;
+                    _otherCategories?: { name: string }[];
+                  }
+                }
+              />
             )}
         </div>
       </CardContent>

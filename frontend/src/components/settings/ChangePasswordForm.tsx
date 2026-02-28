@@ -5,6 +5,7 @@ import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
 import { api } from '@/api/client';
 import { validatePassword } from '@/lib/validation';
+import { getMutationErrorMessage } from '@/lib/error-utils';
 
 export function ChangePasswordForm() {
   const [currentPassword, setCurrentPassword] = useState('');
@@ -43,7 +44,10 @@ export function ChangePasswordForm() {
         setNewPasswordConfirm('');
       })
       .catch((err) => {
-        const msg = err?.message ?? 'Failed to change password';
+        const msg = getMutationErrorMessage(
+          err,
+          'Failed to change password',
+        );
         setPasswordError(msg);
         toast.error(msg);
       })

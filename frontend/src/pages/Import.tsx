@@ -14,6 +14,7 @@ import {
 import { Label } from '@/components/ui/label';
 import { Combobox } from '@/components/ui/combobox';
 import { cn } from '@/lib/utils';
+import { getMutationErrorMessage } from '@/lib/error-utils';
 
 export function Import() {
   const queryClient = useQueryClient();
@@ -47,9 +48,7 @@ export function Import() {
       );
     },
     onError: (err) => {
-      toast.error(
-        err instanceof Error ? err.message : 'Import failed',
-      );
+      toast.error(getMutationErrorMessage(err, 'Import failed'));
     },
   });
 

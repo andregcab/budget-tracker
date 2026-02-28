@@ -5,12 +5,6 @@ export async function getCategories(): Promise<Category[]> {
   return api('/categories');
 }
 
-export async function getCategoriesForPicker(): Promise<
-  { id: string; name: string; isFixed: boolean }[]
-> {
-  return api('/categories');
-}
-
 export async function getBudgets(): Promise<CategoryBudget[]> {
   return api('/category-budgets');
 }

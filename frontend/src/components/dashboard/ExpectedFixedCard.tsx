@@ -8,12 +8,8 @@ import {
 import type { Category, ExpectedFixedItem } from '@/types';
 import type { FixedCategoryDisplay } from '@/hooks/useDashboardData';
 import { Button } from '@/components/ui/button';
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card';
+import { Card, CardContent, CardHeader } from '@/components/ui/card';
+import { CardTitleWithInfo } from '@/components/ui/card-title-with-info';
 import {
   Dialog,
   DialogContent,
@@ -22,11 +18,6 @@ import {
   DialogTrigger,
   DialogFooter,
 } from '@/components/ui/dialog';
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from '@/components/ui/popover';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import {
@@ -36,8 +27,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Info, Plus, Trash2 } from 'lucide-react';
+import { Plus, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
+import { formatCurrency } from '@/lib/transaction-utils';
+import { getMutationErrorMessage } from '@/lib/error-utils';
 
 type ExpectedFixedCardProps = {
   year: number;
@@ -77,9 +70,10 @@ export function ExpectedFixedCard({
     },
     onError: (err) => {
       toast.error(
-        err instanceof Error
-          ? err.message
-          : 'Failed to add expected expense',
+        getMutationErrorMessage(
+          err,
+          'Failed to add expected expense',
+        ),
       );
     },
   });
@@ -93,9 +87,10 @@ export function ExpectedFixedCard({
     },
     onError: (err) => {
       toast.error(
-        err instanceof Error
-          ? err.message
-          : 'Failed to remove expected expense',
+        getMutationErrorMessage(
+          err,
+          'Failed to remove expected expense',
+        ),
       );
     },
   });
@@ -128,25 +123,12 @@ export function ExpectedFixedCard({
     <Card className="mt-6">
       <CardHeader className="pb-2">
         <div className="flex items-center justify-between mb-4 gap-2">
-          <div className="flex items-center gap-1.5">
-            <CardTitle className="text-base">
-              Fixed bills this month
-            </CardTitle>
-            <Popover>
-              <PopoverTrigger asChild>
-                <button
-                  type="button"
-                  className="inline-flex text-muted-foreground hover:text-foreground focus:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded"
-                  aria-label="More information"
-                >
-                  <Info className="h-4 w-4" />
-                </button>
-              </PopoverTrigger>
-              <PopoverContent className="w-72 text-sm" align="start">
-                Rent, subscriptions, insurance — predictable costs
-              </PopoverContent>
-            </Popover>
-          </div>
+          <CardTitleWithInfo
+            title="Fixed bills this month"
+            infoContent={
+              <>Rent, subscriptions, insurance — predictable costs</>
+            }
+          />
           <Dialog open={open} onOpenChange={handleOpenChange}>
             <DialogTrigger asChild>
               <Button variant="default" size="sm">
@@ -258,43 +240,47 @@ export function ExpectedFixedCard({
       <CardContent>
         <div className="space-y-1.5">
           {fixedCategories
-            .filter((c) => !(c.total === 0 && c.budget === 0))
-            .map((c) => {
-              const expected = expectedByCategoryId[c.id];
-              const hasExpected = expected && c.budget > 0;
-              const actual = c.total;
-              const expectedAmt = c.budget;
-              const showDiff =
-                hasExpected && Math.abs(actual - expectedAmt) > 0.01;
+            .filter(
+              (category) =>
+                !(category.total === 0 && category.budget === 0),
+            )
+            .map((category) => {
+              const expectedItem = expectedByCategoryId[category.id];
+              const hasExpected = expectedItem && category.budget > 0;
+              const actual = category.total;
+              const expectedAmount = category.budget;
+              const showExpectedDiff =
+                hasExpected &&
+                Math.abs(actual - expectedAmount) > 0.01;
               return (
                 <div
-                  key={c.id}
+                  key={category.id}
                   className="flex items-center justify-between text-sm group"
                 >
                   <span className="text-muted-foreground">
-                    {c.name}
+                    {category.name}
                   </span>
                   <span className="flex items-center gap-2">
-                    ${c.total.toFixed(2)}
-                    {showDiff && (
+                    {formatCurrency(category.total)}
+                    {showExpectedDiff && (
                       <span className="text-muted-foreground text-xs">
-                        (expected ${expectedAmt.toFixed(2)})
+                        (expected {formatCurrency(expectedAmount)})
                       </span>
                     )}
-                    {expected && (
+                    {expectedItem && (
                       <Button
                         variant="ghost"
                         size="icon"
                         className="h-6 w-6 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
                         onClick={() =>
-                          expected.id.startsWith('inherited-')
+                          expectedItem.id.startsWith('inherited-')
                             ? addMutation.mutate({
                                 year,
                                 month,
-                                categoryId: expected.categoryId,
+                                categoryId: expectedItem.categoryId,
                                 amount: 0,
                               })
-                            : removeMutation.mutate(expected.id)
+                            : removeMutation.mutate(expectedItem.id)
                         }
                         disabled={
                           removeMutation.isPending ||
@@ -311,7 +297,7 @@ export function ExpectedFixedCard({
             })}
           <div className="flex items-center justify-between border-t border-border pt-2 mt-2 font-medium">
             <span>Total fixed</span>
-            <span>${fixedTotal.toFixed(2)}</span>
+            <span>{formatCurrency(fixedTotal)}</span>
           </div>
         </div>
       </CardContent>

@@ -15,7 +15,9 @@ import { cn } from '@/lib/utils';
 import {
   formatAmount,
   formatDateToMMDDYY,
+  formatTransactionAmount,
   formatTransactionDateDisplay,
+  getMyShareDisplay,
   parseMMDDYYToISO,
 } from '@/lib/transaction-utils';
 import type { UseMutationResult } from '@tanstack/react-query';
@@ -110,13 +112,8 @@ export function TransactionTableRow({
   onEditStart,
 }: TransactionTableRowProps) {
   const isEditing = editId === transaction.id;
-  const amt = parseFloat(transaction.amount);
-  const absAmt = Math.abs(amt);
-  const myShareVal = transaction.myShare
-    ? Math.abs(parseFloat(transaction.myShare))
-    : null;
-  const isHalfSplit =
-    myShareVal != null && Math.abs(myShareVal - absAmt / 2) < 0.01;
+  const { myShareVal, isHalfSplit } = getMyShareDisplay(transaction);
+  const absAmt = Math.abs(parseFloat(transaction.amount));
 
   const handleHalfClick = () => {
     if (isHalfSplit) {
@@ -195,11 +192,7 @@ export function TransactionTableRow({
                 : undefined
             }
           >
-            {myShareVal != null
-              ? amt < 0
-                ? `(${myShareVal.toFixed(2)})`
-                : `$${myShareVal.toFixed(2)}`
-              : formatAmount(transaction.amount)}
+            {formatTransactionAmount(transaction)}
           </span>
         )}
       </TableCell>

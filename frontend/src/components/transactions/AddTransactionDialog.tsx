@@ -18,6 +18,7 @@ import {
 } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
+import { formatCurrency } from '@/lib/transaction-utils';
 import type { UseMutationResult } from '@tanstack/react-query';
 
 type Account = { id: string; name: string };
@@ -86,7 +87,9 @@ function AddTransactionForm({
   const absAmt = Math.abs(amt);
   const myShareNum = form.myShare ? parseFloat(form.myShare) : null;
   const isHalfSplit =
-    amt > 0 && myShareNum != null && Math.abs(myShareNum - absAmt / 2) < 0.01;
+    amt > 0 &&
+    myShareNum != null &&
+    Math.abs(myShareNum - absAmt / 2) < 0.01;
 
   const handleHalfClick = () => {
     if (!form.amount || amt <= 0) return;
@@ -113,9 +116,10 @@ function AddTransactionForm({
         date: form.date,
         description: form.description.trim(),
         amount: amt,
-        ...(form.myShare && parseFloat(form.myShare) > 0 && {
-          myShare: parseFloat(form.myShare),
-        }),
+        ...(form.myShare &&
+          parseFloat(form.myShare) > 0 && {
+            myShare: parseFloat(form.myShare),
+          }),
         type: form.type,
         categoryId: form.categoryId || null,
         notes: form.notes.trim() || null,
@@ -132,172 +136,167 @@ function AddTransactionForm({
       <div className="grid gap-4 py-4">
         <div className="grid gap-2">
           <Label>Account</Label>
-              <Combobox
-                options={accounts.map((a) => ({
-                  value: a.id,
-                  label: a.name,
-                }))}
-                value={form.accountId || null}
-                onValueChange={(v) =>
-                  setForm((f) => ({ ...f, accountId: v ?? '' }))
-                }
-                placeholder="Select account"
-                searchPlaceholder="Type to search..."
-                triggerClassName={cn(
-                  'w-full',
-                  showValidation && !hasAccount && 'border-destructive',
-                )}
-              />
-              {showValidation && !hasAccount && (
-                <p className="text-sm text-destructive">
-                  Select an account
-                </p>
-              )}
-            </div>
-            <div className="grid gap-2">
-              <Label htmlFor="add-date">Date</Label>
+          <Combobox
+            options={accounts.map((a) => ({
+              value: a.id,
+              label: a.name,
+            }))}
+            value={form.accountId || null}
+            onValueChange={(v) =>
+              setForm((f) => ({ ...f, accountId: v ?? '' }))
+            }
+            placeholder="Select account"
+            searchPlaceholder="Type to search..."
+            triggerClassName={cn(
+              'w-full',
+              showValidation && !hasAccount && 'border-destructive',
+            )}
+          />
+          {showValidation && !hasAccount && (
+            <p className="text-sm text-destructive">
+              Select an account
+            </p>
+          )}
+        </div>
+        <div className="grid gap-2">
+          <Label htmlFor="add-date">Date</Label>
+          <Input
+            id="add-date"
+            type="date"
+            value={form.date}
+            onChange={(e) =>
+              setForm((f) => ({ ...f, date: e.target.value }))
+            }
+          />
+        </div>
+        <div className="grid gap-2">
+          <Label htmlFor="add-description">Description</Label>
+          <Input
+            id="add-description"
+            placeholder="e.g. Coffee shop"
+            value={form.description}
+            onChange={(e) =>
+              setForm((f) => ({ ...f, description: e.target.value }))
+            }
+            className={cn(
+              showValidation &&
+                !hasDescription &&
+                'border-destructive',
+            )}
+          />
+          {showValidation && !hasDescription && (
+            <p className="text-sm text-destructive">
+              Description is required
+            </p>
+          )}
+        </div>
+        <div className="grid grid-cols-2 gap-4">
+          <div className="grid gap-2">
+            <Label htmlFor="add-amount">Amount</Label>
+            <div className="flex gap-2">
               <Input
-                id="add-date"
-                type="date"
-                value={form.date}
+                id="add-amount"
+                type="number"
+                step="0.01"
+                min="0.01"
+                placeholder="0.00"
+                value={form.amount}
                 onChange={(e) =>
-                  setForm((f) => ({ ...f, date: e.target.value }))
-                }
-              />
-            </div>
-            <div className="grid gap-2">
-              <Label htmlFor="add-description">Description</Label>
-              <Input
-                id="add-description"
-                placeholder="e.g. Coffee shop"
-                value={form.description}
-                onChange={(e) =>
-                  setForm((f) => ({ ...f, description: e.target.value }))
+                  setForm((f) => ({
+                    ...f,
+                    amount: e.target.value,
+                    myShare: '',
+                  }))
                 }
                 className={cn(
-                  showValidation && !hasDescription && 'border-destructive',
+                  showValidation &&
+                    (!hasAmount || !amountValid) &&
+                    'border-destructive',
                 )}
               />
-              {showValidation && !hasDescription && (
-                <p className="text-sm text-destructive">
-                  Description is required
-                </p>
-              )}
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={handleHalfClick}
+                disabled={!form.amount || amt <= 0}
+                title={isHalfSplit ? 'Clear split' : 'Split 50/50'}
+              >
+                ½
+              </Button>
             </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div className="grid gap-2">
-                <Label htmlFor="add-amount">Amount</Label>
-                <div className="flex gap-2">
-                  <Input
-                    id="add-amount"
-                    type="number"
-                    step="0.01"
-                    min="0.01"
-                    placeholder="0.00"
-                    value={form.amount}
-                    onChange={(e) =>
-                      setForm((f) => ({
-                        ...f,
-                        amount: e.target.value,
-                        myShare: '',
-                      }))
-                    }
-                    className={cn(
-                      showValidation &&
-                        (!hasAmount || !amountValid) &&
-                        'border-destructive',
-                    )}
-                  />
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={handleHalfClick}
-                    disabled={!form.amount || amt <= 0}
-                    title={isHalfSplit ? 'Clear split' : 'Split 50/50'}
-                  >
-                    ½
-                  </Button>
-                </div>
-                {showValidation && !hasAmount && (
-                  <p className="text-sm text-destructive">
-                    Enter an amount
-                  </p>
-                )}
-                {showValidation && hasAmount && !amountValid && (
-                  <p className="text-sm text-destructive">
-                    Amount must be greater than 0
-                  </p>
-                )}
-                {form.myShare && (
-                  <p className="text-xs text-muted-foreground">
-                    My share: ${parseFloat(form.myShare).toFixed(2)}
-                  </p>
-                )}
-              </div>
-              <div className="grid gap-2">
-                <Label htmlFor="add-type">Type</Label>
-                <Select
-                  value={form.type}
-                  onValueChange={(v: 'debit' | 'credit') =>
-                    setForm((f) => ({ ...f, type: v }))
-                  }
-                >
-                  <SelectTrigger id="add-type">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="debit">Expense</SelectItem>
-                    <SelectItem value="credit">Income</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-            <div className="grid gap-2">
-              <Label>Category</Label>
-              <Combobox
-                options={categories.map((c) => ({
-                  value: c.id,
-                  label: c.name,
-                }))}
-                value={form.categoryId}
-                onValueChange={(v) =>
-                  setForm((f) => ({ ...f, categoryId: v }))
-                }
-                placeholder="Optional"
-                searchPlaceholder="Type to search..."
-                allowEmpty
-                emptyOption={{ value: null, label: '—' }}
-                triggerClassName="w-full"
-              />
-            </div>
-            <div className="grid gap-2">
-              <Label htmlFor="add-notes">Notes</Label>
-              <Input
-                id="add-notes"
-                placeholder="Optional"
-                value={form.notes}
-                onChange={(e) =>
-                  setForm((f) => ({ ...f, notes: e.target.value }))
-                }
-              />
-            </div>
+            {showValidation && !hasAmount && (
+              <p className="text-sm text-destructive">
+                Enter an amount
+              </p>
+            )}
+            {showValidation && hasAmount && !amountValid && (
+              <p className="text-sm text-destructive">
+                Amount must be greater than 0
+              </p>
+            )}
+            {form.myShare && (
+              <p className="text-xs text-muted-foreground">
+                My share: {formatCurrency(parseFloat(form.myShare))}
+              </p>
+            )}
           </div>
-          <DialogFooter>
-            <Button
-              type="button"
-              variant="outline"
-              onClick={onClose}
+          <div className="grid gap-2">
+            <Label htmlFor="add-type">Type</Label>
+            <Select
+              value={form.type}
+              onValueChange={(v: 'debit' | 'credit') =>
+                setForm((f) => ({ ...f, type: v }))
+              }
             >
-              Cancel
-            </Button>
-            <Button
-              type="submit"
-              disabled={createMutation.isPending}
-            >
-              {createMutation.isPending ? 'Adding...' : 'Add'}
-            </Button>
-          </DialogFooter>
+              <SelectTrigger id="add-type">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="debit">Expense</SelectItem>
+                <SelectItem value="credit">Income</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+        <div className="grid gap-2">
+          <Label>Category</Label>
+          <Combobox
+            options={categories.map((c) => ({
+              value: c.id,
+              label: c.name,
+            }))}
+            value={form.categoryId}
+            onValueChange={(v) =>
+              setForm((f) => ({ ...f, categoryId: v }))
+            }
+            placeholder="Optional"
+            searchPlaceholder="Type to search..."
+            allowEmpty
+            emptyOption={{ value: null, label: '—' }}
+            triggerClassName="w-full"
+          />
+        </div>
+        <div className="grid gap-2">
+          <Label htmlFor="add-notes">Notes</Label>
+          <Input
+            id="add-notes"
+            placeholder="Optional"
+            value={form.notes}
+            onChange={(e) =>
+              setForm((f) => ({ ...f, notes: e.target.value }))
+            }
+          />
+        </div>
+      </div>
+      <DialogFooter>
+        <Button type="button" variant="outline" onClick={onClose}>
+          Cancel
+        </Button>
+        <Button type="submit" disabled={createMutation.isPending}>
+          {createMutation.isPending ? 'Adding...' : 'Add'}
+        </Button>
+      </DialogFooter>
     </form>
   );
 }

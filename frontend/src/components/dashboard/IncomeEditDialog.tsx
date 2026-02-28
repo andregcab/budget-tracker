@@ -20,6 +20,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Pencil, Plus, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
+import { formatCurrency } from '@/lib/transaction-utils';
+import { getMutationErrorMessage } from '@/lib/error-utils';
 
 type IncomeEditDialogProps = {
   year: number;
@@ -78,9 +80,7 @@ export function IncomeEditDialog({
       handleOpenChange(false);
     },
     onError: (err) => {
-      toast.error(
-        err instanceof Error ? err.message : 'Failed to save income',
-      );
+      toast.error(getMutationErrorMessage(err, 'Failed to save income'));
     },
   });
 
@@ -93,9 +93,7 @@ export function IncomeEditDialog({
       handleOpenChange(false);
     },
     onError: (err) => {
-      toast.error(
-        err instanceof Error ? err.message : 'Failed to reset income',
-      );
+      toast.error(getMutationErrorMessage(err, 'Failed to reset income'));
     },
   });
 
@@ -109,9 +107,7 @@ export function IncomeEditDialog({
       setAddDescription('');
     },
     onError: (err) => {
-      toast.error(
-        err instanceof Error ? err.message : 'Failed to add income',
-      );
+      toast.error(getMutationErrorMessage(err, 'Failed to add income'));
     },
   });
 
@@ -123,9 +119,7 @@ export function IncomeEditDialog({
       );
     },
     onError: (err) => {
-      toast.error(
-        err instanceof Error ? err.message : 'Failed to remove income',
-      );
+      toast.error(getMutationErrorMessage(err, 'Failed to remove income'));
     },
   });
 
@@ -168,7 +162,7 @@ export function IncomeEditDialog({
                 : 'text-muted-foreground hover:text-foreground'
             }`}
           >
-            ${income.toFixed(2)}
+            {formatCurrency(income)}
             <Pencil className="ml-1 h-3.5 w-3.5 opacity-70" />
           </Button>
         </DialogTrigger>
@@ -179,7 +173,7 @@ export function IncomeEditDialog({
           </DialogHeader>
           <p className="text-muted-foreground text-sm mt-2">
             {defaultIncome > 0
-              ? `Your default is $${defaultIncome.toFixed(2)}/month. Override below if different this month.`
+              ? `Your default is ${formatCurrency(defaultIncome)}/month. Override below if different this month.`
               : 'Enter an amount for this month.'}
           </p>
           <div className="grid gap-4 py-4">
@@ -205,8 +199,8 @@ export function IncomeEditDialog({
                       className="flex items-center justify-between gap-2 rounded-md border border-border bg-muted/30 px-2 py-1.5"
                     >
                       <span>
-                        {item.description || 'Other'}: $
-                        {item.amount.toFixed(2)}
+                        {item.description || 'Other'}:{' '}
+                        {formatCurrency(item.amount)}
                       </span>
                       <Button
                         type="button"

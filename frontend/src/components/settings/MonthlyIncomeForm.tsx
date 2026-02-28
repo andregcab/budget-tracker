@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { getMutationErrorMessage } from '@/lib/error-utils';
 
 interface MonthlyIncomeFormProps {
   initialValue: number | null;
@@ -33,7 +34,7 @@ export function MonthlyIncomeForm({
       await onSave(monthlyIncome === '' ? null : val);
       setMessage('Saved.');
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to save');
+      setError(getMutationErrorMessage(err, 'Failed to save'));
     } finally {
       setSaving(false);
     }

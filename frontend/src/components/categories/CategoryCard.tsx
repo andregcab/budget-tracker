@@ -1,4 +1,5 @@
 import type { Category } from '@/types';
+import { formatCurrency } from '@/lib/transaction-utils';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -73,14 +74,18 @@ export function CategoryCard({
             />
           </div>
           <div className="space-y-2">
-            <Label htmlFor={`budget-${category.id}`}>Monthly budget</Label>
+            <Label htmlFor={`budget-${category.id}`}>
+              Monthly budget
+            </Label>
             <Input
               id={`budget-${category.id}`}
               type="number"
               step="0.01"
               min="0"
               value={editBudgetAmount}
-              onChange={(e) => onEditBudgetAmountChange(e.target.value)}
+              onChange={(e) =>
+                onEditBudgetAmountChange(e.target.value)
+              }
               className="w-full"
               placeholder="0.00"
             />
@@ -96,7 +101,10 @@ export function CategoryCard({
               className="h-4 w-4 rounded border-input"
               title="Fixed monthly cost"
             />
-            <Label htmlFor={`fixed-${category.id}`} className="font-normal">
+            <Label
+              htmlFor={`fixed-${category.id}`}
+              className="font-normal"
+            >
               Fixed monthly cost
             </Label>
           </div>
@@ -113,7 +121,10 @@ export function CategoryCard({
             />
           </div>
           <div className="flex gap-2">
-            <Button type="submit" form={`edit-form-mobile-${category.id}`}>
+            <Button
+              type="submit"
+              form={`edit-form-mobile-${category.id}`}
+            >
               Save
             </Button>
             <Button
@@ -137,19 +148,25 @@ export function CategoryCard({
           <h3 className="font-semibold">{category.name}</h3>
           <dl className="space-y-0.5 text-sm text-muted-foreground">
             <div>
-              <span className="font-medium text-foreground">Budget: </span>
+              <span className="font-medium text-foreground">
+                Budget:{' '}
+              </span>
               {budget != null
-                ? `$${budget.toFixed(2)}`
+                ? formatCurrency(budget)
                 : category.isFixed
                   ? 'Set amount'
                   : 'Set budget'}
             </div>
             <div>
-              <span className="font-medium text-foreground">Fixed: </span>
+              <span className="font-medium text-foreground">
+                Fixed:{' '}
+              </span>
               {category.isFixed ? 'Yes' : '—'}
             </div>
             <div>
-              <span className="font-medium text-foreground">Keywords: </span>
+              <span className="font-medium text-foreground">
+                Keywords:{' '}
+              </span>
               {(category.keywords ?? []).length > 0
                 ? (category.keywords ?? []).join(', ')
                 : 'Name used by default'}

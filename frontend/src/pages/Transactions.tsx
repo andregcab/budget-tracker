@@ -3,6 +3,7 @@ import { useAccounts } from '@/hooks/useAccounts';
 import { useCategories } from '@/hooks/useCategories';
 import { useTransactions } from '@/hooks/useTransactions';
 import { useTransactionMutations } from '@/hooks/useTransactionMutations';
+import { useTransactionEditState } from '@/hooks/useTransactionEditState';
 import type { TransactionRow } from '@/types';
 import { Button } from '@/components/ui/button';
 import {
@@ -70,41 +71,7 @@ export function Transactions() {
   const [deleteMonthOpen, setDeleteMonthOpen] = useState(false);
   const [addOpen, setAddOpen] = useState(false);
 
-  const [editId, setEditId] = useState<string | null>(null);
-  const [editDate, setEditDate] = useState('');
-  const [editDescription, setEditDescription] = useState('');
-  const [editAmount, setEditAmount] = useState('');
-  const [editCategoryId, setEditCategoryId] = useState<string | null>(null);
-  const [editNotes, setEditNotes] = useState('');
-
-  const handleEditStart = (tx: TransactionRow) => {
-    setEditId(tx.id);
-    setEditDate(tx.date.slice(0, 10));
-    setEditDescription(tx.description);
-    setEditAmount(Math.abs(parseFloat(tx.amount)).toFixed(2));
-    setEditCategoryId(tx.category?.id ?? null);
-    setEditNotes(tx.notes ?? '');
-  };
-  const handleEditCancel = () => setEditId(null);
-  const handleEditSave = (e: React.FormEvent, id: string) => {
-    e.preventDefault();
-    const amt = parseFloat(editAmount);
-    if (!Number.isNaN(amt) && amt > 0) {
-      updateMutation.mutate(
-        {
-          id,
-          body: {
-            date: editDate,
-            description: editDescription.trim(),
-            amount: amt,
-            categoryId: editCategoryId,
-            notes: editNotes.trim() || null,
-          },
-        },
-        { onSuccess: () => setEditId(null) },
-      );
-    }
-  };
+  const editState = useTransactionEditState(updateMutation);
 
   return (
     <div>
@@ -132,9 +99,8 @@ export function Transactions() {
               Add
             </Button>
             <Button
-              variant="outline"
+              variant="destructiveOutline"
               size="sm"
-              className="border-destructive/40 text-destructive bg-destructive/10 hover:bg-destructive/20"
               onClick={() => setDeleteMonthOpen(true)}
             >
               Delete All
@@ -180,20 +146,20 @@ export function Transactions() {
                     categories={categories}
                     onDelete={setDeleteTarget}
                     updateMutation={updateMutation}
-                    editId={editId}
-                    editDate={editDate}
-                    editDescription={editDescription}
-                    editAmount={editAmount}
-                    editCategoryId={editCategoryId}
-                    editNotes={editNotes}
-                    onEditDateChange={setEditDate}
-                    onEditDescriptionChange={setEditDescription}
-                    onEditAmountChange={setEditAmount}
-                    onEditCategoryIdChange={setEditCategoryId}
-                    onEditNotesChange={setEditNotes}
-                    onEditSave={(e) => handleEditSave(e, tx.id)}
-                    onEditCancel={handleEditCancel}
-                    onEditStart={handleEditStart}
+                    editId={editState.editId}
+                    editDate={editState.editDate}
+                    editDescription={editState.editDescription}
+                    editAmount={editState.editAmount}
+                    editCategoryId={editState.editCategoryId}
+                    editNotes={editState.editNotes}
+                    onEditDateChange={editState.setEditDate}
+                    onEditDescriptionChange={editState.setEditDescription}
+                    onEditAmountChange={editState.setEditAmount}
+                    onEditCategoryIdChange={editState.setEditCategoryId}
+                    onEditNotesChange={editState.setEditNotes}
+                    onEditSave={(e) => editState.handleEditSave(e, tx.id)}
+                    onEditCancel={editState.handleEditCancel}
+                    onEditStart={editState.handleEditStart}
                   />
                 ))}
               </div>
@@ -218,20 +184,20 @@ export function Transactions() {
                         categories={categories}
                         onDelete={setDeleteTarget}
                         updateMutation={updateMutation}
-                        editId={editId}
-                        editDate={editDate}
-                        editDescription={editDescription}
-                        editAmount={editAmount}
-                        editCategoryId={editCategoryId}
-                        editNotes={editNotes}
-                        onEditDateChange={setEditDate}
-                        onEditDescriptionChange={setEditDescription}
-                        onEditAmountChange={setEditAmount}
-                        onEditCategoryIdChange={setEditCategoryId}
-                        onEditNotesChange={setEditNotes}
-                        onEditSave={(e) => handleEditSave(e, tx.id)}
-                        onEditCancel={handleEditCancel}
-                        onEditStart={handleEditStart}
+                        editId={editState.editId}
+                        editDate={editState.editDate}
+                        editDescription={editState.editDescription}
+                        editAmount={editState.editAmount}
+                        editCategoryId={editState.editCategoryId}
+                        editNotes={editState.editNotes}
+                        onEditDateChange={editState.setEditDate}
+                        onEditDescriptionChange={editState.setEditDescription}
+                        onEditAmountChange={editState.setEditAmount}
+                        onEditCategoryIdChange={editState.setEditCategoryId}
+                        onEditNotesChange={editState.setEditNotes}
+                        onEditSave={(e) => editState.handleEditSave(e, tx.id)}
+                        onEditCancel={editState.handleEditCancel}
+                        onEditStart={editState.handleEditStart}
                       />
                     ))}
                   </TableBody>

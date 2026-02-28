@@ -14,7 +14,9 @@ import { Pencil, Trash2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import {
   formatAmount,
+  formatTransactionAmount,
   formatTransactionDateDisplay,
+  getMyShareDisplay,
 } from '@/lib/transaction-utils';
 import type { UseMutationResult } from '@tanstack/react-query';
 
@@ -78,13 +80,8 @@ export function TransactionCard({
   onEditStart,
 }: TransactionCardProps) {
   const isEditing = editId === transaction.id;
-  const amt = parseFloat(transaction.amount);
-  const absAmt = Math.abs(amt);
-  const myShareVal = transaction.myShare
-    ? Math.abs(parseFloat(transaction.myShare))
-    : null;
-  const isHalfSplit =
-    myShareVal != null && Math.abs(myShareVal - absAmt / 2) < 0.01;
+  const { myShareVal, isHalfSplit } = getMyShareDisplay(transaction);
+  const absAmt = Math.abs(parseFloat(transaction.amount));
 
   const handleHalfClick = () => {
     if (isHalfSplit) {
@@ -103,7 +100,9 @@ export function TransactionCard({
   if (isEditing) {
     return (
       <Card
-        className={transaction.isExcluded ? 'opacity-50 bg-muted/30' : ''}
+        className={
+          transaction.isExcluded ? 'opacity-50 bg-muted/30' : ''
+        }
       >
         <CardContent className="p-3">
           <form
@@ -112,7 +111,9 @@ export function TransactionCard({
             className="space-y-3"
           >
             <div className="grid gap-2">
-              <Label htmlFor={`tx-date-${transaction.id}`}>Date</Label>
+              <Label htmlFor={`tx-date-${transaction.id}`}>
+                Date
+              </Label>
               <Input
                 id={`tx-date-${transaction.id}`}
                 type="date"
@@ -122,17 +123,23 @@ export function TransactionCard({
               />
             </div>
             <div className="grid gap-2">
-              <Label htmlFor={`tx-desc-${transaction.id}`}>Description</Label>
+              <Label htmlFor={`tx-desc-${transaction.id}`}>
+                Description
+              </Label>
               <Input
                 id={`tx-desc-${transaction.id}`}
                 value={editDescription}
-                onChange={(e) => onEditDescriptionChange(e.target.value)}
+                onChange={(e) =>
+                  onEditDescriptionChange(e.target.value)
+                }
                 placeholder="Description"
                 className="h-8"
               />
             </div>
             <div className="grid gap-2">
-              <Label htmlFor={`tx-amount-${transaction.id}`}>Amount</Label>
+              <Label htmlFor={`tx-amount-${transaction.id}`}>
+                Amount
+              </Label>
               <Input
                 id={`tx-amount-${transaction.id}`}
                 type="number"
@@ -160,7 +167,9 @@ export function TransactionCard({
               />
             </div>
             <div className="grid gap-2">
-              <Label htmlFor={`tx-notes-${transaction.id}`}>Notes</Label>
+              <Label htmlFor={`tx-notes-${transaction.id}`}>
+                Notes
+              </Label>
               <Input
                 id={`tx-notes-${transaction.id}`}
                 value={editNotes}
@@ -190,7 +199,9 @@ export function TransactionCard({
 
   return (
     <Card
-      className={transaction.isExcluded ? 'opacity-50 bg-muted/30' : ''}
+      className={
+        transaction.isExcluded ? 'opacity-50 bg-muted/30' : ''
+      }
     >
       <CardContent className="p-3 space-y-3">
         <div className="flex items-start justify-between gap-2">
@@ -212,11 +223,7 @@ export function TransactionCard({
                   : undefined
               }
             >
-              {myShareVal != null
-                ? amt < 0
-                  ? `(${myShareVal.toFixed(2)})`
-                  : `$${myShareVal.toFixed(2)}`
-                : formatAmount(transaction.amount)}
+              {formatTransactionAmount(transaction)}
             </p>
           </div>
           <div className="flex items-center gap-1 shrink-0">
@@ -277,26 +284,30 @@ export function TransactionCard({
                   'border-flag-active/55 bg-flag-active/35 text-flag-active-foreground hover:bg-flag-active/45',
               )}
               onClick={handleHalfClick}
-              title={isHalfSplit ? 'Clear 50/50 split' : 'Split this 50/50'}
+              title={
+                isHalfSplit ? 'Clear 50/50 split' : 'Split this 50/50'
+              }
             >
               Split
             </Button>
           </div>
           <p className="text-xs text-muted-foreground">
-            <span className="font-medium text-foreground">Category: </span>
+            <span className="font-medium text-foreground">
+              Category:{' '}
+            </span>
             {transaction.category?.name ?? '—'}
           </p>
           {transaction.notes && (
             <Tooltip>
               <TooltipTrigger asChild>
                 <p className="text-xs text-muted-foreground truncate cursor-default">
-                  <span className="font-medium text-foreground">Notes: </span>
+                  <span className="font-medium text-foreground">
+                    Notes:{' '}
+                  </span>
                   {transaction.notes}
                 </p>
               </TooltipTrigger>
-              <TooltipContent>
-                {transaction.notes}
-              </TooltipContent>
+              <TooltipContent>{transaction.notes}</TooltipContent>
             </Tooltip>
           )}
         </div>
