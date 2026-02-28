@@ -1,6 +1,8 @@
 import { api } from '@/api/client';
 import type { TransactionRow, TransactionsResponse } from '@/types';
 
+export type TransactionSortOrder = 'asc' | 'desc';
+
 export async function getTransactions(params: {
   accountId?: string;
   categoryId?: string;
@@ -8,6 +10,7 @@ export async function getTransactions(params: {
   toDate?: string;
   page?: number;
   limit?: number;
+  sortOrder?: TransactionSortOrder;
 }): Promise<TransactionsResponse> {
   const sp = new URLSearchParams();
   if (params.accountId) sp.set('accountId', params.accountId);
@@ -16,6 +19,7 @@ export async function getTransactions(params: {
   if (params.toDate) sp.set('toDate', params.toDate);
   if (params.page) sp.set('page', String(params.page));
   if (params.limit) sp.set('limit', String(params.limit));
+  if (params.sortOrder) sp.set('sortOrder', params.sortOrder);
   return api<TransactionsResponse>(`/transactions?${sp}`);
 }
 
@@ -74,7 +78,10 @@ export function getMonthRange(): { from: string; to: string } {
 }
 
 /** Returns a given month's date range in YYYY-MM-DD format */
-export function getMonthRangeFor(year: number, month: number): {
+export function getMonthRangeFor(
+  year: number,
+  month: number,
+): {
   from: string;
   to: string;
 } {

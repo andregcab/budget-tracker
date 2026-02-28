@@ -27,7 +27,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Plus } from 'lucide-react';
+import { ArrowDown, ArrowUp, Plus } from 'lucide-react';
 import { LoadingSpinner } from '@/components/LoadingSpinner';
 import { TransactionFiltersCard } from '@/components/transactions/TransactionFiltersCard';
 import { TransactionCard } from '@/components/transactions/TransactionCard';
@@ -52,6 +52,8 @@ export function Transactions() {
     setPage,
     limit,
     setLimit,
+    sortOrder,
+    setSortOrder,
     isLoading,
     items,
     total,
@@ -65,9 +67,8 @@ export function Transactions() {
     createMutation,
   } = useTransactionMutations();
 
-  const [deleteTarget, setDeleteTarget] = useState<TransactionRow | null>(
-    null,
-  );
+  const [deleteTarget, setDeleteTarget] =
+    useState<TransactionRow | null>(null);
   const [deleteMonthOpen, setDeleteMonthOpen] = useState(false);
   const [addOpen, setAddOpen] = useState(false);
 
@@ -91,42 +92,68 @@ export function Transactions() {
       />
 
       <Card className="mt-4">
-        <CardHeader className="flex flex-row items-center justify-between gap-4 flex-wrap">
+        <CardHeader className="flex flex-col gap-3">
           <CardTitle>Transactions ({total})</CardTitle>
-          <div className="flex items-center gap-2 flex-wrap">
-            <Button variant="default" size="sm" onClick={() => setAddOpen(true)}>
-              <Plus className="mr-1 h-4 w-4" />
-              Add
-            </Button>
+          <div className="flex flex-row items-center gap-3 flex-nowrap min-w-0 overflow-x-auto">
             <Button
-              variant="destructiveOutline"
+              variant="outline"
               size="sm"
-              onClick={() => setDeleteMonthOpen(true)}
+              className="md:hidden shrink-0"
+              onClick={() =>
+                setSortOrder((o) => (o === 'desc' ? 'asc' : 'desc'))
+              }
+              title={
+                sortOrder === 'desc'
+                  ? 'Newest first (click for oldest first)'
+                  : 'Oldest first (click for newest first)'
+              }
             >
-              Delete All
+              {sortOrder === 'desc' ? (
+                <ArrowDown className="mr-1 h-4 w-4" />
+              ) : (
+                <ArrowUp className="mr-1 h-4 w-4" />
+              )}
+              Date
             </Button>
-            <Label
-              htmlFor="limit"
-              className="text-sm text-muted-foreground whitespace-nowrap"
-            >
-              Per page
-            </Label>
-            <Select
-              value={String(limit)}
-              onValueChange={(v) => {
-                const next = parseInt(v, 10) as 25 | 50 | 100;
-                setLimit(next);
-              }}
-            >
-              <SelectTrigger id="limit" className="w-[100px]">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="25">25</SelectItem>
-                <SelectItem value="50">50</SelectItem>
-                <SelectItem value="100">100</SelectItem>
-              </SelectContent>
-            </Select>
+            <div className="ml-auto flex items-center gap-3 shrink-0">
+              <Button
+                variant="default"
+                size="sm"
+                onClick={() => setAddOpen(true)}
+              >
+                <Plus className="mr-1 h-4 w-4" />
+                Add
+              </Button>
+              <Button
+                variant="destructiveOutline"
+                size="sm"
+                onClick={() => setDeleteMonthOpen(true)}
+              >
+                Delete All
+              </Button>
+              <Label
+                htmlFor="limit"
+                className="text-sm text-muted-foreground whitespace-nowrap"
+              >
+                Per page
+              </Label>
+              <Select
+                value={String(limit)}
+                onValueChange={(v) => {
+                  const next = parseInt(v, 10) as 25 | 50 | 100;
+                  setLimit(next);
+                }}
+              >
+                <SelectTrigger id="limit" className="w-[100px]">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="25">25</SelectItem>
+                  <SelectItem value="50">50</SelectItem>
+                  <SelectItem value="100">100</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
           </div>
         </CardHeader>
         <CardContent>
@@ -153,11 +180,17 @@ export function Transactions() {
                     editCategoryId={editState.editCategoryId}
                     editNotes={editState.editNotes}
                     onEditDateChange={editState.setEditDate}
-                    onEditDescriptionChange={editState.setEditDescription}
+                    onEditDescriptionChange={
+                      editState.setEditDescription
+                    }
                     onEditAmountChange={editState.setEditAmount}
-                    onEditCategoryIdChange={editState.setEditCategoryId}
+                    onEditCategoryIdChange={
+                      editState.setEditCategoryId
+                    }
                     onEditNotesChange={editState.setEditNotes}
-                    onEditSave={(e) => editState.handleEditSave(e, tx.id)}
+                    onEditSave={(e) =>
+                      editState.handleEditSave(e, tx.id)
+                    }
                     onEditCancel={editState.handleEditCancel}
                     onEditStart={editState.handleEditStart}
                   />
@@ -167,12 +200,44 @@ export function Transactions() {
                 <Table className="table-fixed">
                   <TableHeader>
                     <TableRow>
-                      <TableHead className="min-w-[100px] w-[100px]">Date</TableHead>
-                      <TableHead className="w-[220px] min-w-[180px]">Description</TableHead>
-                      <TableHead className="w-24 min-w-[5rem] text-right">Amount</TableHead>
-                      <TableHead className="w-[150px] min-w-[120px]">Actions</TableHead>
-                      <TableHead className="w-[160px]">Category</TableHead>
-                      <TableHead className="w-[120px] min-w-[100px]">Notes</TableHead>
+                      <TableHead className="min-w-[100px] w-[100px]">
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setSortOrder((o) =>
+                              o === 'desc' ? 'asc' : 'desc',
+                            )
+                          }
+                          className="flex items-center gap-1 hover:text-foreground focus:outline-none focus:ring-2 focus:ring-ring rounded"
+                          title={
+                            sortOrder === 'desc'
+                              ? 'Newest first (click for oldest first)'
+                              : 'Oldest first (click for newest first)'
+                          }
+                        >
+                          Date
+                          {sortOrder === 'desc' ? (
+                            <ArrowDown className="h-4 w-4" />
+                          ) : (
+                            <ArrowUp className="h-4 w-4" />
+                          )}
+                        </button>
+                      </TableHead>
+                      <TableHead className="w-[220px] min-w-[180px]">
+                        Description
+                      </TableHead>
+                      <TableHead className="w-24 min-w-[5rem] text-right">
+                        Amount
+                      </TableHead>
+                      <TableHead className="w-[150px] min-w-[120px]">
+                        Actions
+                      </TableHead>
+                      <TableHead className="w-[160px]">
+                        Category
+                      </TableHead>
+                      <TableHead className="w-[120px] min-w-[100px]">
+                        Notes
+                      </TableHead>
                       <TableHead className="w-20 shrink-0" />
                     </TableRow>
                   </TableHeader>
@@ -191,11 +256,17 @@ export function Transactions() {
                         editCategoryId={editState.editCategoryId}
                         editNotes={editState.editNotes}
                         onEditDateChange={editState.setEditDate}
-                        onEditDescriptionChange={editState.setEditDescription}
+                        onEditDescriptionChange={
+                          editState.setEditDescription
+                        }
                         onEditAmountChange={editState.setEditAmount}
-                        onEditCategoryIdChange={editState.setEditCategoryId}
+                        onEditCategoryIdChange={
+                          editState.setEditCategoryId
+                        }
                         onEditNotesChange={editState.setEditNotes}
-                        onEditSave={(e) => editState.handleEditSave(e, tx.id)}
+                        onEditSave={(e) =>
+                          editState.handleEditSave(e, tx.id)
+                        }
                         onEditCancel={editState.handleEditCancel}
                         onEditStart={editState.handleEditStart}
                       />

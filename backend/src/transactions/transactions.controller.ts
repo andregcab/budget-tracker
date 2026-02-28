@@ -39,6 +39,7 @@ export class TransactionsController {
     @Query('maxAmount') maxAmount?: string,
     @Query('page') page?: string,
     @Query('limit') limit?: string,
+    @Query('sortOrder') sortOrder?: 'asc' | 'desc',
   ) {
     return this.transactionsService.findAll(user.id, {
       accountId,
@@ -49,6 +50,7 @@ export class TransactionsController {
       maxAmount,
       page: page ? parseInt(page, 10) : undefined,
       limit: limit ? parseInt(limit, 10) : undefined,
+      sortOrder,
     });
   }
 

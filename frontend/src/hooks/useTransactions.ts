@@ -36,6 +36,15 @@ export function useTransactions() {
   const [accountId, setAccountId] = useState<string>('');
   const [categoryId, setCategoryId] = useState<string>('');
   const [page, setPage] = useState(1);
+  const [sortOrder, setSortOrderState] = useState<'asc' | 'desc'>(
+    'desc',
+  );
+  const setSortOrder = (
+    next: 'asc' | 'desc' | ((prev: 'asc' | 'desc') => 'asc' | 'desc'),
+  ) => {
+    setSortOrderState(next);
+    setPage(1);
+  };
 
   const setFromDate = (v: string) => {
     setTransactionsDateRange(v, toDate);
@@ -55,6 +64,7 @@ export function useTransactions() {
       toDate,
       page,
       limit,
+      sortOrder,
     ],
     queryFn: () =>
       getTransactions({
@@ -64,6 +74,7 @@ export function useTransactions() {
         toDate: toDate || undefined,
         page,
         limit,
+        sortOrder,
       }),
   });
 
@@ -89,6 +100,8 @@ export function useTransactions() {
     setPage,
     limit,
     setLimit: handleLimitChange,
+    sortOrder,
+    setSortOrder,
     isLoading,
     items,
     total,
