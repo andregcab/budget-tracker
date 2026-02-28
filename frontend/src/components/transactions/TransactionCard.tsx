@@ -7,7 +7,10 @@ import { Label } from '@/components/ui/label';
 import { Combobox } from '@/components/ui/combobox';
 import { Pencil, Trash2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { formatAmount } from '@/lib/transaction-utils';
+import {
+  formatAmount,
+  formatTransactionDateDisplay,
+} from '@/lib/transaction-utils';
 import type { UseMutationResult } from '@tanstack/react-query';
 
 type UpdateMutation = UseMutationResult<
@@ -194,11 +197,7 @@ export function TransactionCard({
               {transaction.description}
             </p>
             <p className="text-sm text-muted-foreground">
-              {new Date(transaction.date).toLocaleDateString(undefined, {
-                year: '2-digit',
-                month: 'numeric',
-                day: 'numeric',
-              })}
+              {formatTransactionDateDisplay(transaction.date)}
             </p>
             <p
               className="mt-0.5 text-sm font-mono"

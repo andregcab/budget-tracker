@@ -13,6 +13,7 @@ import { cn } from '@/lib/utils';
 import {
   formatAmount,
   formatDateToMMDDYY,
+  formatTransactionDateDisplay,
   parseMMDDYYToISO,
 } from '@/lib/transaction-utils';
 import type { UseMutationResult } from '@tanstack/react-query';
@@ -136,11 +137,7 @@ export function TransactionTableRow({
             form={`edit-tx-form-${transaction.id}`}
           />
         ) : (
-          new Date(transaction.date).toLocaleDateString(undefined, {
-              year: '2-digit',
-              month: 'numeric',
-              day: 'numeric',
-            })
+          formatTransactionDateDisplay(transaction.date)
         )}
       </TableCell>
       <TableCell

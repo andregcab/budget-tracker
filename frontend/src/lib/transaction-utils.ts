@@ -9,6 +9,20 @@ export function absAmount(amountStr: string): number {
   return Math.abs(parseFloat(amountStr));
 }
 
+/** Format transaction date for display (2-digit year). Treats value as calendar date to avoid timezone shifting the day. */
+export function formatTransactionDateDisplay(isoOrDateStr: string): string {
+  const s = typeof isoOrDateStr === 'string' ? isoOrDateStr.slice(0, 10) : '';
+  if (!s || s.length < 10) return '';
+  const [y, m, d] = s.split('-').map(Number);
+  if (Number.isNaN(y) || Number.isNaN(m) || Number.isNaN(d)) return s;
+  const local = new Date(y, m - 1, d);
+  return local.toLocaleDateString(undefined, {
+    year: '2-digit',
+    month: 'numeric',
+    day: 'numeric',
+  });
+}
+
 /** Format ISO date (YYYY-MM-DD) to MM/DD/YY for input display */
 export function formatDateToMMDDYY(iso: string): string {
   if (!iso || iso.length < 10) return '';
