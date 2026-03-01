@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -75,6 +75,8 @@ function AddTransactionForm({
     notes: '',
   }));
   const [showValidation, setShowValidation] = useState(false);
+  const descriptionRef = useRef<HTMLInputElement>(null);
+  const amountRef = useRef<HTMLInputElement>(null);
 
   const amt = parseFloat(form.amount);
   const amountValid = !Number.isNaN(amt) && amt > 0;
@@ -83,6 +85,12 @@ function AddTransactionForm({
   const hasAmount = Boolean(form.amount);
   const isFormValid =
     hasAccount && hasDescription && hasAmount && amountValid;
+
+  useEffect(() => {
+    if (!showValidation) return;
+    if (!hasDescription) descriptionRef.current?.focus();
+    else if (!hasAmount || !amountValid) amountRef.current?.focus();
+  }, [showValidation, hasDescription, hasAmount, amountValid]);
 
   const absAmt = Math.abs(amt);
   const myShareNum = form.myShare ? parseFloat(form.myShare) : null;
@@ -153,7 +161,7 @@ function AddTransactionForm({
             )}
           />
           {showValidation && !hasAccount && (
-            <p className="text-sm text-destructive">
+            <p id="add-account-error" className="text-sm text-destructive">
               Select an account
             </p>
           )}
@@ -172,6 +180,7 @@ function AddTransactionForm({
         <div className="grid gap-2">
           <Label htmlFor="add-description">Description</Label>
           <Input
+            ref={descriptionRef}
             id="add-description"
             placeholder="e.g. Coffee shop"
             value={form.description}
@@ -183,9 +192,15 @@ function AddTransactionForm({
                 !hasDescription &&
                 'border-destructive',
             )}
+            aria-invalid={showValidation && !hasDescription}
+            aria-describedby={
+              showValidation && !hasDescription
+                ? 'add-description-error'
+                : undefined
+            }
           />
           {showValidation && !hasDescription && (
-            <p className="text-sm text-destructive">
+            <p id="add-description-error" className="text-sm text-destructive">
               Description is required
             </p>
           )}
@@ -195,6 +210,7 @@ function AddTransactionForm({
             <Label htmlFor="add-amount">Amount</Label>
             <div className="flex gap-2">
               <Input
+                ref={amountRef}
                 id="add-amount"
                 type="number"
                 step="0.01"
@@ -213,6 +229,12 @@ function AddTransactionForm({
                     (!hasAmount || !amountValid) &&
                     'border-destructive',
                 )}
+                aria-invalid={showValidation && (!hasAmount || !amountValid)}
+                aria-describedby={
+                  showValidation && (!hasAmount || !amountValid)
+                    ? 'add-amount-error'
+                    : undefined
+                }
               />
               <Button
                 type="button"
@@ -225,14 +247,11 @@ function AddTransactionForm({
                 ½
               </Button>
             </div>
-            {showValidation && !hasAmount && (
-              <p className="text-sm text-destructive">
-                Enter an amount
-              </p>
-            )}
-            {showValidation && hasAmount && !amountValid && (
-              <p className="text-sm text-destructive">
-                Amount must be greater than 0
+            {showValidation && (!hasAmount || !amountValid) && (
+              <p id="add-amount-error" className="text-sm text-destructive">
+                {!hasAmount
+                  ? 'Enter an amount'
+                  : 'Amount must be greater than 0'}
               </p>
             )}
             {form.myShare && (
@@ -260,8 +279,9 @@ function AddTransactionForm({
           </div>
         </div>
         <div className="grid gap-2">
-          <Label>Category</Label>
+          <Label htmlFor="add-category">Category</Label>
           <Combobox
+            id="add-category"
             options={categories.map((c) => ({
               value: c.id,
               label: c.name,

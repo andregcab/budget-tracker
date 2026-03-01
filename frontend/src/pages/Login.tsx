@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { Info } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
@@ -12,12 +12,17 @@ export function Login() {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const errorRef = useRef<HTMLParagraphElement>(null);
   const { login } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const from =
     (location.state as { from?: { pathname: string } })?.from
       ?.pathname ?? '/';
+
+  useEffect(() => {
+    if (error) errorRef.current?.focus();
+  }, [error]);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -63,7 +68,13 @@ export function Login() {
       </div>
       <form onSubmit={handleSubmit} className="space-y-4">
         {error && (
-          <p className="rounded-md bg-destructive/10 p-2 text-sm text-destructive">
+          <p
+            id="login-error"
+            ref={errorRef}
+            role="alert"
+            className="rounded-md bg-destructive/10 p-2 text-sm text-destructive"
+            tabIndex={-1}
+          >
             {error}
           </p>
         )}

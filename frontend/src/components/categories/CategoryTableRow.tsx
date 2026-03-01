@@ -68,10 +68,12 @@ export function CategoryTableRow({
             onPointerDown={(e) => e.stopPropagation()}
           >
             <Input
+              id={`edit-name-${category.id}`}
               value={editName}
               onChange={(e) => onEditNameChange(e.target.value)}
               className="h-8 w-full min-w-0 text-sm"
               autoFocus
+              aria-label="Category name"
             />
           </form>
         ) : (
@@ -86,6 +88,7 @@ export function CategoryTableRow({
             className="flex items-center gap-2"
           >
             <Input
+              id={`edit-budget-${category.id}`}
               type="number"
               step="0.01"
               min="0"
@@ -96,6 +99,7 @@ export function CategoryTableRow({
               className="h-8 w-full min-w-0"
               form={`edit-form-${category.id}`}
               name="budget"
+              aria-label="Budget amount"
             />
           </div>
         ) : (
@@ -122,6 +126,7 @@ export function CategoryTableRow({
               checked={editIsFixed}
               onChange={(e) => onEditIsFixedChange(e.target.checked)}
               title="Fixed monthly cost"
+              aria-label="Fixed monthly cost"
             />
           </div>
         ) : category.isFixed ? (
@@ -138,10 +143,12 @@ export function CategoryTableRow({
             className="min-w-0"
           >
             <Input
+              id={`edit-keywords-${category.id}`}
               value={editKeywords}
               onChange={(e) => onEditKeywordsChange(e.target.value)}
               placeholder="dining, Food & Drink"
               className="h-8 w-full min-w-0 text-sm"
+              aria-label="Keywords"
             />
           </div>
         ) : (
@@ -162,6 +169,7 @@ export function CategoryTableRow({
               size="icon"
               className="h-8 w-8 text-foreground dark:text-primary dark:hover:text-primary"
               title="Save"
+              aria-label="Save"
             >
               <Check className="h-4 w-4" />
             </Button>
@@ -172,6 +180,7 @@ export function CategoryTableRow({
               className="h-8 w-8 text-muted-foreground hover:text-foreground"
               onClick={onEditCancel}
               title="Cancel"
+              aria-label="Cancel"
             >
               <X className="h-4 w-4" />
             </Button>
@@ -193,6 +202,7 @@ export function CategoryTableRow({
                 onEditStart(category);
               }}
               title="Edit name, fixed, keywords"
+              aria-label="Edit name, fixed, keywords"
             >
               <Pencil className="h-4 w-4" />
             </Button>
@@ -208,6 +218,7 @@ export function CategoryTableRow({
               }}
               disabled={deleteMutation.isPending}
               title="Delete"
+              aria-label="Delete"
             >
               <Trash2 className="h-4 w-4" />
             </Button>

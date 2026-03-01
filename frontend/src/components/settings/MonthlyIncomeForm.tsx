@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -19,6 +19,12 @@ export function MonthlyIncomeForm({
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
+  const errorRef = useRef<HTMLParagraphElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (error) errorRef.current?.focus();
+  }, [error]);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -45,6 +51,7 @@ export function MonthlyIncomeForm({
       <div className="grid gap-2">
         <Label htmlFor="monthlyIncome">Monthly income</Label>
         <Input
+          ref={inputRef}
           id="monthlyIncome"
           type="number"
           step="0.01"
@@ -52,9 +59,21 @@ export function MonthlyIncomeForm({
           placeholder="0.00"
           value={monthlyIncome}
           onChange={(e) => setMonthlyIncome(e.target.value)}
+          aria-invalid={!!error}
+          aria-describedby={error ? 'monthly-income-error' : undefined}
         />
       </div>
-      {error && <p className="text-destructive text-sm">{error}</p>}
+      {error && (
+        <p
+          id="monthly-income-error"
+          ref={errorRef}
+          role="alert"
+          className="text-destructive text-sm"
+          tabIndex={-1}
+        >
+          {error}
+        </p>
+      )}
       {message && (
         <p className="text-muted-foreground text-sm">{message}</p>
       )}

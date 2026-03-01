@@ -35,6 +35,10 @@ type ComboboxProps<T = string> = {
   /** Optional: include an "empty" option (e.g. "All" or "—") */
   allowEmpty?: boolean;
   emptyOption?: { value: T | null; label: string };
+  /** Optional: id for the trigger so a <Label htmlFor={id}> can be associated */
+  id?: string;
+  /** Optional: accessible name when no visible label is used (e.g. aria-label) */
+  ariaLabel?: string;
 };
 
 export function Combobox<T extends string>({
@@ -49,8 +53,11 @@ export function Combobox<T extends string>({
   disabled,
   allowEmpty,
   emptyOption = { value: null, label: "—" },
+  id,
+  ariaLabel,
 }: ComboboxProps<T>) {
   const [open, setOpen] = React.useState(false)
+  const listboxId = React.useId()
 
   const selected = options.find((o) => o.value === value)
   const displayValue = selected?.label ?? (allowEmpty && value == null ? emptyOption.label : placeholder)
@@ -59,9 +66,12 @@ export function Combobox<T extends string>({
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
         <Button
+          id={id}
           variant="outline"
           role="combobox"
           aria-expanded={open}
+          aria-controls={listboxId}
+          aria-label={ariaLabel}
           disabled={disabled}
           className={cn(
             "flex h-9 w-full min-w-0 justify-between gap-2 font-normal",
@@ -70,13 +80,13 @@ export function Combobox<T extends string>({
           )}
         >
           <span className="min-w-0 truncate text-left">{displayValue}</span>
-          <ChevronDown className="h-4 w-4 shrink-0 opacity-50" />
+          <ChevronDown className="h-4 w-4 shrink-0 opacity-50" aria-hidden />
         </Button>
       </PopoverTrigger>
       <PopoverContent className={cn("w-[var(--radix-popover-trigger-width)] p-0", className)} align="start">
         <Command>
           <CommandInput placeholder={searchPlaceholder} />
-          <CommandList>
+          <CommandList id={listboxId}>
             <CommandEmpty>{emptyText}</CommandEmpty>
             <CommandGroup>
               {allowEmpty && (

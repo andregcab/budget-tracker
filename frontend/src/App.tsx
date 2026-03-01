@@ -1,4 +1,5 @@
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { DocumentTitle } from "@/components/DocumentTitle";
 import { ScrollRestoration } from "@/components/ScrollRestoration";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "sonner";
@@ -26,6 +27,7 @@ function App() {
       <ThemeProvider>
         <TooltipProvider delayDuration={300}>
         <BrowserRouter>
+          <DocumentTitle />
           <ScrollRestoration />
           <AuthProvider>
             <UserPreferencesProvider>

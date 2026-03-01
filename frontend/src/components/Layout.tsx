@@ -46,6 +46,12 @@ export function Layout() {
 
   return (
     <div className="flex min-h-screen flex-col">
+      <a
+        href="#main"
+        className="absolute left-0 top-0 z-[100] h-px w-px overflow-hidden p-0 [-webkit-clip-path:inset(50%)] [clip-path:inset(50%)] focus:left-4 focus:top-4 focus:h-auto focus:w-auto focus:overflow-visible focus:p-4 focus:[clip-path:none] focus:[-webkit-clip-path:none] focus:rounded-md focus:bg-primary focus:text-primary-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+      >
+        Skip to main content
+      </a>
       <header className="shrink-0 border-b border-border bg-card text-card-foreground">
         <div className="flex h-14 items-center gap-2 px-4 sm:gap-4">
           <Button
@@ -128,7 +134,7 @@ export function Layout() {
           </Link>
         ))}
       </nav>
-      <main className="flex-1 min-w-0 overflow-x-hidden pt-4 px-3 pb-3 sm:pt-5 sm:px-4 sm:pb-4 text-foreground">
+      <main id="main" className="flex-1 min-w-0 overflow-x-hidden pt-4 px-3 pb-3 sm:pt-5 sm:px-4 sm:pb-4 text-foreground">
         <GettingStartedCard />
         <Outlet />
       </main>

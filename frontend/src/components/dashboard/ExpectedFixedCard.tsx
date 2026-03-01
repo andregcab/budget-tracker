@@ -363,6 +363,7 @@ export function ExpectedFixedCard({
                   <span className="flex items-center gap-2">
                     <span className="w-8 shrink-0 flex justify-end">
                       <Button
+                        type="button"
                         variant="ghost"
                         size="icon"
                         className="h-6 w-6 text-muted-foreground opacity-0 transition-opacity focus:opacity-100 group-hover:opacity-100 hover:text-foreground"
@@ -372,8 +373,9 @@ export function ExpectedFixedCard({
                           removeMutation.isPending
                         }
                         title="Set amount for this month"
+                        aria-label="Set amount for this month"
                       >
-                        <Pencil className="h-3 w-3" />
+                        <Pencil className="h-3 w-3" aria-hidden />
                       </Button>
                     </span>
                     {formatCurrency(category.total)}

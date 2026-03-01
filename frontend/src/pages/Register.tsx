@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
@@ -19,8 +19,29 @@ export function Register() {
     passwordConfirm?: string;
   }>({});
   const [loading, setLoading] = useState(false);
+  const errorRef = useRef<HTMLParagraphElement>(null);
+  const usernameRef = useRef<HTMLInputElement>(null);
+  const passwordRef = useRef<HTMLInputElement>(null);
+  const passwordConfirmRef = useRef<HTMLInputElement>(null);
   const { register } = useAuth();
   const navigate = useNavigate();
+
+  useEffect(() => {
+    if (error) {
+      errorRef.current?.focus();
+    } else if (fieldErrors.username) {
+      usernameRef.current?.focus();
+    } else if (fieldErrors.password) {
+      passwordRef.current?.focus();
+    } else if (fieldErrors.passwordConfirm) {
+      passwordConfirmRef.current?.focus();
+    }
+  }, [
+    error,
+    fieldErrors.username,
+    fieldErrors.password,
+    fieldErrors.passwordConfirm,
+  ]);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -69,7 +90,13 @@ export function Register() {
     >
       <form onSubmit={handleSubmit} className="space-y-4">
         {error && (
-          <p className="rounded-md bg-destructive/10 p-2 text-sm text-destructive">
+          <p
+            id="register-error"
+            ref={errorRef}
+            role="alert"
+            className="rounded-md bg-destructive/10 p-2 text-sm text-destructive"
+            tabIndex={-1}
+          >
             {error}
           </p>
         )}
@@ -81,6 +108,7 @@ export function Register() {
             Username
           </label>
           <Input
+            ref={usernameRef}
             id="username"
             type="text"
             value={username}
@@ -98,9 +126,16 @@ export function Register() {
             )}
             required
             autoComplete="username"
+            aria-invalid={!!fieldErrors.username}
+            aria-describedby={
+              fieldErrors.username ? 'username-error' : undefined
+            }
           />
           {fieldErrors.username && (
-            <p className="mt-1 text-xs text-destructive">
+            <p
+              id="username-error"
+              className="mt-1 text-xs text-destructive"
+            >
               {fieldErrors.username}
             </p>
           )}
@@ -113,6 +148,7 @@ export function Register() {
             Password
           </label>
           <Input
+            ref={passwordRef}
             id="password"
             type="password"
             value={password}
@@ -147,13 +183,20 @@ export function Register() {
             )}
             required
             autoComplete="new-password"
+            aria-invalid={!!fieldErrors.password}
+            aria-describedby={
+              fieldErrors.password ? 'password-error' : undefined
+            }
           />
           <p className="mt-1 text-xs text-muted-foreground">
             At least 8 characters, with one uppercase, one lowercase,
             and one number
           </p>
           {fieldErrors.password && (
-            <p className="mt-1 text-xs text-destructive">
+            <p
+              id="password-error"
+              className="mt-1 text-xs text-destructive"
+            >
               {fieldErrors.password}
             </p>
           )}
@@ -166,6 +209,7 @@ export function Register() {
             Confirm password
           </label>
           <Input
+            ref={passwordConfirmRef}
             id="passwordConfirm"
             type="password"
             value={passwordConfirm}
@@ -183,9 +227,18 @@ export function Register() {
             )}
             required
             autoComplete="new-password"
+            aria-invalid={!!fieldErrors.passwordConfirm}
+            aria-describedby={
+              fieldErrors.passwordConfirm
+                ? 'passwordConfirm-error'
+                : undefined
+            }
           />
           {fieldErrors.passwordConfirm && (
-            <p className="mt-1 text-xs text-destructive">
+            <p
+              id="passwordConfirm-error"
+              className="mt-1 text-xs text-destructive"
+            >
               {fieldErrors.passwordConfirm}
             </p>
           )}

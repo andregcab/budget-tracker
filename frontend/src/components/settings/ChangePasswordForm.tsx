@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -14,6 +14,14 @@ export function ChangePasswordForm() {
   const [passwordError, setPasswordError] = useState('');
   const [passwordMessage, setPasswordMessage] = useState('');
   const [changingPassword, setChangingPassword] = useState(false);
+  const errorRef = useRef<HTMLParagraphElement>(null);
+  const newPasswordRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (passwordError) {
+      errorRef.current?.focus();
+    }
+  }, [passwordError]);
 
   function handleChangePassword(e: React.FormEvent) {
     e.preventDefault();
@@ -70,12 +78,15 @@ export function ChangePasswordForm() {
       <div className="grid gap-2">
         <Label htmlFor="newPassword">New password</Label>
         <Input
-          id="newPassword"
-          type="password"
-          value={newPassword}
-          onChange={(e) => setNewPassword(e.target.value)}
-          required
-          autoComplete="new-password"
+            ref={newPasswordRef}
+            id="newPassword"
+            type="password"
+            value={newPassword}
+            onChange={(e) => setNewPassword(e.target.value)}
+            required
+            autoComplete="new-password"
+            aria-invalid={!!passwordError}
+            aria-describedby={passwordError ? 'change-password-error' : undefined}
         />
         <p className="text-xs text-muted-foreground">
           At least 8 characters, with one uppercase, one lowercase,
@@ -93,10 +104,20 @@ export function ChangePasswordForm() {
           onChange={(e) => setNewPasswordConfirm(e.target.value)}
           required
           autoComplete="new-password"
+          aria-invalid={!!passwordError}
+          aria-describedby={passwordError ? 'change-password-error' : undefined}
         />
       </div>
       {passwordError && (
-        <p className="text-sm text-destructive">{passwordError}</p>
+        <p
+          id="change-password-error"
+          ref={errorRef}
+          role="alert"
+          className="text-sm text-destructive"
+          tabIndex={-1}
+        >
+          {passwordError}
+        </p>
       )}
       {passwordMessage && (
         <p className="text-sm text-[var(--positive)]">

@@ -211,8 +211,9 @@ export function IncomeEditDialog({
                           removeAdditionalMutation.mutate(item.id)
                         }
                         disabled={removeAdditionalMutation.isPending}
+                        aria-label={`Remove ${item.description || 'Other'} income`}
                       >
-                        <Trash2 className="h-3.5 w-3.5" />
+                        <Trash2 className="h-3.5 w-3.5" aria-hidden />
                       </Button>
                     </li>
                   ))}
@@ -220,19 +221,27 @@ export function IncomeEditDialog({
               </div>
             )}
             <div className="space-y-2">
-              <Label>Add extra income</Label>
+              <Label className="block">Add extra income</Label>
               <form
                 onSubmit={handleAddAdditional}
                 className="flex flex-wrap gap-2 items-center"
               >
+                <Label htmlFor="income-edit-description" className="sr-only">
+                  Description
+                </Label>
                 <Input
+                  id="income-edit-description"
                   type="text"
                   placeholder="e.g. Sold item, Birthday Money"
                   value={addDescription}
                   onChange={(e) => setAddDescription(e.target.value)}
                   className="flex-1 min-w-[200px]"
                 />
+                <Label htmlFor="income-edit-amount" className="sr-only">
+                  Amount
+                </Label>
                 <Input
+                  id="income-edit-amount"
                   type="number"
                   step="0.01"
                   min="0.01"

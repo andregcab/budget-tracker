@@ -36,7 +36,7 @@ export function SummaryCard({
             </span>
             <div className="flex-1 min-w-0 h-6 rounded-md overflow-hidden bg-muted/50">
               <div
-                className="h-full rounded-md bg-[oklch(0.76_0.19_145)]/90 dark:bg-[oklch(0.78_0.19_145)]/90 transition-[width] duration-300 ease-out"
+                className="h-full rounded-md bg-[var(--positive)]/90 transition-[width] duration-300 ease-out"
                 style={{ width: `${incomePct}%` }}
               />
             </div>
@@ -50,7 +50,7 @@ export function SummaryCard({
             </span>
             <div className="flex-1 min-w-0 h-6 rounded-md overflow-hidden bg-muted/50">
               <div
-                className="h-full rounded-md bg-[oklch(0.78_0.17_55)]/90 dark:bg-[oklch(0.80_0.16_55)]/90 transition-[width] duration-300 ease-out"
+                className="h-full rounded-md bg-[var(--chart-3)]/90 transition-[width] duration-300 ease-out"
                 style={{ width: `${expensesPct}%` }}
               />
             </div>
@@ -67,9 +67,7 @@ export function SummaryCard({
               </p>
               <p
                 className={`text-2xl font-bold ${
-                  savings >= 0
-                    ? 'text-[oklch(0.52_0.2_145)] dark:text-[oklch(0.62_0.2_145)]'
-                    : 'text-destructive'
+                  savings >= 0 ? 'text-[var(--positive)]' : 'text-destructive'
                 }`}
               >
                 {formatCurrency(Math.abs(savings))}

@@ -185,6 +185,7 @@ export function CategoryCard({
               onEditStart(category);
             }}
             title="Edit"
+            aria-label="Edit"
           >
             <Pencil className="h-4 w-4" />
           </Button>
@@ -200,6 +201,7 @@ export function CategoryCard({
             }}
             disabled={deleteMutation.isPending}
             title="Delete"
+            aria-label="Delete"
           >
             <Trash2 className="h-4 w-4" />
           </Button>

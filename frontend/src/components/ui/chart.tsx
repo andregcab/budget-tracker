@@ -300,6 +300,49 @@ const ChartLegendContent = React.forwardRef<
         {items.map((item, index) => {
           const key = `${nameKey || item.dataKey || "value"}`
           const itemConfig = getPayloadConfigFromPayload(config, item, key)
+          const label = itemConfig?.label ?? String(item.value)
+          const isInteractive = Boolean(onItemClick)
+
+          const content = (
+            <>
+              {itemConfig?.icon && !hideIcon ? (
+                <itemConfig.icon />
+              ) : (
+                <div
+                  className="h-2 w-2 shrink-0 rounded-[2px]"
+                  style={{
+                    backgroundColor: item.color,
+                  }}
+                />
+              )}
+              {itemConfig?.label}
+            </>
+          )
+
+          if (isInteractive) {
+            return (
+              <button
+                key={item.value}
+                type="button"
+                className={cn(
+                  "flex items-center gap-1.5 shrink-0 rounded-md [&>svg]:h-3 [&>svg]:w-3 [&>svg]:text-muted-foreground",
+                  "cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                )}
+                onMouseEnter={onItemHover ? () => onItemHover(index) : undefined}
+                onMouseLeave={onItemHover ? () => onItemHover(undefined) : undefined}
+                onClick={() => onItemClick?.(index)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" || e.key === " ") {
+                    e.preventDefault()
+                    onItemClick?.(index)
+                  }
+                }}
+                aria-label={String(label)}
+              >
+                {content}
+              </button>
+            )
+          }
 
           return (
             <div
@@ -310,22 +353,11 @@ const ChartLegendContent = React.forwardRef<
               )}
               onMouseEnter={onItemHover ? () => onItemHover(index) : undefined}
               onMouseLeave={onItemHover ? () => onItemHover(undefined) : undefined}
-              onClick={onItemClick ? () => onItemClick(index) : undefined}
             >
-                {itemConfig?.icon && !hideIcon ? (
-                  <itemConfig.icon />
-                ) : (
-                  <div
-                    className="h-2 w-2 shrink-0 rounded-[2px]"
-                    style={{
-                      backgroundColor: item.color,
-                    }}
-                  />
-                )}
-                {itemConfig?.label}
-              </div>
-            )
-          })}
+              {content}
+            </div>
+          )
+        })}
       </div>
     )
   }

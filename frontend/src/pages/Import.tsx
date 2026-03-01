@@ -1,5 +1,5 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useRef, useEffect } from 'react';
 import { toast } from 'sonner';
 import { apiUpload } from '@/api/client';
 import { useAccounts } from '@/hooks/useAccounts';
@@ -21,6 +21,7 @@ export function Import() {
   const [accountId, setAccountId] = useState('');
   const [file, setFile] = useState<File | null>(null);
   const [dragOver, setDragOver] = useState(false);
+  const errorRef = useRef<HTMLParagraphElement>(null);
 
   const { data: accounts = [] } = useAccounts();
 
@@ -51,6 +52,10 @@ export function Import() {
       toast.error(getMutationErrorMessage(err, 'Import failed'));
     },
   });
+
+  useEffect(() => {
+    if (uploadMutation.error) errorRef.current?.focus();
+  }, [uploadMutation.error]);
 
   const handleDrop = useCallback((e: React.DragEvent) => {
     e.preventDefault();
@@ -89,8 +94,9 @@ export function Import() {
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="grid gap-2">
-            <Label>Account</Label>
+            <Label htmlFor="import-account">Account</Label>
             <Combobox
+              id="import-account"
               options={accounts.map((a) => ({
                 value: a.id,
                 label: a.name,
@@ -166,7 +172,13 @@ export function Import() {
               )}
           </div>
           {uploadMutation.error && (
-            <p className="text-destructive text-sm">
+            <p
+              id="import-error"
+              ref={errorRef}
+              role="alert"
+              className="text-destructive text-sm"
+              tabIndex={-1}
+            >
               {uploadMutation.error instanceof Error
                 ? uploadMutation.error.message
                 : 'Import failed'}

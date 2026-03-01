@@ -33,6 +33,7 @@ import {
 import { cn } from '@/lib/utils';
 import { formatCurrency } from '@/lib/transaction-utils';
 import { useUserPreferences } from '@/hooks/useUserPreferences';
+import { usePrefersReducedMotion } from '@/hooks/usePrefersReducedMotion';
 import type { ChartCategory } from '@/hooks/useDashboardData';
 
 type SpendingChartCardProps = {
@@ -46,6 +47,7 @@ export function SpendingChartCard({
 }: SpendingChartCardProps) {
   const { spendingChartType: chartType, setSpendingChartType } =
     useUserPreferences();
+  const prefersReducedMotion = usePrefersReducedMotion();
   const [pieActiveIndex, setPieActiveIndex] = useState<
     number | undefined
   >(undefined);
@@ -408,7 +410,7 @@ export function SpendingChartCard({
                   innerRadius={0}
                   stroke="var(--border)"
                   strokeWidth={1.5}
-                  animationDuration={300}
+                  animationDuration={prefersReducedMotion ? 0 : 300}
                   animationEasing="ease-in-out"
                   activeIndex={pieActiveIndex}
                   label={renderPieLabel}

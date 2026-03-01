@@ -136,6 +136,12 @@ body[data-scroll-locked] {
   animation: pie-slice-raise 0.25s linear forwards;
 }
 
+@media (prefers-reduced-motion: reduce) {
+  .pie-active-slice {
+    animation: none;
+  }
+}
+
 /* Subtle nudge glow — like video game hints: soft, attention-drawing without being loud */
 @keyframes nudge-glow {
   0%,

@@ -292,6 +292,7 @@ export function TransactionTableRow({
                 size="icon"
                 className="h-8 w-8 text-foreground dark:text-primary dark:hover:text-primary"
                 title="Save"
+                aria-label="Save"
               >
                 <Check className="h-4 w-4" />
               </Button>
@@ -303,6 +304,7 @@ export function TransactionTableRow({
               className="h-8 w-8 text-muted-foreground hover:text-foreground"
               onClick={onEditCancel}
               title="Cancel"
+              aria-label="Cancel"
             >
               <X className="h-4 w-4" />
             </Button>
@@ -316,6 +318,7 @@ export function TransactionTableRow({
               className="h-8 w-8"
               onClick={() => onEditStart(transaction)}
               title="Edit"
+              aria-label="Edit"
             >
               <Pencil className="h-4 w-4" />
             </Button>
@@ -326,6 +329,7 @@ export function TransactionTableRow({
               className="h-8 w-8 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
               onClick={() => onDelete(transaction)}
               title="Delete"
+              aria-label="Delete"
             >
               <Trash2 className="h-4 w-4" />
             </Button>
