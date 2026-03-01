@@ -18,6 +18,7 @@ export interface TransactionFilters {
   maxAmount?: string;
   page?: number;
   limit?: number;
+  sortOrder?: 'asc' | 'desc';
 }
 
 @Injectable()
@@ -45,11 +46,12 @@ export class TransactionsService {
     const limit = Math.min(100, Math.max(1, filters.limit ?? 20));
     const skip = (page - 1) * limit;
 
+    const dateOrder = filters.sortOrder ?? 'desc';
     const [items, total] = await Promise.all([
       this.prisma.transaction.findMany({
         where,
         include: { category: { select: { id: true, name: true } } },
-        orderBy: [{ date: 'desc' }, { createdAt: 'asc' }, { id: 'asc' }],
+        orderBy: [{ date: dateOrder }, { createdAt: 'asc' }, { id: 'asc' }],
         skip,
         take: limit,
       }),
